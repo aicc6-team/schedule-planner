@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일정 달력</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 폰트어썸 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- 구글 API 클라이언트 라이브러리 추가 -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        /* 일정관리 페이지와 너비 통일을 위해 수정 */
+        .container {
+            max-width: 1200px;
+            margin: 0.8rem auto;
+            padding: 0 0.4rem;
+        }
+        /* 달력 컨테이너 스타일 수정 */
+        .calendar-container {
+            background: white;
+            padding: 0.8rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            width: 100%; /* 너비 확보 */
+        }
+        #calendarFrame {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        .calendar-info {
+            margin-bottom: 0.8rem;
+            font-size: 0.7rem;
+            padding: 0.7rem;
+        }
+        .calendar-info p {
+            margin-bottom: 0.5rem;
+        }
+        .calendar-info ol {
+            margin-left: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .calendar-info li {
+            margin-bottom: 0.3rem;
+        }
+        .calendar-actions {
+            margin-bottom: 0.8rem;
+            padding: 0.7rem 0;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-calendar-check"></i>
+                <h1>내 일정을 부탁해</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">일정관리</a></li>
+                    <li><a href="calendar.html" class="active">일정달력</a></li>
+                    <li><a href="analysis.html">일정분석</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="calendar-container">
+            <h2>일정 달력</h2>
+            
+            <!-- 구글 캘린더 연동 기능 설명 -->
+            <!-- <div class="calendar-info">
+                <p><strong>구글 캘린더 연동 기능 사용 안내</strong></p>
+                <p>현재 구글 캘린더 ID가 설정되어 있으나, 완전한 연동을 위해서는 API 키와 클라이언트 ID가 필요합니다.</p>
+                <ol>
+                    <li>구글 클라우드 콘솔(https://console.cloud.google.com/)에서 새 프로젝트 생성</li>
+                    <li>API 및 서비스 > 라이브러리에서 Google Calendar API 활성화</li>
+                    <li>사용자 인증 정보에서 API 키와 OAuth 클라이언트 ID 발급(웹 애플리케이션 유형)</li>
+                    <li>승인된 자바스크립트 출처에 <code>http://localhost:5500</code> 추가</li>
+                    <li>발급받은 키를 config.js 파일에 입력</li>
+                </ol>
+                <p>자세한 설정 방법은 config.js 파일의 주석을 참고하세요.</p>
+            </div> -->
+            
+            <!-- 구글 캘린더 연동 버튼 영역 -->
+            <!-- <div class="calendar-actions">
+                <button id="authorizeButton" class="calendar-btn"><i class="fas fa-key"></i> 구글 계정 연결</button>
+                <button id="exportButton" class="calendar-btn" disabled><i class="fas fa-file-export"></i> 일정 구글 캘린더에 저장</button>
+                <div id="calendarStatus" class="status-message"></div>
+            </div>
+             -->
+            <!-- 구글 캘린더 표시 -->
+            <iframe id="calendarFrame" 
+                    style="border: 0" 
+                    width="100%" 
+                    height="600px" 
+                    frameborder="0" 
+                    scrolling="no">
+            </iframe>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="calendar.js"></script>
+</body>
+</html> 

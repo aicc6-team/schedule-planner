@@ -1,0 +1,201 @@
+<!DOCTYPE html> <!-- HTML5 문서임을 선언 -->
+<html lang="ko"> <!-- 한국어로 작성된 웹페이지임을 명시 -->
+
+<head> <!-- 웹페이지의 설정과 외부 파일 연결을 위한 영역 -->
+    <meta charset="UTF-8"> <!-- 한글 등 유니코드 문자를 올바르게 표시하기 위한 인코딩 설정 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 모바일 기기에서 화면 크기 자동 조절 -->
+    <title>내 일정을 부탁해</title> <!-- 브라우저 탭에 표시될 제목 -->
+
+    <!-- 외부 CSS 파일 연결 -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- 폰트어썸 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase 라이브러리 연결 (데이터베이스 사용을 위해) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <!-- Chart.js 라이브러리 연결 (차트 그리기를 위해) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- 구글 API 클라이언트 라이브러리 추가 -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+</head>
+
+<body> <!-- 웹페이지의 실제 내용이 표시되는 영역 -->
+    <!-- 상단 네비게이션 메뉴 -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-calendar-check"></i>
+                <h1>내 일정을 부탁해</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html" class="active">일정관리</a></li>
+                    <li><a href="calendar.html">일정달력</a></li>
+                    <li><a href="analysis.html">일정분석</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container"> <!-- 전체 콘텐츠를 감싸는 컨테이너 -->
+        <div class="main-content"> <!-- 메인 콘텐츠 영역 -->
+            <!-- 왼쪽: 할일 입력 폼 -->
+            <div class="input-section">
+                <h2>할일 추가</h2>
+                <div class="input-form">
+                    <!-- 할일 제목 입력 필드 -->
+                    <input type="text" id="todoInput" placeholder="할일을 입력하세요">
+                    
+                    <!-- 할일 상세 설명 입력 필드 -->
+                    <textarea id="todoDescription" placeholder="상세 설명을 입력하세요"></textarea>
+
+                    <!-- 날짜 선택 필드 -->
+                    <div class="input-group">
+                        <label for="todoDate">날짜:</label>
+                        <input type="date" id="todoDate">
+                    </div>
+
+                    <!-- 시작 시간 선택 필드 (30분 단위) -->
+                    <div class="input-group">
+                        <label for="todoTime">시작 시간:</label>
+                        <select id="todoTime">
+                            <option value="08:00">08:00</option>
+                            <option value="08:30">08:30</option>
+                            <option value="09:00" selected>09:00</option>
+                            <option value="09:30">09:30</option>
+                            <option value="10:00">10:00</option>
+                            <option value="10:30">10:30</option>
+                            <option value="11:00">11:00</option>
+                            <option value="11:30">11:30</option>
+                            <option value="12:00">12:00</option>
+                            <option value="12:30">12:30</option>
+                            <option value="13:00">13:00</option>
+                            <option value="13:30">13:30</option>
+                            <option value="14:00">14:00</option>
+                            <option value="14:30">14:30</option>
+                            <option value="15:00">15:00</option>
+                            <option value="15:30">15:30</option>
+                            <option value="16:00">16:00</option>
+                            <option value="16:30">16:30</option>
+                            <option value="17:00">17:00</option>
+                            <option value="17:30">17:30</option>
+                            <option value="18:00">18:00</option>
+                            <option value="18:30">18:30</option>
+                            <option value="19:00">19:00</option>
+                            <option value="19:30">19:30</option>
+                            <option value="20:00">20:00</option>
+                            <option value="20:30">20:30</option>
+                            <option value="21:00">21:00</option>
+                            <option value="21:30">21:30</option>
+                           
+                        </select>
+                    </div>
+
+                    <!-- 소요시간 입력 필드 (30분 단위) -->
+                    <div class="input-group">
+                        <label for="todoDuration">소요시간:</label>
+                        <select id="todoDuration">
+                            <option value="0.5" selected>30분</option>
+                            <option value="1">1시간</option>
+                            <option value="1.5">1시간 30분</option>
+                            <option value="2">2시간</option>
+                            <option value="2.5">2시간 30분</option>
+                            <option value="3">3시간</option>
+                            <option value="3.5">3시간 30분</option>
+                            <option value="4">4시간</option>
+                            <option value="4.5">4시간 30분</option>
+                            <option value="5">5시간</option>
+                            <option value="5.5">5시간 30분</option>
+                            <option value="6">6시간</option>
+                            <option value="6.5">6시간 30분</option>
+                            <option value="7">7시간</option>
+                            <option value="7.5">7시간 30분</option>
+                            <option value="8">8시간</option>
+                            <option value="8.5">8시간 30분</option>
+                            <option value="9">9시간</option>
+                            <option value="9.5">9시간 30분</option>
+                            <option value="10">10시간</option>
+                            <option value="10.5">10시간 30분</option>
+                            <option value="11">11시간</option>
+                            <option value="11.5">11시간 30분</option>
+                            <option value="12">12시간</option>
+                        </select>
+                    </div>
+
+                    <!-- 중요도 선택 필드 -->
+                    <div class="input-group">
+                        <label for="todoPriority">중요도:</label>
+                        <select id="todoPriority">
+                            <option value="low">낮음</option>
+                            <option value="medium">중간</option>
+                            <option value="high">높음</option>
+                        </select>
+                    </div>
+
+                    <!-- 할일 추가 버튼 -->
+                    <button id="addButton">추가</button>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 할일 목록 표시 영역 -->
+            <div class="todo-section">
+                <h2>할일 목록</h2>
+                
+                <!-- 탭 버튼: 현재 할일과 완료된 할일 구분 -->
+                <div class="todo-tabs">
+                    <button class="tab-button active" data-tab="current">현재 할일</button>
+                    <button class="tab-button" data-tab="completed">완료된 할일</button>
+                </div>
+
+                <!-- 할일 목록이 동적으로 추가될 영역 -->
+                <div id="todoList"></div>
+            </div>
+        </div>
+
+        <!-- AI 조언 영역 -->
+        <div class="ai-section">
+            <h2>AI 일정 분석 도우미</h2>
+            <div class="advice-container" id="aiAdvice">
+                <button id="analyzeButton" class="analyze-button">
+                    <i class="fas fa-magic"></i> AI로 일정 분석 및 캘린더 동기화
+                </button>
+                <div class="advice-container" style="display: none;" id="aiAdviceContent">
+                    <div class="loading">
+                        <p>AI가 일정을 분석 중입니다...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 구글 캘린더 연동 버튼 영역 -->
+            <div class="calendar-actions" style="margin-top: 10px;">
+                <button id="authorizeButton" class="calendar-btn">
+                    <i class="fas fa-key"></i> 구글 계정 연결
+                </button>
+                <div id="calendarStatus" class="status-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 자바스크립트 파일 연결 -->
+    <script src="config.js"></script> <!-- Firebase 설정 파일 -->
+    <script src="script.js"></script> <!-- 메인 기능 구현 파일 -->
+</body>
+</html>
+
+<!-- 🌟 핵심 설명 요약:
+✅ head 안에는 설정(외부파일 연결, 타이틀, 인코딩 등)이 들어있어
+✅ body 안에는 실제로 화면에 보이는 내용이 들어가
+✅ <div>는 영역을 나누는 박스 같은 거야 (CSS로 디자인할 수 있어)
+✅ <input>, <textarea>, <select>는 사용자 입력받는 칸이야
+✅ <script>는 자바스크립트 파일이나 라이브러리를 연결할 때 써
+
+이렇게 HTML 뼈대를 만들어두고,
+style.css로 디자인(색, 크기, 위치) 하고,
+script.js로 기능(할일 추가, 삭제, 목록 관리) 를 짜게 돼!
+
+ -->

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일정 분석</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 폰트어썸 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 컨테이너 너비 통일 */
+        .container {
+            max-width: 1200px;
+            margin: 0.8rem auto;
+            padding: 0 0.4rem;
+        }
+        
+        .analysis-section {
+            background: white;
+            padding: 0.8rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 0.8rem;
+            width: 100%; /* 너비 확보 */
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin-top: 0.6rem;
+        }
+        
+        .matrix-chart {
+            position: relative;
+            height: 300px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-top: 0.6rem;
+            overflow: hidden;
+        }
+        
+        .matrix-quadrant {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0.6rem;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .matrix-quadrant:hover {
+            transform: scale(1.02);
+            z-index: 1;
+        }
+        
+        .q1 {
+            top: 0;
+            left: 50%;
+            background-color: rgba(231, 76, 60, 0.15);
+            border-left: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .q2 {
+            top: 0;
+            left: 0;
+            background-color: rgba(241, 196, 15, 0.15);
+            border-right: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .q3 {
+            top: 50%;
+            left: 0;
+            background-color: rgba(46, 204, 113, 0.15);
+            border-right: 1px solid #eee;
+            border-top: 1px solid #eee;
+        }
+        
+        .q4 {
+            top: 50%;
+            left: 50%;
+            background-color: rgba(52, 152, 219, 0.15);
+            border-left: 1px solid #eee;
+            border-top: 1px solid #eee;
+        }
+        
+        .matrix-title {
+            font-weight: bold;
+            margin-bottom: 0.4rem;
+            font-size: 0.75rem;
+            color: #333;
+        }
+        
+        .matrix-advice {
+            font-size: 0.65rem;
+            color: #555;
+        }
+        
+        .matrix-item {
+            margin-top: 0.4rem;
+            font-size: 0.65rem;
+            background: white;
+            padding: 0.3rem 0.4rem;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .h-axis, .v-axis {
+            position: absolute;
+            color: #777;
+            font-size: 0.65rem;
+            font-weight: bold;
+        }
+        
+        .h-axis {
+            bottom: 5px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .h-axis-left {
+            position: absolute;
+            left: 10px;
+        }
+        
+        .h-axis-right {
+            position: absolute;
+            right: 10px;
+        }
+        
+        .v-axis {
+            transform: rotate(-90deg);
+            left: -85px;
+            top: 50%;
+            width: 200px;
+        }
+        
+        .v-axis-top {
+            position: absolute;
+            left: 85px;
+        }
+        
+        .v-axis-bottom {
+            position: absolute;
+            right: 85px;
+        }
+        
+        .ai-advice-container {
+            padding: 0.5rem;
+        }
+        
+        .ai-advice-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .ai-advice-form textarea {
+            flex: 1;
+            padding: 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            min-height: 60px;
+        }
+        
+        .ai-advice-form button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 1rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        
+        .ai-advice-form button:hover {
+            background-color: #2980b9;
+        }
+        
+        .ai-advice-result {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 0.8rem;
+            font-size: 0.7rem;
+            border-left: 3px solid #3498db;
+        }
+        
+        @media (max-width: 768px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-calendar-check"></i>
+                <h1>내 일정을 부탁해</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">일정관리</a></li>
+                    <li><a href="calendar.html">일정달력</a></li>
+                    <li><a href="analysis.html" class="active">일정분석</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2>일정 분석</h2>
+        
+        <!-- AI 조언 섹션 -->
+        <div class="analysis-section">
+            <h2>AI 일정 조언</h2>
+            <div class="ai-advice-container">
+                <div class="ai-advice-form">
+                    <textarea id="adviceQuestion" placeholder="일정에 대한 질문이나 조언을 요청하세요. 예) 내 일정 패턴을 분석해서 효율적인 시간 관리 방법을 알려줘"></textarea>
+                    <button id="getAdviceBtn"><i class="fas fa-robot"></i> 조언받기</button>
+                </div>
+                <div class="ai-advice-result" id="aiAdvice">
+                    <p>일정 분석 결과를 바탕으로 AI에게 조언을 요청해보세요. 질문을 입력하고 '조언받기' 버튼을 클릭하세요.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 중요도-반복 매트릭스 (새로 추가) -->
+        <div class="analysis-section">
+            <h2>중요도-반복 매트릭스 분석</h2>
+            <p class="matrix-description" style="font-size: 0.7rem; color: #666; margin-bottom: 0.5rem;">
+                이 매트릭스는 일정의 중요도와 반복 여부를 기반으로 분석하여 효율적인 일정 관리를 돕습니다.
+            </p>
+            <div class="matrix-chart">
+                <!-- 가로축 (중요도) -->
+                <div class="h-axis">
+                    <span class="h-axis-left">낮은 중요도</span>
+                    <span class="h-axis-right">높은 중요도</span>
+                </div>
+                
+                <!-- 세로축 (반복성) -->
+                <div class="v-axis">
+                    <span class="v-axis-top">반복적인 일정</span>
+                    <span class="v-axis-bottom">1회성 일정</span>
+                </div>
+                
+                <!-- 사분면 1: 높은 중요도, 1회성 -->
+                <div class="matrix-quadrant q1">
+                    <div class="matrix-title">집중 필요 영역</div>
+                    <div class="matrix-advice">높은 중요도, 1회성</div>
+                    <div class="matrix-item">프로젝트 발표 준비</div>
+                </div>
+                
+                <!-- 사분면 2: 낮은 중요도, 1회성 -->
+                <div class="matrix-quadrant q2">
+                    <div class="matrix-title">위임/거절 영역</div>
+                    <div class="matrix-advice">낮은 중요도, 1회성</div>
+                    <div class="matrix-item">사무용품 구매</div>
+                </div>
+                
+                <!-- 사분면 3: 낮은 중요도, 반복적 -->
+                <div class="matrix-quadrant q3">
+                    <div class="matrix-title">자동화 영역</div>
+                    <div class="matrix-advice">낮은 중요도, 반복적</div>
+                    <div class="matrix-item">주간 보고서 작성</div>
+                </div>
+                
+                <!-- 사분면 4: 높은 중요도, 반복적 -->
+                <div class="matrix-quadrant q4">
+                    <div class="matrix-title">루틴 확립 영역</div>
+                    <div class="matrix-advice">높은 중요도, 반복적</div>
+                    <div class="matrix-item">팀 회의</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="analysis-grid">
+            <!-- 중요도 분석 -->
+            <div class="analysis-section">
+                <h2>중요도 분석</h2>
+                <div class="chart-container">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 시간대별 분석 -->
+            <div class="analysis-section">
+                <h2>시간대별 분석</h2>
+                <div class="chart-container">
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 마감일 전 완료율 분석 -->
+            <div class="analysis-section">
+                <h2>마감일 전 완료율 분석</h2>
+                <div class="chart-container">
+                    <canvas id="deadlineCompletionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 주간/월간 트렌드 -->
+            <div class="analysis-section">
+                <h2>주간/월간 트렌드</h2>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="analysis.js"></script>
+</body>
+</html> 

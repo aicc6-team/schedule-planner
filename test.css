@@ -1,0 +1,1039 @@
+/* ✅ 전체 스타일 초기화: margin/padding 제거 + 박스 크기 계산 방식 변경 */
+* {
+    margin: 0; /* 모든 요소 기본 바깥여백 제거 */
+    padding: 0; /* 모든 요소 기본 안쪽여백 제거 */
+    box-sizing: border-box; /* width/height에 padding, border 포함 */
+}
+
+/* ✅ body 기본 스타일 */
+body {
+    font-family: 'Noto Sans KR', sans-serif; /* 기본 글꼴 지정 */
+    line-height: 1.2; /* 줄간격 설정 */
+    background-color: #f5f5f5; /* 연회색 배경 */
+    color: #333; /* 글자 색 어두운 회색 */
+    font-size: 0.7rem; /* 글자 크기 (작게) */
+}
+
+/* ✅ 상단 헤더 영역 스타일 */
+.main-header {
+    background: linear-gradient(135deg, #2c3e50, #1a5276); /* 헤더 배경 그라데이션 */
+    padding: 0.5rem 0; /* 위아래 여백 */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
+    position: sticky; /* 스크롤해도 상단 고정 */
+    top: 0; /* 위에서 0 위치 */
+    z-index: 1000; /* 다른 요소보다 위에 표시 */
+    transition: all 0.3s ease-in-out; /* 모든 변화 부드럽게 */
+}
+
+/* ✅ 헤더에 마우스 올리면 그림자 더 진하게 */
+.main-header:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* ✅ 헤더 안 내용 레이아웃 설정 */
+.header-container {
+    max-width: 1200px; /* 최대 너비 제한 */
+    margin: 0 auto; /* 가운데 정렬 */
+    padding: 0 0.5rem; /* 좌우 안쪽 여백 */
+    display: flex; /* 가로 배치 */
+    justify-content: space-between; /* 좌우 끝 정렬 */
+    align-items: center; /* 세로 중앙 정렬 */
+}
+
+/* ✅ 로고 스타일 */
+.logo {
+    display: flex; /* 안쪽 요소 가로 배치 */
+    align-items: center; /* 세로 중앙 정렬 */
+    gap: 0.5rem; /* 요소 사이 간격 */
+    color: white; /* 기본 글자색 흰색 */
+    transition: transform 0.3s ease, color 0.3s ease; /* 회전, 색상 변화 부드럽게 */
+}
+
+/* ✅ 로고에 마우스 올리면 살짝 커짐 */
+.logo:hover {
+    transform: scale(1.05);
+}
+
+/* ✅ 로고 안 아이콘 */
+.logo i {
+    font-size: 1.2rem; /* 아이콘 크기 */
+    color: #3498db; /* 파란색 */
+    text-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* 파란빛 그림자 */
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* ✅ 로고 아이콘에 마우스 올리면 색/각도 변함 */
+.logo:hover i {
+    transform: rotate(10deg); /* 10도 회전 */
+    color: #2ecc71; /* 초록색 */
+}
+
+/* ✅ 로고 제목 */
+.logo h1 {
+    font-size: 1rem; /* 글자 크기 */
+    margin: 0; /* 여백 없음 */
+    color: white; /* 흰색 글자 */
+    letter-spacing: 0.5px; /* 글자 간격 */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* 어두운 그림자 */
+}
+
+/* ✅ 네비게이션 메뉴 리스트 */
+.main-nav ul {
+    display: flex; /* 메뉴 가로 배치 */
+    list-style: none; /* 리스트 점 없애기 */
+    gap: 1rem; /* 메뉴 사이 간격 */
+    padding: 0; /* 기본 안쪽 여백 제거 */
+    margin: 0; /* 기본 바깥 여백 제거 */
+}
+
+/* ✅ 네비게이션 메뉴 링크 */
+.main-nav a {
+    color: rgba(255, 255, 255, 0.8); /* 흰색 80% 투명 */
+    text-decoration: none; /* 밑줄 제거 */
+    font-size: 0.8rem; /* 글자 크기 */
+    font-weight: 500; /* 약간 굵게 */
+    padding: 0.4rem 0.8rem; /* 안쪽 여백 */
+    border-radius: 20px; /* 둥근 모서리 */
+    transition: all 0.3s ease; /* 모든 변화 부드럽게 */
+    position: relative; /* ::before 위치 기준 */
+    overflow: hidden; /* ::before 넘어가지 않게 */
+    display: inline-block; /* inline + block 성격 */
+    letter-spacing: 0.5px; /* 글자 간격 */
+}
+
+/* ✅ 메뉴 밑줄 효과 (hover 시 보여짐) */
+.main-nav a:before {
+    content: ''; /* 내용 없음 */
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0; /* 처음엔 안보임 */
+    height: 2px;
+    background-color: #3498db; /* 파란색 밑줄 */
+    transition: width 0.3s ease; /* 너비 변화 부드럽게 */
+}
+
+/* ✅ 메뉴에 마우스 올리면 효과 */
+.main-nav a:hover {
+    color: white; /* 흰색 글자 */
+    transform: translateY(-2px); /* 살짝 위로 */
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); /* 빛나는 효과 */
+}
+
+/* ✅ 메뉴 밑줄 hover 시 펼쳐짐 */
+.main-nav a:hover:before {
+    width: 100%; /* 전체 너비로 밑줄 */
+}
+
+/* ✅ 활성화된 메뉴 */
+.main-nav a.active {
+    background: rgba(52, 152, 219, 0.2); /* 파란 배경 투명 */
+    color: white;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    animation: pulse 2s infinite; /* 깜빡임 애니메이션 */
+}
+
+/* ✅ 활성 메뉴 밑줄 항상 표시 */
+.main-nav a.active:before {
+    width: 100%;
+    background-color: #3498db;
+}
+
+/* ✅ 활성 메뉴 애니메이션 */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* ✅ 모바일 화면 (너비 768px 이하) */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column; /* 세로 배치 */
+        padding: 0.4rem;
+    }
+    .logo {
+        margin-bottom: 0.3rem;
+    }
+    .main-nav ul {
+        width: 100%;
+        justify-content: center; /* 가운데 정렬 */
+        gap: 0.5rem;
+    }
+    .main-nav a {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
+    }
+}
+
+/* ✅ 전체 페이지 공통 컨테이너 */
+.container {
+    max-width: 1200px;
+    margin: 0.8rem auto;
+    padding: 0 0.4rem;
+}
+
+/* ✅ 제목 스타일 */
+h2 {
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+    color: #2c3e50;
+}
+h3 {
+    font-size: 0.8rem;
+    margin-bottom: 0.3rem;
+    color: #2c3e50;
+}
+
+/* ✅ 공통 섹션 박스 스타일 */
+.input-section, .todo-section, .ai-section, .calendar-container, .analysis-section {
+    background: white; /* 흰색 배경 */
+    padding: 0.8rem;
+    border-radius: 8px; /* 둥근 모서리 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 약한 그림자 */
+    margin-bottom: 0.8rem;
+    width: 100%;
+}
+
+/* ✅ 메인 컨텐츠 영역 그리드 */
+.main-content {
+    display: grid;
+    grid-template-columns: 30% 70%; /* 왼쪽30% 오른쪽70% */
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+/* ✅ 입력 폼 세로 배치 */
+.input-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* ✅ 입력 그룹: 라벨 + 입력칸 세로 정렬 */
+.input-group {
+    display: flex; /* 안쪽 요소 가로/세로 배치 지정 */
+    flex-direction: column; /* 세로 정렬 */
+    gap: 0.15rem; /* 요소 사이 간격 */
+}
+
+/* ✅ input, textarea, select 공통 스타일 */
+input, textarea, select {
+    padding: 0.3rem; /* 안쪽 여백 */
+    border: 1px solid #ddd; /* 연한 회색 테두리 */
+    border-radius: 4px; /* 모서리 둥글게 */
+    font-size: 0.7rem; /* 글자 크기 */
+}
+
+/* ✅ textarea 높이 최소 40px */
+textarea {
+    min-height: 40px;
+}
+
+/* ✅ 버튼 기본 스타일 */
+button {
+    padding: 0.35rem; /* 안쪽 여백 */
+    border: none; /* 테두리 제거 */
+    border-radius: 4px; /* 모서리 둥글게 */
+    cursor: pointer; /* 마우스 올리면 손모양 */
+    font-size: 0.7rem; /* 글자 크기 */
+    transition: background-color 0.3s; /* 배경색 전환 부드럽게 */
+    color: white; /* 글자색 흰색 */
+}
+
+/* ✅ "추가" 버튼 배경색 */
+#addButton {
+    background-color: #3498db; /* 파란색 */
+}
+
+/* ✅ "추가" 버튼에 마우스 올리면 더 진한 파란색 */
+#addButton:hover {
+    background-color: #2980b9;
+}
+
+/* ✅ 할일 목록 상단 탭 메뉴 스타일 */
+.todo-tabs {
+    display: flex; /* 가로 배치 */
+    gap: 0; /* 요소 간격 없음 */
+    margin-bottom: 0.6rem; /* 아래 여백 */
+    background-color: #eee; /* 연회색 배경 */
+    border-radius: 6px; /* 둥근 모서리 */
+    padding: 0.2rem; /* 안쪽 여백 */
+    border: 1px solid #ddd; /* 테두리 */
+}
+
+/* ✅ 탭 버튼 공통 스타일 */
+.tab-button {
+    flex: 1; /* 각 버튼 동일 너비 */
+    background-color: transparent; /* 배경 투명 */
+    color: #666; /* 회색 글자 */
+    border: none; /* 테두리 없음 */
+    border-radius: 4px; /* 둥근 모서리 */
+    padding: 0.4rem 0; /* 안쪽 여백 */
+    transition: all 0.2s ease; /* 전환 부드럽게 */
+    font-weight: 500; /* 글자 약간 굵게 */
+}
+
+/* ✅ 활성 탭 버튼 스타일 */
+.tab-button.active {
+    background-color: #3498db; /* 파란색 배경 */
+    color: white; /* 흰색 글자 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* 살짝 그림자 */
+}
+
+/* ✅ 할일 아이템 박스 */
+.todo-item {
+    border: 1px solid #e0e0e0; /* 연회색 테두리 */
+    border-radius: 8px; /* 둥근 모서리 */
+    padding: 0.6rem; /* 안쪽 여백 */
+    margin-bottom: 0.5rem; /* 아래 여백 */
+    background: white; /* 흰색 배경 */
+    transition: all 0.2s ease; /* 변화 부드럽게 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* 약한 그림자 */
+    position: relative; /* 내부 요소 위치 기준 */
+    overflow: hidden; /* 넘친 내용 숨김 */
+}
+
+/* ✅ 할일에 마우스 올리면 배경색 살짝 변경 */
+.todo-item:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+
+/* ✅ 할일 내용 부분 */
+.todo-item-content {
+    flex: 1; /* 남은 공간 채우기 */
+    display: flex; /* 세로 정렬 */
+    flex-direction: column;
+    gap: 0.3rem; /* 요소 간 간격 */
+    width: 100%; /* 전체 너비 */
+    overflow: hidden; /* 넘침 방지 */
+}
+
+/* ✅ 할일 제목 */
+.todo-item-title {
+    font-weight: 600; /* 약간 굵게 */
+    font-size: 0.75rem; /* 글자 크기 */
+    color: #333; /* 어두운 글자 */
+    margin-bottom: 0.2rem; /* 아래 여백 */
+    white-space: nowrap; /* 한 줄 표시 */
+    overflow: hidden; /* 넘침 방지 */
+    text-overflow: ellipsis; /* ... 표시 */
+    max-width: 100%; /* 최대 너비 */
+}
+
+/* ✅ 할일 설명 (2줄까지만 표시) */
+.todo-item-description {
+    font-size: 0.65rem; /* 글자 크기 */
+    color: #666; /* 회색 글자 */
+    margin-bottom: 0.3rem;
+    display: -webkit-box; /* 여러 줄 표시 */
+    -webkit-line-clamp: 2; /* 최대 2줄 */
+    -webkit-box-orient: vertical; /* 세로 방향 */
+    overflow: hidden; /* 넘침 방지 */
+    word-break: break-word; /* 단어 단위 줄바꿈 */
+}
+
+/* ✅ 할일 메타 정보 (날짜 등) */
+.todo-item-details {
+    font-size: 0.6rem; /* 글자 크기 */
+    color: #888; /* 연회색 */
+    white-space: nowrap; /* 한 줄 표시 */
+    overflow: hidden; /* 넘침 방지 */
+    text-overflow: ellipsis; /* ... 표시 */
+    flex: 1.5; /* 영역 비율 */
+    text-align: right; /* 오른쪽 정렬 */
+    padding-right: 0.8rem; /* 오른쪽 여백 */
+    min-width: 120px; /* 최소 너비 */
+}
+
+/* ✅ 할일 버튼 그룹 */
+.todo-item-buttons {
+    display: flex; /* 가로 배치 */
+    gap: 0.4rem; /* 버튼 사이 간격 */
+    margin-left: auto; /* 오른쪽 끝으로 이동 */
+}
+
+/* ✅ 각 버튼 공통 스타일 */
+.todo-complete-btn, .todo-edit-btn, .todo-delete-btn {
+    border: none; /* 테두리 없음 */
+    border-radius: 50%; /* 동그라미 버튼 */
+    width: 1.8rem; height: 1.8rem; /* 버튼 크기 */
+    display: flex; align-items: center; justify-content: center; /* 가운데 정렬 */
+    cursor: pointer; /* 손가락 모양 */
+    transition: all 0.2s ease; /* 부드러운 변화 */
+    font-size: 0.6rem; /* 글자 크기 */
+    color: white; /* 글자색 흰색 */
+    padding: 0; /* 안쪽 여백 없음 */
+}
+
+/* ✅ 버튼 안 아이콘 */
+.todo-complete-btn i, .todo-edit-btn i, .todo-delete-btn i {
+    font-size: 0.7rem;
+}
+
+/* ✅ 완료 버튼 색상 */
+.todo-complete-btn {
+    background-color: #2ecc71; /* 초록 */
+}
+/* ✅ 수정 버튼 색상 */
+.todo-edit-btn {
+    background-color: #f39c12; /* 주황 */
+}
+/* ✅ 삭제 버튼 색상 */
+.todo-delete-btn {
+    background-color: #e74c3c; /* 빨강 */
+}
+
+/* ✅ 완료 버튼 hover */
+.todo-complete-btn:hover {
+    background-color: #27ae60;
+}
+/* ✅ 수정 버튼 hover */
+.todo-edit-btn:hover {
+    background-color: #d35400;
+}
+/* ✅ 삭제 버튼 hover */
+.todo-delete-btn:hover {
+    background-color: #c0392b;
+}
+
+/* ✅ 중요도: 높은 우선순위 스타일 */
+.todo-item.priority-high {
+    border-left: 4px solid #e74c3c; /* 빨강 테두리 */
+    background-color: #ffebee; /* 연한 분홍 배경 */
+    box-shadow: 0 1px 3px rgba(231, 76, 60, 0.3);
+}
+
+/* ✅ 중요도: 중간 우선순위 스타일 */
+.todo-item.priority-medium {
+    border-left: 4px solid #f1c40f; /* 노랑 테두리 */
+    background-color: #fffde7; /* 연노랑 배경 */
+    box-shadow: 0 1px 3px rgba(241, 196, 15, 0.3);
+}
+
+/* ✅ 중요도: 낮은 우선순위 스타일 */
+.todo-item.priority-low {
+    border-left: 4px solid #2ecc71; /* 초록 테두리 */
+    background-color: #e8f5e9; /* 연초록 배경 */
+    box-shadow: 0 1px 3px rgba(46, 204, 113, 0.3);
+}
+
+/* ✅ 빈 목록 메시지 */
+.empty-list {
+    text-align: center; /* 가운데 정렬 */
+    color: #95a5a6; /* 회색 */
+    padding: 1rem 0; /* 위아래 여백 */
+    font-size: 0.75rem; /* 글자 크기 */
+}
+
+/* ✅ AI 조언 표시 영역 */
+.advice-container {
+    background: #f8f9fa; /* 연회색 배경 */
+    padding: 0.7rem; /* 안쪽 여백 */
+    border-radius: 8px; /* 둥근 모서리 */
+    border-left: 4px solid #3498db; /* 파란색 왼쪽 테두리 */
+    margin-top: 0.5rem; /* 위 여백 */
+    font-size: 0.75rem; /* 글자 크기 */
+}
+
+/* ✅ 로딩 메시지 */
+.loading {
+    text-align: center; /* 가운데 정렬 */
+    padding: 0.7rem;
+    color: #777; /* 회색 */
+    font-size: 0.75rem;
+}
+
+/* ✅ 스케줄 전체 영역 스타일 */
+.schedule-container {
+    margin-top: 0.7rem; /* 위쪽 여백 */
+}
+
+/* ✅ 스케줄 범례(색상 설명 박스) */
+.schedule-legend {
+    display: flex; /* 가로 배치 */
+    gap: 0.8rem; /* 항목 사이 간격 */
+    flex-wrap: wrap; /* 화면 좁으면 줄바꿈 */
+    padding: 0.3rem 0.5rem; /* 안쪽 여백 */
+    margin-bottom: 0.5rem; /* 아래쪽 여백 */
+    background-color: #f8f9fa; /* 연회색 배경 */
+    border-radius: 6px; /* 둥근 모서리 */
+    font-size: 0.65rem; /* 글자 크기 */
+}
+
+/* ✅ 범례 한 항목 */
+.legend-item {
+    display: flex; /* 가로 배치 */
+    align-items: center; /* 세로 가운데 정렬 */
+    gap: 0.25rem; /* 점과 텍스트 간격 */
+}
+
+/* ✅ 범례 안에 색상 점 */
+.legend-dot {
+    width: 8px; height: 8px; /* 크기 */
+    border-radius: 50%; /* 동그라미 */
+    display: inline-block; /* 인라인 블록 */
+}
+
+/* ✅ 범례 색상: 일정 충돌 */
+.legend-dot.conflict {
+    background-color: #e74c3c; /* 빨강 배경 */
+    border: 1px solid #c0392b; /* 진한 빨강 테두리 */
+}
+
+/* ✅ 범례 색상: 일정 조정됨 */
+.legend-dot.adjusted {
+    background-color: #f39c12; /* 주황 배경 */
+    border: 1px solid #d35400; /* 진한 주황 테두리 */
+}
+
+/* ✅ 범례 색상: 중요도 높음 */
+.legend-dot.high {
+    background-color: #e74c3c;
+}
+
+/* ✅ 범례 색상: 중요도 중간 */
+.legend-dot.medium {
+    background-color: #f1c40f;
+}
+
+/* ✅ 범례 색상: 중요도 낮음 */
+.legend-dot.low {
+    background-color: #2ecc71;
+}
+
+/* ✅ 스케줄 항목들 가로 스크롤 가능 영역 */
+.schedule-grid {
+    display: flex; /* 가로 배치 */
+    flex-direction: row;
+    width: 100%; /* 전체 너비 */
+    margin-top: 0.5rem; /* 위쪽 여백 */
+    padding-bottom: 0.5rem; /* 아래쪽 여백 */
+    overflow-x: auto; /* 가로 스크롤 가능 */
+    gap: 0.6rem; /* 항목 간 간격 */
+}
+
+/* ✅ 스케줄 박스 (각 날짜별 일정) */
+.schedule-section {
+    background: #fff; /* 흰색 배경 */
+    padding: 0.6rem; /* 안쪽 여백 */
+    border-radius: 8px; /* 둥근 모서리 */
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15); /* 그림자 */
+    position: relative;
+    border-top: 4px solid #3498db; /* 파란색 상단선 */
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* 부드러운 이동/그림자 */
+    flex: 0 0 calc(20% - 0.5rem); /* 너비 비율 */
+    min-width: 140px; /* 최소 너비 */
+    margin: 0;
+}
+
+/* ✅ 첫 번째 스케줄 왼쪽 여백 제거 */
+.schedule-section:first-child {
+    margin-left: 0;
+}
+
+/* ✅ 마지막 스케줄 오른쪽 여백 제거 */
+.schedule-section:last-child {
+    margin-right: 0;
+}
+
+/* ✅ 스케줄 박스에 마우스 올리면 올라감 + 그림자 강조 */
+.schedule-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* ✅ 스케줄 제목 */
+.schedule-section h4 {
+    margin-bottom: 0.4rem;
+    color: #3498db; /* 파란 글자 */
+    border-bottom: 1px solid #eee; /* 연회색 밑줄 */
+    padding-bottom: 0.25rem; /* 아래쪽 안쪽 여백 */
+    font-size: 0.68rem; /* 글자 크기 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem; /* 아이콘과 글자 간격 */
+    white-space: nowrap; /* 줄바꿈 안 함 */
+    overflow: hidden; /* 넘침 숨김 */
+    text-overflow: ellipsis; /* ... 표시 */
+    text-align: center;
+}
+
+/* ✅ 할일 목록 상단 컨트롤 영역 (정렬 버튼 등) */
+.todo-controls {
+    display: flex;
+    justify-content: space-between; /* 양 끝 정렬 */
+    align-items: center; /* 세로 가운데 정렬 */
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #eee; /* 연회색 밑줄 */
+}
+
+/* ✅ 정렬 버튼 그룹 */
+.sort-buttons {
+    display: flex;
+    gap: 0.3rem; /* 버튼 간 간격 */
+}
+
+/* ✅ 정렬 버튼 기본 스타일 */
+.sort-button {
+    background-color: #e0e0e0; /* 연회색 배경 */
+    color: #333; /* 어두운 글자 */
+    padding: 0.3rem 0.5rem; /* 안쪽 여백 */
+    font-size: 0.7rem;
+}
+
+/* ✅ 선택된 정렬 버튼 */
+.sort-button.active {
+    background-color: #3498db; /* 파란색 배경 */
+    color: white;
+}
+
+/* ✅ 총 할일 개수 표시 */
+.total-count {
+    font-size: 0.7rem;
+    color: #777; /* 회색 글자 */
+    background-color: #f5f5f5; /* 연회색 배경 */
+    padding: 0.25rem 0.5rem; /* 안쪽 여백 */
+    border-radius: 4px; /* 둥근 모서리 */
+    font-weight: 500; /* 약간 굵게 */
+}
+
+/* ✅ 분석 결과 그리드 */
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2열 */
+    gap: 0.8rem;
+    width: 100%;
+}
+
+/* ✅ 분석 결과 항목 */
+.analysis-item {
+    background: white;
+    padding: 0.8rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* ✅ 분석 제목 */
+.analysis-item h4 {
+    color: #3498db;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* ✅ 차트 영역 */
+.chart-container {
+    height: 250px;
+    margin-top: 0.6rem;
+    position: relative;
+    width: 100%;
+}
+
+/* ✅ 차트 캔버스 크기 설정 */
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+}
+
+/* ✅ AI 조언 그리드 */
+.advice-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 1열 */
+    gap: 0.7rem;
+    margin-top: 0.5rem;
+}
+
+/* ✅ AI 조언 항목 */
+.advice-item {
+    background: #f8f9fa; /* 연회색 배경 */
+    padding: 0.7rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border-left: 3px solid #3498db; /* 파란색 왼쪽선 */
+    font-size: 0.75rem;
+}
+
+/* ✅ AI 조언 제목 */
+.advice-item h4 {
+    color: #3498db;
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* ✅ 캘린더 iframe 크기 */
+.calendar-container iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+}
+
+/* ✅ 캘린더 안내 메시지 */
+.calendar-info {
+    background-color: #d6eaf8; /* 연파란 배경 */
+    border-left: 4px solid #3498db; /* 파란 왼쪽선 */
+    padding: 0.8rem;
+    margin-bottom: 0.8rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+/* ✅ 캘린더 안내 메시지 안의 문단 스타일 */
+.calendar-info p {
+    margin-bottom: 0.5rem; /* 아래쪽 여백 */
+}
+
+/* ✅ 캘린더 안내 메시지 안의 목록 (ol) */
+.calendar-info ol {
+    margin-left: 1.2rem; /* 왼쪽 들여쓰기 */
+    margin-bottom: 0.5rem; /* 아래쪽 여백 */
+}
+
+/* ✅ 캘린더 안내 메시지 안의 목록 항목 (li) */
+.calendar-info li {
+    margin-bottom: 0.3rem; /* 항목 아래 여백 */
+}
+
+/* ✅ 캘린더 액션 버튼 영역 */
+.calendar-actions {
+    display: flex; /* 버튼 가로 배치 */
+    flex-wrap: wrap; /* 화면 작으면 줄바꿈 */
+    gap: 0.6rem; /* 버튼 사이 간격 */
+    margin-bottom: 0.8rem; /* 아래 여백 */
+    padding: 0.6rem 0; /* 위아래 안쪽 여백 */
+    border-top: 1px solid #eee; /* 윗줄 */
+    border-bottom: 1px solid #eee; /* 아랫줄 */
+    background-color: #f8f9fa; /* 연회색 배경 */
+    align-items: center; /* 세로 가운데 정렬 */
+}
+
+/* ✅ 캘린더 액션 버튼 개별 스타일 */
+.calendar-btn {
+    background-color: #3498db; /* 파란색 배경 */
+    color: white; /* 흰색 글자 */
+    padding: 0.4rem 0.8rem; /* 안쪽 여백 */
+    border: none; /* 테두리 없음 */
+    border-radius: 4px; /* 둥근 모서리 */
+    cursor: pointer; /* 손가락 모양 */
+    display: flex; /* 아이콘 + 텍스트 가로 배치 */
+    align-items: center; /* 세로 가운데 정렬 */
+    gap: 0.4rem; /* 아이콘과 글자 간격 */
+    transition: all 0.3s ease; /* 부드러운 전환 */
+    font-size: 0.7rem; /* 글자 크기 */
+}
+
+/* ✅ 캘린더 버튼에 마우스 올렸을 때 */
+.calendar-btn:hover {
+    background-color: #2980b9; /* 더 진한 파랑 */
+    transform: translateY(-2px); /* 위로 살짝 이동 */
+}
+
+/* ✅ 캘린더 버튼 비활성화 시 */
+.calendar-btn:disabled {
+    background-color: #95a5a6; /* 회색 */
+    cursor: not-allowed; /* 금지 표시 */
+    transform: none; /* 이동 없음 */
+}
+
+/* ✅ 캘린더 버튼 안의 아이콘 */
+.calendar-btn i {
+    font-size: 0.8rem; /* 아이콘 크기 */
+}
+
+/* ✅ 상태 메시지 기본 스타일 */
+.status-message {
+    font-size: 0.7rem; /* 글자 크기 */
+    padding: 0.4rem; /* 안쪽 여백 */
+    border-radius: 4px; /* 둥근 모서리 */
+}
+
+/* ✅ 성공 상태 메시지 */
+.status-message.success {
+    background-color: #d5f5e3; /* 연녹색 배경 */
+    color: #27ae60; /* 초록 글자 */
+}
+
+/* ✅ 오류 상태 메시지 */
+.status-message.error {
+    background-color: #f8d7da; /* 연분홍 배경 */
+    color: #c0392b; /* 빨강 글자 */
+}
+
+/* ✅ 정보 상태 메시지 */
+.status-message.info {
+    background-color: #d6eaf8; /* 연파랑 배경 */
+    color: #2980b9; /* 파랑 글자 */
+}
+
+/* ✅ 타임라인 컨테이너 (세로 스크롤 영역) */
+.timeline-container {
+    margin-top: 0.3rem; /* 위쪽 여백 */
+    max-height: 250px; /* 최대 높이 제한 */
+    overflow-y: auto; /* 세로 스크롤 */
+    width: 100%; /* 전체 너비 */
+}
+
+/* ✅ 타임라인 전체 */
+.timeline {
+    display: flex; /* 세로 배치 */
+    flex-direction: column;
+    gap: 0.4rem; /* 블럭 간 간격 */
+    width: 100%;
+}
+
+/* ✅ 각 시간 블럭 */
+.time-block {
+    border-radius: 6px; /* 둥근 모서리 */
+    padding: 0.3rem; /* 안쪽 여백 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* 그림자 */
+    position: relative;
+    width: 100%;
+}
+
+/* ✅ 시간 블럭의 제목 */
+.time-header {
+    font-weight: bold; /* 굵은 글자 */
+    margin-bottom: 0.2rem; /* 아래 여백 */
+    font-size: 0.65rem; /* 글자 크기 */
+    color: #333; /* 어두운 글자 */
+    padding-bottom: 0.2rem; /* 아래 안쪽 여백 */
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* 연회색 밑줄 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem; /* 아이콘/글자 간격 */
+    text-align: center;
+}
+
+/* ✅ 개별 작업 리스트 */
+.task-list {
+    display: flex; /* 세로 배치 */
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 100%;
+}
+
+/* ✅ 개별 작업 항목 */
+.task-item {
+    display: flex; /* 가로 배치 */
+    gap: 0.2rem; /* 요소 간 간격 */
+    padding: 0.2rem; /* 안쪽 여백 */
+    border-radius: 4px; /* 둥근 모서리 */
+    align-items: center; /* 세로 가운데 정렬 */
+    transition: transform 0.1s ease; /* 이동 부드럽게 */
+    width: 100%;
+}
+
+/* ✅ 작업 항목에 마우스 올리면 오른쪽으로 이동 */
+.task-item:hover {
+    transform: translateX(2px);
+}
+
+/* ✅ 일정 충돌 표시 */
+.task-item.conflict {
+    border: 1px dashed #e74c3c; /* 빨강 점선 테두리 */
+    background-color: #ffebee; /* 연분홍 배경 */
+    position: relative;
+    animation: pulse-conflict 2s infinite; /* 깜빡이는 효과 */
+}
+
+/* ✅ 충돌 깜빡임 효과 */
+@keyframes pulse-conflict {
+    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    70% { box-shadow: 0 0 0 5px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+/* ✅ 일정 조정 항목 */
+.task-item.adjusted {
+    border: 1px dashed #f39c12; /* 주황 점선 테두리 */
+    background-color: #fff8e1; /* 연노랑 배경 */
+    position: relative;
+}
+
+/* ✅ 일정 조정 아이콘 표시 */
+.task-item.adjusted::after {
+    content: "⚙️"; /* 톱니바퀴 아이콘 */
+    position: absolute;
+    top: -5px; right: -5px;
+    font-size: 0.6rem;
+}
+
+/* ✅ 작업 항목의 색상 점 */
+.task-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ✅ 작업 시간 표시 */
+.task-time {
+    font-size: 0.63rem;
+    font-weight: 600;
+    color: #555;
+    flex-shrink: 0;
+    width: 35px;
+}
+
+/* ✅ 작업 내용 */
+.task-content {
+    font-size: 0.63rem;
+    line-height: 1.2;
+    color: #333;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ✅ 작업 소요시간 */
+.task-duration {
+    font-size: 0.53rem;
+    color: #666;
+    margin-left: 0.1rem;
+    flex-shrink: 0;
+}
+
+/* ✅ 비어있는 작업 메시지 */
+.empty-tasks {
+    font-size: 0.65rem;
+    color: #999;
+    font-style: italic;
+    padding: 0.2rem;
+    text-align: center;
+}
+
+/* ✅ 반응형 디자인 (모바일용) */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        gap: 0.7rem;
+    }
+
+    .main-nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .main-content {
+        grid-template-columns: 1fr; /* 한 줄 */
+        gap: 0.5rem;
+    }
+    
+    .schedule-grid {
+        flex-wrap: nowrap; /* 한 줄 스크롤 */
+        overflow-x: auto;
+        padding-bottom: 0.8rem;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .schedule-section {
+        flex: 0 0 85%;
+        min-width: 240px;
+    }
+    
+    .analysis-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .advice-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ✅ 태블릿 크기 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .schedule-grid {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    
+    .schedule-section {
+        flex: 0 0 30%;
+        min-width: 180px;
+    }
+}
+
+/* ✅ AI 분석 버튼 */
+.analyze-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.6rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ✅ AI 분석 버튼에 마우스 올리면 */
+.analyze-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+/* ✅ AI 분석 버튼 비활성화 */
+.analyze-button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ✅ 동기화 상태 메시지 */
+.sync-message {
+    margin-bottom: 0.8rem;
+    padding: 0.6rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    line-height: 1.3;
+}
+
+/* ✅ 동기화 성공 메시지 */
+.sync-message.success {
+    background-color: #d5f5e3;
+    color: #27ae60;
+    border-left: 3px solid #27ae60;
+}
+
+/* ✅ 동기화 오류 메시지 */
+.sync-message.error {
+    background-color: #f8d7da;
+    color: #c0392b;
+    border-left: 3px solid #c0392b;
+}
+
+/* ✅ 동기화 정보 메시지 */
+.sync-message.info {
+    background-color: #d6eaf8;
+    color: #2980b9;
+    border-left: 3px solid #2980b9;
+}
+
+/* ✅ 메시지 안의 아이콘 */
+.sync-message i {
+    font-size: 0.8rem;
+    margin-top: 0.05rem;
+}
