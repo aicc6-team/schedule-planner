@@ -1,0 +1,38 @@
+[
+  {
+    "id": "project_001",
+    "name": "스마트홈 모바일앱",
+    "description": "IoT 기기 제어를 위한 모바일 애플리케이션. 사용자가 스마트폰으로 집안 IoT 기기들을 원격으로 제어할 수 있는 앱입니다.",
+    "deadline": "2024-03-31T23:59:59Z",
+    "status": "active",
+    "team": "스마트앱개발팀",
+    "members": ["user_001", "user_002", "user_003", "user_004"],
+    "created_by": "user_001",
+    "created_at": "2024-01-15T00:00:00Z",
+    "updated_at": "2024-01-15T00:00:00Z"
+  },
+  {
+    "id": "project_002",
+    "name": "웹 관리자 대시보드",
+    "description": "스마트홈 시스템 관리용 웹 대시보드. 관리자가 전체 시스템 상태를 모니터링하고 설정을 변경할 수 있는 웹 인터페이스입니다.",
+    "deadline": "2024-02-28T23:59:59Z",
+    "status": "active",
+    "team": "스마트앱개발팀",
+    "members": ["user_001", "user_002", "user_003"],
+    "created_by": "user_001",
+    "created_at": "2024-01-10T00:00:00Z",
+    "updated_at": "2024-01-10T00:00:00Z"
+  },
+  {
+    "id": "project_003",
+    "name": "사용자 행동 분석 시스템",
+    "description": "앱 사용자 행동 데이터 분석 및 인사이트 도출. 사용자의 앱 사용 패턴을 분석하여 개선점을 찾고 사용자 경험을 향상시키는 시스템입니다.",
+    "deadline": "2024-04-15T23:59:59Z",
+    "status": "active",
+    "team": "데이터분석팀",
+    "members": ["user_005", "user_006", "user_007"],
+    "created_by": "user_005",
+    "created_at": "2024-01-20T00:00:00Z",
+    "updated_at": "2024-01-20T00:00:00Z"
+  }
+] 

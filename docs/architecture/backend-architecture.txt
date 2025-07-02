@@ -1,0 +1,257 @@
+[내 일정을 부탁해] 백엔드 아키텍처 설계 (MVP 단계)
+
+====================
+1. 백엔드 요구사항 분석
+====================
+
+■ 기술 스택
+- Node.js + Express + TypeScript
+- Firebase Authentication + Cloud Firestore
+- JWT 기반 인증 시스템
+- Google Calendar API 연동
+- RESTful API (Users, Projects, Schedules, ScheduleConflicts)
+
+■ MVP 기능 범위
+- 사용자 인증 (Google OAuth + JWT)
+- 사용자 정보 관리
+- 프로젝트 CRUD
+- 일정 CRUD 및 상태 관리
+- 일정 충돌 감지
+- 구글 캘린더 연동
+
+====================
+2. 논리 구조 설계
+====================
+
+Express 앱 생성 → 미들웨어 설정 → 라우터 구성 → 컨트롤러 → 서비스 → Firebase 연동
+
+■ 데이터 흐름
+1. 클라이언트 요청 → Express 서버
+2. 미들웨어 처리 (CORS, 인증, 검증)
+3. 라우터 → 컨트롤러
+4. 컨트롤러 → 서비스 (비즈니스 로직)
+5. 서비스 → Firebase (데이터베이스)
+6. 응답 반환
+
+====================
+3. 백엔드 디렉토리 구조
+====================
+
+backend/
+├── src/
+│   ├── app.ts                 # Express 앱 메인 파일
+│   ├── server.ts              # 서버 시작 파일
+│   ├── config/
+│   │   ├── firebase.ts        # Firebase 설정
+│   │   ├── database.ts        # Firestore 설정
+│   │   └── environment.ts     # 환경변수 설정
+│   ├── middleware/
+│   │   ├── auth.ts            # JWT 인증 미들웨어
+│   │   ├── cors.ts            # CORS 설정
+│   │   └── validation.ts      # 요청 데이터 검증 미들웨어 (joi)
+│   ├── routes/
+│   │   ├── index.ts           # 라우터 통합
+│   │   ├── auth.ts            # 인증 관련 라우트
+│   │   ├── users.ts           # 사용자 관련 라우트
+│   │   ├── projects.ts        # 프로젝트 관련 라우트
+│   │   ├── schedules.ts       # 일정 관련 라우트
+│   │   ├── conflicts.ts       # 충돌 관련 라우트
+│   │   └── google.ts          # 구글 캘린더 연동 라우트
+│   ├── controllers/
+│   │   ├── authController.ts  # 인증 컨트롤러
+│   │   ├── userController.ts  # 사용자 컨트롤러
+│   │   ├── projectController.ts # 프로젝트 컨트롤러
+│   │   ├── scheduleController.ts # 일정 컨트롤러
+│   │   ├── conflictController.ts # 충돌 컨트롤러
+│   │   └── googleController.ts # 구글 연동 컨트롤러
+│   ├── services/
+│   │   ├── authService.ts     # 인증 서비스
+│   │   ├── userService.ts     # 사용자 서비스
+│   │   ├── projectService.ts  # 프로젝트 서비스
+│   │   ├── scheduleService.ts # 일정 서비스
+│   │   ├── conflictService.ts # 충돌 감지 서비스
+│   │   └── googleService.ts   # 구글 캘린더 서비스
+│   ├── types/
+│   │   ├── user.ts            # 사용자 타입 정의
+│   │   ├── project.ts         # 프로젝트 타입 정의
+│   │   ├── schedule.ts        # 일정 타입 정의
+│   │   ├── conflict.ts        # 충돌 타입 정의
+│   │   └── api.ts             # API 응답 타입 정의
+│   ├── utils/
+│   │   ├── jwt.ts             # JWT 유틸리티
+│   │   └── dateUtils.ts       # 날짜 처리 유틸리티
+│   └── constants/
+│       ├── messages.ts        # 에러/성공 메시지
+│       └── statusCodes.ts     # HTTP 상태 코드
+├── package.json               # 프로젝트 의존성
+├── tsconfig.json              # TypeScript 설정
+├── .env                       # 환경변수 (gitignore)
+├── .env.example               # 환경변수 예시
+└── README.md                  # 백엔드 README
+
+====================
+4. 각 디렉토리/파일 상세 설명
+====================
+
+■ config/ - 설정 파일들
+- firebase.ts: Firebase Admin SDK 초기화 및 설정
+- database.ts: Firestore 데이터베이스 연결 설정
+- environment.ts: 환경변수 타입 정의 및 검증
+
+■ middleware/ - Express 미들웨어
+- auth.ts: JWT 토큰 검증 미들웨어
+- cors.ts: CORS 설정 미들웨어
+- validation.ts: 요청 데이터 검증 (joi 사용)
+
+■ routes/ - API 라우트 정의
+- index.ts: 모든 라우터 통합
+- auth.ts: 로그인/로그아웃/토큰 갱신
+- users.ts: 사용자 정보 CRUD
+- projects.ts: 프로젝트 CRUD
+- schedules.ts: 일정 CRUD
+- conflicts.ts: 충돌 감지 및 해결
+- google.ts: 구글 캘린더 연동
+
+■ controllers/ - 요청 처리 로직
+- HTTP 요청/응답 처리
+- 요청 데이터 파싱
+- 서비스 호출 및 응답 반환
+- 기본적인 에러 처리
+
+■ services/ - 비즈니스 로직
+- Firebase 데이터베이스 조작
+- 외부 API 호출 (Google Calendar)
+- 복잡한 비즈니스 로직 처리
+- 데이터 검증 및 변환
+
+■ types/ - TypeScript 타입 정의
+- MVP 시나리오의 데이터 모델 타입
+- API 요청/응답 타입
+- 인터페이스 정의
+
+■ utils/ - 유틸리티 함수
+- jwt.ts: JWT 토큰 생성/검증
+- dateUtils.ts: 날짜 처리 및 변환
+
+■ constants/ - 상수 정의
+- messages.ts: 에러/성공 메시지
+- statusCodes.ts: HTTP 상태 코드
+
+====================
+5. API 엔드포인트 설계
+====================
+
+■ 인증 관련 (/api/auth)
+- POST /auth/login - Google OAuth 로그인
+- POST /auth/logout - 로그아웃
+- POST /auth/refresh - 토큰 갱신
+
+■ 사용자 관련 (/api/users)
+- GET /users/profile - 사용자 정보 조회
+- PUT /users/profile - 사용자 정보 수정
+- GET /users/team - 팀원 목록 조회
+
+■ 프로젝트 관련 (/api/projects)
+- GET /projects - 프로젝트 목록 조회
+- POST /projects - 프로젝트 생성
+- GET /projects/:id - 프로젝트 상세 조회
+- PUT /projects/:id - 프로젝트 수정
+- DELETE /projects/:id - 프로젝트 삭제
+
+■ 일정 관련 (/api/schedules)
+- GET /schedules - 일정 목록 조회
+- POST /schedules - 일정 생성
+- GET /schedules/:id - 일정 상세 조회
+- PUT /schedules/:id - 일정 수정
+- DELETE /schedules/:id - 일정 삭제
+- PUT /schedules/:id/status - 일정 상태 변경
+
+■ 충돌 관련 (/api/conflicts)
+- GET /conflicts - 충돌 목록 조회
+- POST /conflicts/check - 충돌 검사
+- PUT /conflicts/:id/resolve - 충돌 해결
+
+■ 구글 캘린더 관련 (/api/google)
+- POST /google/connect - 구글 캘린더 연동
+- POST /google/sync - 캘린더 동기화
+- DELETE /google/disconnect - 연동 해제
+
+====================
+6. 데이터베이스 설계 (Firestore)
+====================
+
+■ 컬렉션 구조
+- users: 사용자 정보
+- projects: 프로젝트 정보
+- schedules: 일정 정보
+- scheduleConflicts: 일정 충돌 정보
+
+■ 보안 규칙 (기본)
+- 사용자는 자신의 데이터만 접근 가능
+- 프로젝트는 팀원만 접근 가능
+- 일정은 프로젝트 멤버만 접근 가능
+
+====================
+7. 환경변수 설정
+====================
+
+■ .env 파일 예시
+```
+# Server
+PORT=3001
+NODE_ENV=development
+
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY=your-private-key
+FIREBASE_CLIENT_EMAIL=your-client-email
+
+# JWT
+JWT_SECRET=your-jwt-secret
+JWT_EXPIRES_IN=7d
+
+# Google Calendar
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3001/api/auth/google/callback
+```
+
+====================
+8. 개발 우선순위
+====================
+
+■ Phase 1: 기본 인프라 (1주)
+1. Express 서버 설정
+2. Firebase 연동
+3. 기본 미들웨어 설정
+4. 인증 시스템 구현
+
+■ Phase 2: 핵심 기능 (2주)
+1. 사용자 관리 API
+2. 프로젝트 CRUD API
+3. 일정 CRUD API
+4. 기본 충돌 감지
+
+■ Phase 3: 고급 기능 (1주)
+1. 구글 캘린더 연동
+2. 충돌 해결 로직
+3. API 최적화
+
+====================
+9. 기술적 제약사항 (MVP)
+====================
+
+■ 제외된 기능
+- 복잡한 로깅 시스템
+- 고급 에러 핸들링
+- 성능 모니터링
+- 캐싱 시스템
+- 배치 처리
+
+■ 단순화된 구현
+- 기본적인 에러 응답
+- 단순한 데이터 검증
+- 직접적인 Firebase 조작
+- 기본적인 CORS 설정
+
+--- END --- 

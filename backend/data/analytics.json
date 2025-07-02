@@ -1,0 +1,122 @@
+[
+  {
+    "id": "analytics_001",
+    "project_id": "project_001",
+    "metric_name": "schedule_completion_rate",
+    "value": 85.7,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "스마트홈 모바일앱 프로젝트의 주간 일정 완료율"
+  },
+  {
+    "id": "analytics_002",
+    "project_id": "project_001",
+    "metric_name": "team_productivity",
+    "value": 92.3,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "스마트앱개발팀의 주간 생산성 지수"
+  },
+  {
+    "id": "analytics_003",
+    "project_id": "project_001",
+    "metric_name": "conflict_resolution_time",
+    "value": 4.5,
+    "unit": "hours",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "일정 충돌 해결 평균 시간"
+  },
+  {
+    "id": "analytics_004",
+    "project_id": "project_002",
+    "metric_name": "schedule_completion_rate",
+    "value": 78.9,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "웹 관리자 대시보드 프로젝트의 주간 일정 완료율"
+  },
+  {
+    "id": "analytics_005",
+    "project_id": "project_002",
+    "metric_name": "team_productivity",
+    "value": 88.7,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "스마트앱개발팀의 웹 대시보드 프로젝트 생산성"
+  },
+  {
+    "id": "analytics_006",
+    "project_id": "project_003",
+    "metric_name": "schedule_completion_rate",
+    "value": 91.2,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "사용자 행동 분석 시스템 프로젝트의 주간 일정 완료율"
+  },
+  {
+    "id": "analytics_007",
+    "project_id": "project_003",
+    "metric_name": "team_productivity",
+    "value": 95.1,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "데이터분석팀의 주간 생산성 지수"
+  },
+  {
+    "id": "analytics_008",
+    "project_id": null,
+    "metric_name": "total_active_projects",
+    "value": 3,
+    "unit": "count",
+    "period": "current",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "현재 활성화된 프로젝트 수"
+  },
+  {
+    "id": "analytics_009",
+    "project_id": null,
+    "metric_name": "total_schedules",
+    "value": 17,
+    "unit": "count",
+    "period": "current",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "전체 일정 수"
+  },
+  {
+    "id": "analytics_010",
+    "project_id": null,
+    "metric_name": "pending_conflicts",
+    "value": 4,
+    "unit": "count",
+    "period": "current",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "해결 대기 중인 충돌 수"
+  },
+  {
+    "id": "analytics_011",
+    "project_id": null,
+    "metric_name": "overall_completion_rate",
+    "value": 85.3,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "전체 프로젝트 평균 완료율"
+  },
+  {
+    "id": "analytics_012",
+    "project_id": null,
+    "metric_name": "team_member_workload",
+    "value": 87.6,
+    "unit": "percent",
+    "period": "weekly",
+    "date": "2024-01-22T00:00:00Z",
+    "description": "팀원 평균 업무 부하도"
+  }
+] 

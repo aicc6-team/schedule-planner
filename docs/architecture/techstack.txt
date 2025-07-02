@@ -1,0 +1,258 @@
+[기술 스택 및 패키지 정리] – "내 일정을 부탁해"
+
+1. 언어 및 프레임워크 구조
+
+- 프론트엔드: Next.js 14 (React 기반, App Router)
+- 백엔드: Node.js + Express + TypeScript
+- AI 분석: Python 3.11+ + FastAPI + LangChain + OpenAI
+- DB: Firebase (Realtime Database, Authentication)
+- 프론트 배포: Vercel
+- 백엔드 배포: Railway
+- AI 서버 배포: Railway
+
+2. 프론트엔드 패키지 (Next.js 14 기반)
+
+# 기본 구성
+npm install next@latest react@latest react-dom@latest
+
+# TypeScript 지원
+npm install --save-dev typescript @types/react @types/node @types/react-dom
+
+# 스타일링 (Tailwind CSS)
+npm install tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+# 상태관리
+npm install recoil
+
+# Firebase 클라이언트 연동
+npm install firebase
+
+# Google OAuth 및 Calendar API
+npm install @react-oauth/google
+
+# 날짜 처리
+npm install date-fns
+
+# 차트 시각화
+npm install chart.js react-chartjs-2
+
+# HTTP 클라이언트
+npm install axios
+
+# 폼 관리
+npm install react-hook-form @hookform/resolvers
+
+# UI 컴포넌트
+npm install @headlessui/react @heroicons/react
+
+# 실시간 데이터 처리
+npm install firebase
+
+# 유효성 검사
+npm install zod
+
+# 라우팅 및 네비게이션
+npm install next-navigation
+
+# 로딩 상태 관리
+npm install react-loading-skeleton
+
+# 토스트 알림
+npm install react-hot-toast
+
+3. 백엔드 패키지 (Node.js + Express + TypeScript)
+
+# 초기 설정
+npm install typescript ts-node-dev @types/node --save-dev
+
+# Express 서버
+npm install express cors helmet morgan
+npm install @types/express @types/cors --save-dev
+
+# Firebase Admin
+npm install firebase-admin
+
+# Google API 사용
+npm install googleapis
+
+# 인증 토큰 처리
+npm install jsonwebtoken bcryptjs
+npm install @types/jsonwebtoken @types/bcryptjs --save-dev
+
+# 환경변수
+npm install dotenv
+
+# 유효성 검사
+npm install joi
+npm install @types/joi --save-dev
+
+# Railway 배포 대응
+npm install concurrently
+
+# 로깅
+npm install winston
+
+# CORS 설정
+npm install cors
+npm install @types/cors --save-dev
+
+# 요청 파싱
+npm install body-parser
+npm install @types/body-parser --save-dev
+
+# 파일 업로드
+npm install multer
+npm install @types/multer --save-dev
+
+# 스케줄링 (알림 기능용)
+npm install node-cron
+npm install @types/node-cron --save-dev
+
+# 이메일 발송
+npm install nodemailer
+npm install @types/nodemailer --save-dev
+
+# HTTP 클라이언트 (외부 API 호출)
+npm install axios
+
+4. AI 분석 파트 (Python + FastAPI)
+
+# FastAPI 및 의존성
+pip install fastapi uvicorn python-multipart
+
+# LangChain 및 OpenAI
+pip install openai langchain python-dotenv
+
+# Firebase 연결
+pip install firebase-admin
+
+# 데이터 분석용
+pip install pandas numpy
+
+# HTTP 클라이언트
+pip install httpx
+
+# 환경변수
+pip install python-dotenv
+
+# 로깅
+pip install loguru
+
+# CORS
+pip install fastapi-cors
+
+# 비동기 처리
+pip install asyncio
+
+# 날짜/시간 처리
+pip install python-dateutil
+
+# JSON 처리
+pip install pydantic
+
+# 스케줄링
+pip install apscheduler
+
+# 데이터 검증
+pip install pydantic[email]
+
+# 캐싱
+pip install redis
+
+# 웹소켓 (실시간 통신)
+pip install websockets
+
+5. Firebase 구성 요소
+
+- Firebase Realtime Database
+- Firebase Authentication (Google OAuth)
+- Firebase Admin SDK
+- Firebase Security Rules
+- Firebase Functions (선택사항 - 알림 기능)
+
+6. 외부 API 구성
+
+- Google Calendar API, People API (OAuth 필요)
+- OpenAI API (GPT-4 기반)
+- Vercel (프론트 배포)
+- Railway (백엔드, AI 서버 배포)
+
+7. 개발 도구
+
+# 프론트엔드 개발
+npm install --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
+npm install --save-dev prettier eslint-config-prettier eslint-plugin-prettier
+npm install --save-dev @next/eslint-config-next
+
+# 백엔드 개발
+npm install --save-dev nodemon
+npm install --save-dev @types/jest jest ts-jest
+npm install --save-dev supertest @types/supertest
+
+# AI 서버 개발
+pip install pytest pytest-asyncio
+pip install black flake8 mypy
+pip install pre-commit
+
+8. 프로젝트 구조
+
+/project-root/
+├── frontend/          # Next.js 프론트엔드
+├── backend/           # Node.js + Express 백엔드
+├── ai-server/         # Python + FastAPI AI 서버
+└── docs/              # 프로젝트 문서
+
+9. 환경변수 설정
+
+# 프론트엔드 (.env.local)
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_AI_API_URL=http://localhost:8000
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
+
+# 백엔드 (.env)
+PORT=3001
+NODE_ENV=development
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_PRIVATE_KEY=your_firebase_private_key
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:3000
+AI_SERVER_URL=http://localhost:8000
+
+# AI 서버 (.env)
+OPENAI_API_KEY=your_openai_api_key
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_PRIVATE_KEY=your_firebase_private_key
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+MODEL_NAME=gpt-4
+TEMPERATURE=0.7
+MAX_TOKENS=2000
+
+10. 추가 고려사항
+
+# 성능 최적화
+- 프론트엔드: Next.js Image 컴포넌트, 코드 스플리팅
+- 백엔드: Redis 캐싱, 데이터베이스 인덱싱
+- AI 서버: 비동기 처리, 요청 큐잉
+
+# 보안
+- CORS 설정
+- Rate limiting
+- Input validation
+- JWT 토큰 만료 관리
+
+# 모니터링
+- 로깅 시스템
+- 에러 추적
+- 성능 모니터링
+
+--- END ---

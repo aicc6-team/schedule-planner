@@ -1,0 +1,167 @@
+[
+  {
+    "id": "user_001",
+    "email": "kim.dev@company.com",
+    "name": "김개발",
+    "role": "팀장",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/4A90E2/FFFFFF?text=김개발",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_002",
+    "email": "park.front@company.com",
+    "name": "박프론트",
+    "role": "프론트엔드 개발자",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/7ED321/FFFFFF?text=박프론트",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_003",
+    "email": "lee.backend@company.com",
+    "name": "이백엔드",
+    "role": "백엔드 개발자",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/F5A623/FFFFFF?text=이백엔드",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_004",
+    "email": "choi.design@company.com",
+    "name": "최디자인",
+    "role": "UI/UX 디자이너",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/BD10E0/FFFFFF?text=최디자인",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_005",
+    "email": "jung.data@company.com",
+    "name": "정데이터",
+    "role": "팀장",
+    "team": "데이터분석팀",
+    "avatar": "https://via.placeholder.com/150/D0021B/FFFFFF?text=정데이터",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_006",
+    "email": "han.analytics@company.com",
+    "name": "한분석",
+    "role": "데이터 분석가",
+    "team": "데이터분석팀",
+    "avatar": "https://via.placeholder.com/150/9013FE/FFFFFF?text=한분석",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_007",
+    "email": "song.viz@company.com",
+    "name": "송시각화",
+    "role": "데이터 시각화 전문가",
+    "team": "데이터분석팀",
+    "avatar": "https://via.placeholder.com/150/50E3C2/FFFFFF?text=송시각화",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_008",
+    "email": "yoon.front2@company.com",
+    "name": "윤프론트2",
+    "role": "프론트엔드 개발자",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/7ED321/FFFFFF?text=윤프론트2",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_009",
+    "email": "kang.backend2@company.com",
+    "name": "강백엔드2",
+    "role": "백엔드 개발자",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/F5A623/FFFFFF?text=강백엔드2",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_010",
+    "email": "lim.design2@company.com",
+    "name": "임디자인2",
+    "role": "UI/UX 디자이너",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/BD10E0/FFFFFF?text=임디자인2",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_011",
+    "email": "oh.analytics2@company.com",
+    "name": "오분석2",
+    "role": "데이터 분석가",
+    "team": "데이터분석팀",
+    "avatar": "https://via.placeholder.com/150/9013FE/FFFFFF?text=오분석2",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_012",
+    "email": "shin.marketing@company.com",
+    "name": "신마케팅",
+    "role": "마케터",
+    "team": "마케팅팀",
+    "avatar": "https://via.placeholder.com/150/FF6B6B/FFFFFF?text=신마케팅",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_013",
+    "email": "baek.sales@company.com",
+    "name": "백영업",
+    "role": "영업",
+    "team": "영업팀",
+    "avatar": "https://via.placeholder.com/150/4ECDC4/FFFFFF?text=백영업",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_014",
+    "email": "kwon.qa@company.com",
+    "name": "권품질",
+    "role": "QA 엔지니어",
+    "team": "스마트앱개발팀",
+    "avatar": "https://via.placeholder.com/150/45B7D1/FFFFFF?text=권품질",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user_015",
+    "email": "jeong.devops@company.com",
+    "name": "정데브옵스",
+    "role": "DevOps 엔지니어",
+    "team": "인프라팀",
+    "avatar": "https://via.placeholder.com/150/96CEB4/FFFFFF?text=정데브옵스",
+    "google_access_token": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+] 

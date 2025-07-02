@@ -1,0 +1,122 @@
+[
+  {
+    "id": "conflict_001",
+    "schedule_id": "schedule_002",
+    "conflicting_schedule_id": "schedule_012",
+    "conflict_type": "resource_overlap",
+    "description": "최디자인이 UI/UX 디자인 설계와 대시보드 UI 설계를 동시에 진행하려고 함",
+    "severity": "high",
+    "status": "resolved",
+    "resolution": "대시보드 UI 설계를 박프론트에게 위임",
+    "created_at": "2024-01-15T10:00:00Z",
+    "resolved_at": "2024-01-15T14:00:00Z"
+  },
+  {
+    "id": "conflict_002",
+    "schedule_id": "schedule_003",
+    "conflicting_schedule_id": "schedule_014",
+    "conflict_type": "resource_overlap",
+    "description": "이백엔드가 백엔드 API 설계와 관리자 API 개발을 동시에 진행하려고 함",
+    "severity": "medium",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-01-25T11:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_003",
+    "schedule_id": "schedule_004",
+    "conflicting_schedule_id": "schedule_013",
+    "conflict_type": "resource_overlap",
+    "description": "박프론트가 로그인 화면 UI 개발과 대시보드 프론트엔드 개발을 동시에 진행하려고 함",
+    "severity": "high",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-05T09:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_004",
+    "schedule_id": "schedule_005",
+    "conflicting_schedule_id": "schedule_014",
+    "conflict_type": "resource_overlap",
+    "description": "이백엔드가 사용자 인증 API 개발과 관리자 API 개발을 동시에 진행하려고 함",
+    "severity": "medium",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-05T09:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_005",
+    "schedule_id": "schedule_007",
+    "conflicting_schedule_id": "schedule_008",
+    "conflict_type": "dependency_conflict",
+    "description": "IoT 기기 제어 API 개발이 완료되기 전에 디자인 리뷰가 시작됨",
+    "severity": "low",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-12T09:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_006",
+    "schedule_id": "schedule_004",
+    "conflicting_schedule_id": "schedule_013",
+    "conflict_type": "resource_overlap",
+    "description": "박프론트와 윤프론트2가 로그인 화면 UI 개발과 대시보드 프론트엔드 개발을 동시에 진행하려고 함",
+    "severity": "high",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-05T09:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_007",
+    "schedule_id": "schedule_005",
+    "conflicting_schedule_id": "schedule_014",
+    "conflict_type": "resource_overlap",
+    "description": "이백엔드와 강백엔드2가 사용자 인증 API 개발과 관리자 API 개발을 동시에 진행하려고 함",
+    "severity": "medium",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-05T09:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_008",
+    "schedule_id": "schedule_019",
+    "conflicting_schedule_id": "schedule_020",
+    "conflict_type": "resource_overlap",
+    "description": "성능 최적화 작업과 마케팅 전략 수립이 동시에 진행되어 리소스 부족 발생",
+    "severity": "high",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-24T09:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_009",
+    "schedule_id": "schedule_021",
+    "conflicting_schedule_id": "schedule_022",
+    "conflict_type": "resource_overlap",
+    "description": "보안 감사와 사용자 교육이 동시에 진행되어 PM 리소스 부족",
+    "severity": "medium",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-06T09:00:00Z",
+    "resolved_at": null
+  },
+  {
+    "id": "conflict_010",
+    "schedule_id": "schedule_023",
+    "conflicting_schedule_id": "schedule_024",
+    "conflict_type": "dependency_conflict",
+    "description": "데이터 품질 검증이 완료되기 전에 AI 모델 개발이 시작됨",
+    "severity": "high",
+    "status": "pending",
+    "resolution": null,
+    "created_at": "2024-02-09T09:00:00Z",
+    "resolved_at": null
+  }
+] 
