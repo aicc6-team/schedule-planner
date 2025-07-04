@@ -1,96 +1,227 @@
-#!/usr/bin/env node
+import { db } from '../config/firebase';
+import 'dotenv/config';
 
-import { seedAllData, seedCollection, resetDatabase, clearAllCollections } from '../services/firestoreSeeder';
+// 타입 정의
+interface PersonalSchedule {
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  importance: string;
+  emotion: string;
+  projectId: string;
+  assignee: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// CLI 인자 파싱
-const args = process.argv.slice(2);
-const command = args[0];
+interface DepartmentSchedule {
+  title: string;
+  objective: string;
+  date: string;
+  time: string;
+  participants: string[];
+  department: string;
+  projectId: string;
+  organizer: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// 사용법 출력
-const showUsage = () => {
-  console.log(`
-📋 Firestore 데이터 시드 도구 사용법:
+interface ProjectSchedule {
+  projectId: string;
+  projectName: string;
+  objective: string;
+  category: string;
+  startDate: string;
+  endDate: string;
+  time: string;
+  roles: {
+    pm: number;
+    backend: number;
+    frontend: number;
+    designer: number;
+    marketer: number;
+    sales: number;
+    general: number;
+    others: number;
+  };
+  participants: string[];
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-npm run seed                    # 모든 데이터 시드
-npm run seed:reset             # Firestore 초기화 후 모든 데이터 시드
-npm run seed:collection <name> # 특정 컬렉션만 시드
-npm run seed:clear             # 모든 컬렉션 초기화
+// 시드 데이터
+const personalSchedules: PersonalSchedule[] = [
+  {
+    title: "백엔드 API 구축",
+    description: "백엔드 API 구축",
+    date: "2025-07-04",
+    time: "13:10",
+    durationMinutes: 30,
+    importance: "높음",
+    emotion: "보통",
+    projectId: "project-001",
+    assignee: "김개발",
+    status: "pending",
+    createdAt: "2025-07-04T05:29:00.279Z",
+    updatedAt: "2025-07-04T05:29:00.279Z"
+  },
+  {
+    title: "프론트엔드 컴포넌트 개발",
+    description: "React 컴포넌트 개발",
+    date: "2025-07-05",
+    time: "14:00",
+    durationMinutes: 120,
+    importance: "중간",
+    emotion: "좋음",
+    projectId: "project-001",
+    assignee: "박프론트",
+    status: "pending",
+    createdAt: "2025-07-04T05:29:00.279Z",
+    updatedAt: "2025-07-04T05:29:00.279Z"
+  }
+];
 
-사용 가능한 컬렉션:
-- users
-- projects  
-- schedules
-- conflicts
-- analytics
+const departmentSchedules: DepartmentSchedule[] = [
+  {
+    title: "부서 회의",
+    objective: "주간 회의",
+    date: "2025-07-04",
+    time: "13:10",
+    participants: ["김팀장", "이대리", "김개발"],
+    department: "개발팀",
+    projectId: "project-001",
+    organizer: "김팀장",
+    status: "pending",
+    createdAt: "2025-07-04T05:29:00.279Z",
+    updatedAt: "2025-07-04T05:29:00.279Z"
+  },
+  {
+    title: "기획 검토 회의",
+    objective: "프로젝트 기획 검토",
+    date: "2025-07-06",
+    time: "10:00",
+    participants: ["김팀장", "박기획", "이대리"],
+    department: "기획팀",
+    projectId: "project-001",
+    organizer: "박기획",
+    status: "pending",
+    createdAt: "2025-07-04T05:29:00.279Z",
+    updatedAt: "2025-07-04T05:29:00.279Z"
+  }
+];
 
-예시:
-npm run seed:collection users
-npm run seed:collection schedules
-`);
+const projectSchedules: ProjectSchedule[] = [
+  {
+    projectId: "project-001",
+    projectName: "내 일정 프로젝트",
+    objective: "프로젝트 기획 정리",
+    category: "기획",
+    startDate: "2025-07-01",
+    endDate: "2025-07-04",
+    time: "13:10",
+    roles: {
+      pm: 1,
+      backend: 2,
+      frontend: 2,
+      designer: 1,
+      marketer: 0,
+      sales: 0,
+      general: 0,
+      others: 0
+    },
+    participants: ["김개발", "이대리", "박프론트"],
+    status: "pending",
+    createdAt: "2025-07-04T05:29:00.279Z",
+    updatedAt: "2025-07-04T05:29:00.279Z"
+  },
+  {
+    projectId: "project-002",
+    projectName: "모바일 앱 개발",
+    objective: "모바일 앱 개발 및 출시",
+    category: "개발",
+    startDate: "2025-07-10",
+    endDate: "2025-08-15",
+    time: "09:00",
+    roles: {
+      pm: 1,
+      backend: 1,
+      frontend: 2,
+      designer: 2,
+      marketer: 1,
+      sales: 0,
+      general: 0,
+      others: 0
+    },
+    participants: ["김팀장", "박개발자", "이디자이너"],
+    status: "pending",
+    createdAt: "2025-07-04T05:29:00.279Z",
+    updatedAt: "2025-07-04T05:29:00.279Z"
+  }
+];
+
+// 시드 함수들
+export const seedPersonalSchedules = async () => {
+  console.log('🌱 개인 일정 시드 데이터 생성 중...');
+  const batch = db.batch();
+  
+  personalSchedules.forEach((schedule) => {
+    const docRef = db.collection('personal_schedules').doc();
+    batch.set(docRef, schedule);
+  });
+  
+  await batch.commit();
+  console.log('✅ 개인 일정 시드 데이터 생성 완료');
 };
 
-// 메인 실행 함수
-const main = async () => {
+export const seedDepartmentSchedules = async () => {
+  console.log('🌱 부서 일정 시드 데이터 생성 중...');
+  const batch = db.batch();
+  
+  departmentSchedules.forEach((schedule) => {
+    const docRef = db.collection('department_schedules').doc();
+    batch.set(docRef, schedule);
+  });
+  
+  await batch.commit();
+  console.log('✅ 부서 일정 시드 데이터 생성 완료');
+};
+
+export const seedProjectSchedules = async () => {
+  console.log('🌱 프로젝트 일정 시드 데이터 생성 중...');
+  const batch = db.batch();
+  
+  projectSchedules.forEach((schedule) => {
+    const docRef = db.collection('project_schedules').doc();
+    batch.set(docRef, schedule);
+  });
+  
+  await batch.commit();
+  console.log('✅ 프로젝트 일정 시드 데이터 생성 완료');
+};
+
+// 모든 시드 데이터 생성
+export const seedAllData = async () => {
   try {
-    console.log('🚀 Firestore 데이터 시드 도구 시작...\n');
+    console.log('🚀 Firestore 시드 데이터 생성 시작...');
     
-    switch (command) {
-      case 'all':
-      case undefined:
-        console.log('🌱 모든 데이터 시드 시작...');
-        await seedAllData();
-        break;
-        
-      case 'reset':
-        console.log('🔄 Firestore 초기화 후 시드 시작...');
-        await resetDatabase();
-        break;
-        
-      case 'collection':
-        const collectionName = args[1];
-        if (!collectionName) {
-          console.error('❌ 컬렉션 이름을 지정해주세요.');
-          showUsage();
-          process.exit(1);
-        }
-        
-        const validCollections = ['users', 'projects', 'schedules', 'conflicts', 'analytics'];
-        if (!validCollections.includes(collectionName.toLowerCase())) {
-          console.error(`❌ 유효하지 않은 컬렉션: ${collectionName}`);
-          console.log(`사용 가능한 컬렉션: ${validCollections.join(', ')}`);
-          process.exit(1);
-        }
-        
-        console.log(`🌱 ${collectionName} 컬렉션 시드 시작...`);
-        await seedCollection(collectionName);
-        break;
-        
-      case 'clear':
-        console.log('🗑️ 모든 컬렉션 초기화 시작...');
-        await clearAllCollections();
-        break;
-        
-      case 'help':
-      case '--help':
-      case '-h':
-        showUsage();
-        break;
-        
-      default:
-        console.error(`❌ 알 수 없는 명령: ${command}`);
-        showUsage();
-        process.exit(1);
-    }
+    await seedPersonalSchedules();
+    await seedDepartmentSchedules();
+    await seedProjectSchedules();
     
-    console.log('\n✅ 모든 작업이 성공적으로 완료되었습니다!');
-    
+    console.log('🎉 모든 시드 데이터 생성 완료!');
   } catch (error) {
-    console.error('\n❌ 오류 발생:', error);
-    process.exit(1);
+    console.error('❌ 시드 데이터 생성 실패:', error);
+    throw error;
   }
 };
 
 // 스크립트 실행
 if (require.main === module) {
-  main();
+  seedAllData().catch(console.error);
 } 

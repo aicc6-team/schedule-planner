@@ -1,0 +1,88 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.scheduleController = void 0;
+const firestoreService_1 = require("../services/firestoreService");
+exports.scheduleController = {
+    async getPersonalSchedules(_req, res) {
+        try {
+            const schedules = await firestoreService_1.firestoreService.getPersonalSchedules();
+            res.status(200).json({
+                success: true,
+                data: schedules,
+                message: '개인 일정 목록 조회 성공',
+                count: schedules.length
+            });
+        }
+        catch (error) {
+            console.error('개인 일정 조회 실패:', error);
+            res.status(500).json({
+                success: false,
+                error: '개인 일정을 조회하는 중 오류가 발생했습니다.',
+                message: error instanceof Error ? error.message : '알 수 없는 오류'
+            });
+        }
+    },
+    async getDepartmentSchedules(_req, res) {
+        try {
+            const schedules = await firestoreService_1.firestoreService.getDepartmentSchedules();
+            res.status(200).json({
+                success: true,
+                data: schedules,
+                message: '부서 일정 목록 조회 성공',
+                count: schedules.length
+            });
+        }
+        catch (error) {
+            console.error('부서 일정 조회 실패:', error);
+            res.status(500).json({
+                success: false,
+                error: '부서 일정을 조회하는 중 오류가 발생했습니다.',
+                message: error instanceof Error ? error.message : '알 수 없는 오류'
+            });
+        }
+    },
+    async getProjectSchedules(_req, res) {
+        try {
+            const schedules = await firestoreService_1.firestoreService.getProjectSchedules();
+            res.status(200).json({
+                success: true,
+                data: schedules,
+                message: '프로젝트 일정 목록 조회 성공',
+                count: schedules.length
+            });
+        }
+        catch (error) {
+            console.error('프로젝트 일정 조회 실패:', error);
+            res.status(500).json({
+                success: false,
+                error: '프로젝트 일정을 조회하는 중 오류가 발생했습니다.',
+                message: error instanceof Error ? error.message : '알 수 없는 오류'
+            });
+        }
+    },
+    async getAllSchedules(_req, res) {
+        try {
+            const allSchedules = await firestoreService_1.firestoreService.getAllSchedules();
+            res.status(200).json({
+                success: true,
+                data: allSchedules,
+                message: '전체 일정 목록 조회 성공',
+                count: {
+                    personal: allSchedules.personal.length,
+                    department: allSchedules.department.length,
+                    project: allSchedules.project.length,
+                    total: allSchedules.personal.length + allSchedules.department.length + allSchedules.project.length
+                }
+            });
+        }
+        catch (error) {
+            console.error('전체 일정 조회 실패:', error);
+            res.status(500).json({
+                success: false,
+                error: '전체 일정을 조회하는 중 오류가 발생했습니다.',
+                message: error instanceof Error ? error.message : '알 수 없는 오류'
+            });
+        }
+    }
+};
+//# sourceMappingURL=scheduleController.js.map

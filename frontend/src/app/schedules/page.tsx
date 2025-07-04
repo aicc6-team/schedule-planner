@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import ScheduleCard from '@/components/ScheduleCard';
 import SearchBar from '@/components/SearchBar';
@@ -20,119 +20,176 @@ import {
 import Modal from '@/components/Modal';
 import { useRouter } from 'next/navigation';
 
-// 임시 데이터 (type: personal, department, project, company)
-const mockSchedules = [
-  {
-    id: '1',
-    title: '팀 미팅',
-    description: '주간 진행상황 공유 및 다음 주 계획 수립',
-    startTime: '2024-01-15T10:00:00',
-    endTime: '2024-01-15T11:00:00',
-    priority: 'high' as const,
-    type: 'department' as const,
-    assignee: '홍길동',
-    project: '웹사이트 리뉴얼',
-  },
-  {
-    id: '2',
-    title: '코드 리뷰',
-    description: '프론트엔드 컴포넌트 검토 및 피드백',
-    startTime: '2024-01-15T14:00:00',
-    endTime: '2024-01-15T15:30:00',
-    priority: 'medium' as const,
-    type: 'project' as const,
-    assignee: '김철수',
-    project: '웹사이트 리뉴얼',
-  },
-  {
-    id: '3',
-    title: '고객 미팅',
-    description: '신규 프로젝트 요구사항 논의',
-    startTime: '2024-01-16T09:00:00',
-    endTime: '2024-01-16T10:30:00',
-    priority: 'high' as const,
-    type: 'company' as const,
-    assignee: '이영희',
-    project: '모바일 앱 개발',
-  },
-  {
-    id: '4',
-    title: '디자인 검토',
-    description: 'UI/UX 디자인 피드백 및 수정사항 논의',
-    startTime: '2024-01-16T13:00:00',
-    endTime: '2024-01-16T14:00:00',
-    priority: 'low' as const,
-    type: 'personal' as const,
-    assignee: '박민수',
-    project: '웹사이트 리뉴얼',
-  },
-  {
-    id: '5',
-    title: '신규 서비스 기획 회의',
-    description: '신규 서비스 런칭을 위한 아이디어 회의',
-    startTime: '2024-12-01T10:00:00',
-    endTime: '2024-12-01T12:00:00',
-    priority: 'high' as const,
-    type: 'department' as const,
-    assignee: '최은지',
-    project: '신규 서비스',
-  },
-  {
-    id: '6',
-    title: '연말 결산 보고',
-    description: '2024년 연말 결산 및 내년 계획 발표',
-    startTime: '2024-12-20T15:00:00',
-    endTime: '2024-12-20T16:30:00',
-    priority: 'medium' as const,
-    type: 'company' as const,
-    assignee: '이상훈',
-    project: '경영관리',
-  },
-  {
-    id: '7',
-    title: '프로젝트 마감',
-    description: '웹사이트 리뉴얼 프로젝트 최종 마감',
-    startTime: '2024-12-31T09:00:00',
-    endTime: '2024-12-31T18:00:00',
-    priority: 'high' as const,
-    type: 'project' as const,
-    assignee: '김철수',
-    project: '웹사이트 리뉴얼',
-  },
-  {
-    id: '8',
-    title: '2025년 신년 워크숍',
-    description: '전사 신년 워크숍 및 팀빌딩',
-    startTime: '2025-01-10T09:00:00',
-    endTime: '2025-01-10T18:00:00',
-    priority: 'medium' as const,
-    type: 'company' as const,
-    assignee: '관리자',
-    project: '워크숍',
-  },
-  {
-    id: '9',
-    title: '상반기 목표 설정 회의',
-    description: '2025년 상반기 부서별 목표 설정',
-    startTime: '2025-01-15T14:00:00',
-    endTime: '2025-01-15T16:00:00',
-    priority: 'high' as const,
-    type: 'department' as const,
-    assignee: '부서장',
-    project: '경영관리',
-  },
-  {
-    id: '10',
-    title: '신규 프로젝트 킥오프',
-    description: '신규 프로젝트 시작 및 팀 소개',
-    startTime: '2025-02-01T10:00:00',
-    endTime: '2025-02-01T12:00:00',
-    priority: 'high' as const,
-    type: 'project' as const,
-    assignee: '프로젝트PM',
-    project: '신규 프로젝트',
-  },
-];
+// API 호출 함수들
+const API_BASE_URL = 'http://localhost:3001';
+
+const fetchPersonalSchedules = async (): Promise<PersonalSchedule[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/personal`);
+  if (!response.ok) {
+    throw new Error('개인 일정을 가져오는데 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+const fetchDepartmentSchedules = async (): Promise<DepartmentSchedule[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/department`);
+  if (!response.ok) {
+    throw new Error('부서 일정을 가져오는데 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+const fetchProjectSchedules = async (): Promise<ProjectSchedule[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/project`);
+  if (!response.ok) {
+    throw new Error('프로젝트 일정을 가져오는데 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+const fetchAllSchedules = async (): Promise<{personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[]}> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/all`);
+  if (!response.ok) {
+    throw new Error('전체 일정을 가져오는데 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+// 백엔드 데이터 타입 정의
+interface PersonalSchedule {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  importance: string;
+  emotion: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface DepartmentSchedule {
+  id: string;
+  title: string;
+  objective: string;
+  date: string;
+  time: string;
+  participants: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ProjectSchedule {
+  id: string;
+  projectName: string;
+  objective: string;
+  category: string;
+  endDate: string;
+  time: string;
+  roles: {
+    pm: number;
+    backend: number;
+    frontend: number;
+    designer: number;
+    marketer: number;
+    sales: number;
+    general: number;
+    others: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 프론트엔드에서 사용할 통합 Schedule 타입
+interface Schedule {
+  id: string;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  priority: 'high' | 'medium' | 'low';
+  type: 'personal' | 'department' | 'project';
+  assignee?: string;
+  project?: string;
+  adjusted?: boolean;
+}
+
+// 백엔드 데이터를 프론트엔드 Schedule 타입으로 변환하는 함수들
+const transformPersonalSchedule = (personalSchedule: PersonalSchedule): Schedule => {
+  const startDateTime = `${personalSchedule.date}T${personalSchedule.time}:00`;
+  const endDateTime = new Date(new Date(startDateTime).getTime() + personalSchedule.durationMinutes * 60000).toISOString();
+  
+  return {
+    id: personalSchedule.id,
+    title: personalSchedule.title,
+    description: personalSchedule.description,
+    startTime: startDateTime,
+    endTime: endDateTime,
+    priority: personalSchedule.importance === '높음' ? 'high' : personalSchedule.importance === '보통' ? 'medium' : 'low',
+    type: 'personal',
+    assignee: '개인',
+    project: '개인 일정'
+  };
+};
+
+const transformDepartmentSchedule = (departmentSchedule: DepartmentSchedule): Schedule => {
+  const startDateTime = `${departmentSchedule.date}T${departmentSchedule.time}:00`;
+  // 부서 일정은 보통 1시간으로 가정
+  const endDateTime = new Date(new Date(startDateTime).getTime() + 60 * 60000).toISOString();
+  
+  return {
+    id: departmentSchedule.id,
+    title: departmentSchedule.title,
+    description: departmentSchedule.objective,
+    startTime: startDateTime,
+    endTime: endDateTime,
+    priority: 'medium', // 부서 일정은 기본적으로 중간 우선순위
+    type: 'department',
+    assignee: departmentSchedule.participants[0] || '부서',
+    project: '부서 일정'
+  };
+};
+
+const transformProjectSchedule = (projectSchedule: ProjectSchedule): Schedule => {
+  const startDateTime = `${projectSchedule.endDate}T${projectSchedule.time}:00`;
+  // 프로젝트 일정은 마감 시간이므로 시작시간을 1시간 전으로 설정
+  const startTime = new Date(new Date(startDateTime).getTime() - 60 * 60000).toISOString();
+  
+  return {
+    id: projectSchedule.id,
+    title: projectSchedule.projectName,
+    description: projectSchedule.objective,
+    startTime: startTime,
+    endTime: startDateTime,
+    priority: 'high', // 프로젝트 마감은 높은 우선순위
+    type: 'project',
+    assignee: 'PM',
+    project: projectSchedule.projectName
+  };
+};
+
+const transformAllSchedules = (allSchedules: {personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[]}): Schedule[] => {
+  const transformedSchedules: Schedule[] = [];
+  
+  allSchedules.personal.forEach(schedule => {
+    transformedSchedules.push(transformPersonalSchedule(schedule));
+  });
+  
+  allSchedules.department.forEach(schedule => {
+    transformedSchedules.push(transformDepartmentSchedule(schedule));
+  });
+  
+  allSchedules.project.forEach(schedule => {
+    transformedSchedules.push(transformProjectSchedule(schedule));
+  });
+  
+  return transformedSchedules;
+};
 
 const typeTabs = [
   { value: 'all', label: '전체', icon: CalendarIcon },
@@ -156,8 +213,6 @@ const areaOrder = [
   { key: 'project', label: '프로젝트 영역', color: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-900' },
 ];
 
-type Schedule = typeof mockSchedules[number] & { adjusted?: boolean };
-
 function getNextAvailableTime(existing: Schedule[], duration: number, startDate = '2024-01-15T08:00:00') {
   let lastEnd = new Date(startDate);
   for (const s of existing) {
@@ -177,21 +232,62 @@ export default function SchedulesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const [adjusted, setAdjusted] = useState<Schedule[]>([]);
-  const [schedules, setSchedules] = useState<Schedule[]>(mockSchedules);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<'working' | 'done'>('working');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 데이터 가져오기
+  useEffect(() => {
+    const loadSchedules = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const allSchedules = await fetchAllSchedules();
+        const transformedSchedules = transformAllSchedules(allSchedules);
+        setSchedules(transformedSchedules);
+        
+        // 성공 토스트
+        if ((window as any).showToast) {
+          (window as any).showToast({
+            type: 'success',
+            title: '일정 로드 완료',
+            message: `총 ${transformedSchedules.length}개의 일정을 불러왔습니다.`,
+          });
+        }
+      } catch (error) {
+        console.error('일정 로드 실패:', error);
+        setError(error instanceof Error ? error.message : '일정을 불러오는데 실패했습니다.');
+        
+        // 에러 토스트
+        if ((window as any).showToast) {
+          (window as any).showToast({
+            type: 'error',
+            title: '일정 로드 실패',
+            message: '일정을 불러오는데 실패했습니다. 다시 시도해주세요.',
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSchedules();
+  }, []);
 
   // 유형별 개수 요약
   const typeCounts = typeTabs.reduce((acc, tab) => {
     if (tab.value === 'all') return acc;
-    acc[tab.value] = mockSchedules.filter(s => s.type === tab.value).length;
+    acc[tab.value] = schedules.filter(s => s.type === tab.value).length;
     return acc;
   }, {} as Record<string, number>);
 
   // 필터링
-  const filteredSchedules = mockSchedules.filter(schedule => {
+  const filteredSchedules = schedules.filter(schedule => {
     const matchesSearch = schedule.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         schedule.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (schedule.description && schedule.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPriority = priorityFilter === 'all' || schedule.priority === priorityFilter;
     const matchesType = typeTab === 'all' || schedule.type === typeTab;
     return matchesSearch && matchesPriority && matchesType;
@@ -339,106 +435,145 @@ export default function SchedulesPage() {
             </button>
           </div>
 
-          {/* 결과 통계 */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-secondary-600">
-              총 {filteredSchedules.length}개의 일정
-            </p>
-            <div className="flex gap-2">
-              {priorityFilter !== 'all' && getPriorityBadge(priorityFilter)}
+          {/* 로딩 상태 */}
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              <span className="ml-3 text-secondary-600">일정을 불러오고 있습니다...</span>
             </div>
-          </div>
+          )}
+
+          {/* 에러 상태 */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium">오류가 발생했습니다</h3>
+                  <p className="mt-1 text-sm">{error}</p>
+                  <div className="mt-3">
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="text-sm bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-md transition-colors"
+                    >
+                      다시 시도
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 결과 통계 */}
+          {!loading && !error && (
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-secondary-600">
+                총 {filteredSchedules.length}개의 일정
+              </p>
+              <div className="flex gap-2">
+                {priorityFilter !== 'all' && getPriorityBadge(priorityFilter)}
+              </div>
+            </div>
+          )}
 
           {/* 탭 UI */}
-          <div className="flex gap-2 mb-6">
-            <button
-              className={`px-4 py-2 rounded-t-lg font-semibold border-b-2 transition-all duration-150 ${activeTab === 'working' ? 'border-primary-500 text-primary-700 bg-white' : 'border-transparent text-secondary-400 bg-secondary-100'}`}
-              onClick={() => setActiveTab('working')}
-            >
-              진행일정
-            </button>
-            <button
-              className={`px-4 py-2 rounded-t-lg font-semibold border-b-2 transition-all duration-150 ${activeTab === 'done' ? 'border-primary-500 text-primary-700 bg-white' : 'border-transparent text-secondary-400 bg-secondary-100'}`}
-              onClick={() => setActiveTab('done')}
-            >
-              지난일정
-            </button>
-          </div>
+          {!loading && !error && (
+            <div className="flex gap-2 mb-6">
+              <button
+                className={`px-4 py-2 rounded-t-lg font-semibold border-b-2 transition-all duration-150 ${activeTab === 'working' ? 'border-primary-500 text-primary-700 bg-white' : 'border-transparent text-secondary-400 bg-secondary-100'}`}
+                onClick={() => setActiveTab('working')}
+              >
+                진행일정
+              </button>
+              <button
+                className={`px-4 py-2 rounded-t-lg font-semibold border-b-2 transition-all duration-150 ${activeTab === 'done' ? 'border-primary-500 text-primary-700 bg-white' : 'border-transparent text-secondary-400 bg-secondary-100'}`}
+                onClick={() => setActiveTab('done')}
+              >
+                지난일정
+              </button>
+            </div>
+          )}
 
           {/* 영역별 카드 리스트 - 탭에 따라 분기 */}
-          {activeTab === 'working' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {areaOrder.map(area => (
-                <div
-                  key={area.key}
-                  className={`rounded-xl p-4 shadow-sm border ${area.color} ${area.border}`}
-                >
-                  <div className={`font-semibold mb-2 flex items-center justify-between ${area.text}`}>
-                    <span>{area.label}</span>
-                    <span className="text-xs font-normal">{workingSchedules.filter(s => s.type === area.key).length}개 일정</span>
+          {!loading && !error && (
+            activeTab === 'working' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {areaOrder.map(area => (
+                  <div
+                    key={area.key}
+                    className={`rounded-xl p-4 shadow-sm border ${area.color} ${area.border}`}
+                  >
+                    <div className={`font-semibold mb-2 flex items-center justify-between ${area.text}`}>
+                      <span>{area.label}</span>
+                      <span className="text-xs font-normal">{workingSchedules.filter(s => s.type === area.key).length}개 일정</span>
+                    </div>
+                    {workingSchedules.filter(s => s.type === area.key).length === 0 ? (
+                      <div className="text-secondary-400 text-sm py-8 text-center">일정이 없습니다</div>
+                    ) : (
+                      <ul className="space-y-3">
+                        {workingSchedules.filter(s => s.type === area.key).map(schedule => (
+                          <li key={schedule.id} className="bg-white rounded-lg p-3 shadow border border-secondary-100 flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <input type="checkbox" className="accent-primary-500" />
+                              <span className="font-medium text-secondary-900 flex-1">{schedule.title}</span>
+                              {schedule.adjusted && <Badge variant="info" size="sm">조정 완료</Badge>}
+                              <button className="text-xs text-red-500 hover:underline ml-2">삭제</button>
+                              <button className="text-xs text-primary-500 hover:underline">수정</button>
+                            </div>
+                            <div className="text-xs text-secondary-600">{schedule.description}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant={schedule.priority === 'high' ? 'danger' : schedule.priority === 'medium' ? 'warning' : 'success'} size="sm">
+                                {schedule.priority === 'high' ? '높음' : schedule.priority === 'medium' ? '보통' : '낮음'}
+                              </Badge>
+                              <span className="text-xs text-secondary-400">{schedule.startTime?.slice(0, 10)}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {workingSchedules.filter(s => s.type === area.key).length === 0 ? (
-                    <div className="text-secondary-400 text-sm py-8 text-center">일정이 없습니다</div>
-                  ) : (
-                    <ul className="space-y-3">
-                      {workingSchedules.filter(s => s.type === area.key).map(schedule => (
-                        <li key={schedule.id} className="bg-white rounded-lg p-3 shadow border border-secondary-100 flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <input type="checkbox" className="accent-primary-500" />
-                            <span className="font-medium text-secondary-900 flex-1">{schedule.title}</span>
-                            {schedule.adjusted && <Badge variant="info" size="sm">조정 완료</Badge>}
-                            <button className="text-xs text-red-500 hover:underline ml-2">삭제</button>
-                            <button className="text-xs text-primary-500 hover:underline">수정</button>
-                          </div>
-                          <div className="text-xs text-secondary-600">{schedule.description}</div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={schedule.priority === 'high' ? 'danger' : schedule.priority === 'medium' ? 'warning' : 'success'} size="sm">
-                              {schedule.priority === 'high' ? '높음' : schedule.priority === 'medium' ? '보통' : '낮음'}
-                            </Badge>
-                            <span className="text-xs text-secondary-400">{schedule.startTime?.slice(0, 10)}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {areaOrder.map(area => (
-                <div
-                  key={area.key}
-                  className={`rounded-xl p-4 shadow-sm border ${area.color} ${area.border}`}
-                >
-                  <div className={`font-semibold mb-2 flex items-center justify-between ${area.text}`}>
-                    <span>{area.label}</span>
-                    <span className="text-xs font-normal">{doneSchedules.filter(s => s.type === area.key).length}개 일정</span>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {areaOrder.map(area => (
+                  <div
+                    key={area.key}
+                    className={`rounded-xl p-4 shadow-sm border ${area.color} ${area.border}`}
+                  >
+                    <div className={`font-semibold mb-2 flex items-center justify-between ${area.text}`}>
+                      <span>{area.label}</span>
+                      <span className="text-xs font-normal">{doneSchedules.filter(s => s.type === area.key).length}개 일정</span>
+                    </div>
+                    {doneSchedules.filter(s => s.type === area.key).length === 0 ? (
+                      <div className="text-secondary-400 text-sm py-8 text-center">완료된 일정이 없습니다</div>
+                    ) : (
+                      <ul className="space-y-3">
+                        {doneSchedules.filter(s => s.type === area.key).map(schedule => (
+                          <li key={schedule.id} className="bg-white rounded-lg p-3 shadow border border-secondary-100 flex flex-col gap-1 opacity-60">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-secondary-900 flex-1 line-through">{schedule.title}</span>
+                              <Badge variant="secondary" size="sm">완료</Badge>
+                            </div>
+                            <div className="text-xs text-secondary-400 line-through">{schedule.description}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant={schedule.priority === 'high' ? 'danger' : schedule.priority === 'medium' ? 'warning' : 'success'} size="sm">
+                                {schedule.priority === 'high' ? '높음' : schedule.priority === 'medium' ? '보통' : '낮음'}
+                              </Badge>
+                              <span className="text-xs text-secondary-400">{schedule.startTime?.slice(0, 10)}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {doneSchedules.filter(s => s.type === area.key).length === 0 ? (
-                    <div className="text-secondary-400 text-sm py-8 text-center">완료된 일정이 없습니다</div>
-                  ) : (
-                    <ul className="space-y-3">
-                      {doneSchedules.filter(s => s.type === area.key).map(schedule => (
-                        <li key={schedule.id} className="bg-white rounded-lg p-3 shadow border border-secondary-100 flex flex-col gap-1 opacity-60">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-secondary-900 flex-1 line-through">{schedule.title}</span>
-                            <Badge variant="secondary" size="sm">완료</Badge>
-                          </div>
-                          <div className="text-xs text-secondary-400 line-through">{schedule.description}</div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={schedule.priority === 'high' ? 'danger' : schedule.priority === 'medium' ? 'warning' : 'success'} size="sm">
-                              {schedule.priority === 'high' ? '높음' : schedule.priority === 'medium' ? '보통' : '낮음'}
-                            </Badge>
-                            <span className="text-xs text-secondary-400">{schedule.startTime?.slice(0, 10)}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
 
           {/* 자동 조정 모달 */}
