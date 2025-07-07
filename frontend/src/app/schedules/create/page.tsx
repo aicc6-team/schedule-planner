@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import Badge from '@/components/Badge';
 import Toast, { ToastProps } from '@/components/Toast';
@@ -51,15 +51,91 @@ const scheduleTypes = [
   }
 ];
 
+// API 호출 함수들
+const API_BASE_URL = 'http://localhost:3001';
 
+const fetchPersonalSchedule = async (id: string) => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/personal/${id}`);
+  if (!response.ok) {
+    throw new Error('개인 일정을 불러오는데 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+const fetchDepartmentSchedule = async (id: string) => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/department/${id}`);
+  if (!response.ok) {
+    throw new Error('부서 일정을 불러오는데 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+const fetchProjectSchedule = async (id: string) => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/project/${id}`);
+  if (!response.ok) {
+    throw new Error('프로젝트 일정을 불러오는데 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+// 업데이트 API 호출 함수들
+const updatePersonalSchedule = async (id: string, data: any) => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/personal/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    throw new Error('개인 일정 수정에 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+const updateDepartmentSchedule = async (id: string, data: any) => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/department/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    throw new Error('부서 일정 수정에 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
+
+const updateProjectSchedule = async (id: string, data: any) => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/project/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    throw new Error('프로젝트 일정 수정에 실패했습니다.');
+  }
+  const result = await response.json();
+  return result.data;
+};
 
 export default function ScheduleCreatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // URL 파라미터 받기
+  const mode = searchParams.get('mode'); // 'edit' 또는 null
+  const scheduleId = searchParams.get('id');
+  const scheduleType = searchParams.get('type');
+  const isEditMode = mode === 'edit' && scheduleId && scheduleType;
   
   // 에러 및 알림 상태
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const [isLoading, setIsLoading] = useState(!!isEditMode);
 
   // Toast 관리 함수
   const addToast = (toast: Omit<ToastProps, 'id' | 'onClose'>) => {
@@ -115,6 +191,80 @@ export default function ScheduleCreatePage() {
     },
     status: 'pending',
   });
+
+  // 수정 모드일 때 기존 데이터 불러오기
+  useEffect(() => {
+    if (isEditMode) {
+      loadScheduleData();
+    }
+  }, [isEditMode]);
+
+  const loadScheduleData = async () => {
+    try {
+      setIsLoading(true);
+      
+      let scheduleData;
+      if (scheduleType === 'personal') {
+        scheduleData = await fetchPersonalSchedule(scheduleId!);
+        setPersonalForm({
+          title: scheduleData.title || '',
+          description: scheduleData.description || '',
+          date: scheduleData.date || '',
+          time: scheduleData.time || '',
+          durationMinutes: scheduleData.durationMinutes || 30,
+          importance: scheduleData.importance || 'medium',
+          emotion: scheduleData.emotion || 'normal',
+          status: scheduleData.status || 'pending',
+        });
+      } else if (scheduleType === 'department') {
+        scheduleData = await fetchDepartmentSchedule(scheduleId!);
+        setDepartmentForm({
+          title: scheduleData.title || '',
+          objective: scheduleData.objective || '',
+          date: scheduleData.date || '',
+          time: scheduleData.time || '',
+          participants: scheduleData.participants || [],
+          status: scheduleData.status || 'pending',
+        });
+      } else if (scheduleType === 'project') {
+        scheduleData = await fetchProjectSchedule(scheduleId!);
+        setProjectForm({
+          projectName: scheduleData.projectName || '',
+          objective: scheduleData.objective || '',
+          category: scheduleData.category || '',
+          endDate: scheduleData.endDate || '',
+          time: scheduleData.time || '',
+          roles: scheduleData.roles || {
+            pm: 0,
+            backend: 0,
+            frontend: 0,
+            designer: 0,
+            marketer: 0,
+            sales: 0,
+            general: 0,
+            others: 0,
+          },
+          status: scheduleData.status || 'pending',
+        });
+      }
+      
+      addToast({
+        type: 'success',
+        title: '일정 로드 완료',
+        message: '기존 일정 정보를 불러왔습니다.',
+      });
+      
+    } catch (error) {
+      console.error('일정 로드 실패:', error);
+      addToast({
+        type: 'error',
+        title: '일정 로드 실패',
+        message: '기존 일정을 불러오는데 실패했습니다.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 각 폼의 입력 핸들러
   const handlePersonalChange = (field: string, value: any) => {
@@ -271,12 +421,24 @@ export default function ScheduleCreatePage() {
         projectId: '', // 기본값
         assignee: '사용자' // 기본값
       };
-      await createPersonalSchedule(scheduleData);
-      addToast({ 
-        type: 'success', 
-        title: '저장 완료', 
-        message: '개인 일정이 성공적으로 저장되었습니다.' 
-      });
+      
+      if (isEditMode && scheduleType === 'personal') {
+        await updatePersonalSchedule(scheduleId!, scheduleData);
+        addToast({ 
+          type: 'success', 
+          title: '수정 완료', 
+          message: '개인 일정이 성공적으로 수정되었습니다.' 
+        });
+        // 수정 완료 후 일정 관리 페이지로 이동
+        setTimeout(() => router.push('/schedules'), 1000);
+      } else {
+        await createPersonalSchedule(scheduleData);
+        addToast({ 
+          type: 'success', 
+          title: '저장 완료', 
+          message: '개인 일정이 성공적으로 저장되었습니다.' 
+        });
+      }
       // 폼 초기화
       setPersonalForm({
         title: '',
@@ -320,12 +482,24 @@ export default function ScheduleCreatePage() {
         projectId: '', // 기본값
         organizer: '관리자' // 기본값
       };
-      await createDepartmentSchedule(scheduleData);
-      addToast({ 
-        type: 'success', 
-        title: '저장 완료', 
-        message: '부서 일정이 성공적으로 저장되었습니다.' 
-      });
+      
+      if (isEditMode && scheduleType === 'department') {
+        await updateDepartmentSchedule(scheduleId!, scheduleData);
+        addToast({ 
+          type: 'success', 
+          title: '수정 완료', 
+          message: '부서 일정이 성공적으로 수정되었습니다.' 
+        });
+        // 수정 완료 후 일정 관리 페이지로 이동
+        setTimeout(() => router.push('/schedules'), 1000);
+      } else {
+        await createDepartmentSchedule(scheduleData);
+        addToast({ 
+          type: 'success', 
+          title: '저장 완료', 
+          message: '부서 일정이 성공적으로 저장되었습니다.' 
+        });
+      }
       // 폼 초기화
       setDepartmentForm({
         title: '',
@@ -367,12 +541,24 @@ export default function ScheduleCreatePage() {
         startDate: projectForm.endDate, // 종료일과 동일하게 설정
         participants: [] // 기본값
       };
-      await createProjectSchedule(scheduleData);
-      addToast({ 
-        type: 'success', 
-        title: '저장 완료', 
-        message: '프로젝트 일정이 성공적으로 저장되었습니다.' 
-      });
+      
+      if (isEditMode && scheduleType === 'project') {
+        await updateProjectSchedule(scheduleId!, scheduleData);
+        addToast({ 
+          type: 'success', 
+          title: '수정 완료', 
+          message: '프로젝트 일정이 성공적으로 수정되었습니다.' 
+        });
+        // 수정 완료 후 일정 관리 페이지로 이동
+        setTimeout(() => router.push('/schedules'), 1000);
+      } else {
+        await createProjectSchedule(scheduleData);
+        addToast({ 
+          type: 'success', 
+          title: '저장 완료', 
+          message: '프로젝트 일정이 성공적으로 저장되었습니다.' 
+        });
+      }
       // 폼 초기화
       setProjectForm({
         projectName: '',
@@ -411,15 +597,23 @@ export default function ScheduleCreatePage() {
           <div className="flex items-center justify-between">
             <div>
               <nav className="text-sm text-slate-500 mb-2">
-                <span>일정 관리</span> <span className="mx-2">/</span> <span className="text-slate-700">새 일정 추가</span>
+                <span>일정 관리</span> <span className="mx-2">/</span> <span className="text-slate-700">{isEditMode ? '일정 수정' : '새 일정 추가'}</span>
               </nav>
-              <h1 className="text-2xl font-bold text-slate-900">새 일정 추가</h1>
-              <p className="text-slate-600 mt-1">새로운 일정을 등록하고 관리하세요</p>
+              <h1 className="text-2xl font-bold text-slate-900">{isEditMode ? '일정 수정' : '새 일정 추가'}</h1>
+              <p className="text-slate-600 mt-1">{isEditMode ? '기존 일정을 수정하고 관리하세요' : '새로운 일정을 등록하고 관리하세요'}</p>
             </div>
           </div>
         </div>
         <div className="p-8">
-          <div className="max-w-7xl mx-auto">
+          {isLoading ? (
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <span className="ml-3 text-secondary-600">일정 정보를 불러오고 있습니다...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-7xl mx-auto">
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="flex-1 flex flex-col items-center mb-4">
                 <h2 className="text-2xl font-bold text-blue-600 mb-2">개인</h2>
@@ -781,6 +975,7 @@ export default function ScheduleCreatePage() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </main>
       

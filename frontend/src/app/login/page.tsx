@@ -1,17 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { signIn, getSession, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // 이미 로그인된 사용자는 대시보드로 리다이렉트
+  useEffect(() => {
+    if (session) {
+      router.push('/dashboard');
+    }
+  }, [session, router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: 로그인 로직 구현
     console.log('로그인 시도:', { email, password });
   };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signIn('google', { 
+        callbackUrl: '/dashboard',
+        redirect: false
+      });
+      
+      if (result?.error) {
+        console.error('로그인 에러:', result.error);
+        // TODO: 에러 토스트 표시
+      }
+    } catch (error) {
+      console.error('로그인 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 로딩 중이거나 이미 로그인된 경우 로딩 상태 표시
+  if (status === 'loading' || session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-secondary-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-secondary-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary-50">

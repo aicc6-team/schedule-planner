@@ -141,7 +141,7 @@ export default function DashboardPage() {
           </div>
 
           {/* 빠른 액션 */}
-          <div className="card">
+          <div className="card mt-8">
             <h2 className="text-lg font-semibold text-secondary-900 mb-4">빠른 액션</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button 

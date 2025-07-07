@@ -59,6 +59,70 @@ const fetchAllSchedules = async (): Promise<{personal: PersonalSchedule[], depar
   return result.data;
 };
 
+
+
+// 삭제 API 호출 함수들 추가
+const deletePersonalSchedule = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/personal/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) {
+    throw new Error('개인 일정 삭제에 실패했습니다.');
+  }
+};
+
+const deleteDepartmentSchedule = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/department/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) {
+    throw new Error('부서 일정 삭제에 실패했습니다.');
+  }
+};
+
+const deleteProjectSchedule = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/project/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) {
+    throw new Error('프로젝트 일정 삭제에 실패했습니다.');
+  }
+};
+
+// 완료 처리 API 호출 함수들 추가
+const completePersonalSchedule = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/personal/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'completed' })
+  });
+  if (!response.ok) {
+    throw new Error('개인 일정 완료 처리에 실패했습니다.');
+  }
+};
+
+const completeDepartmentSchedule = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/department/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'completed' })
+  });
+  if (!response.ok) {
+    throw new Error('부서 일정 완료 처리에 실패했습니다.');
+  }
+};
+
+const completeProjectSchedule = async (id: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/project/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'completed' })
+  });
+  if (!response.ok) {
+    throw new Error('프로젝트 일정 완료 처리에 실패했습니다.');
+  }
+};
+
 // 백엔드 데이터 타입 정의
 interface PersonalSchedule {
   id: string;
@@ -117,6 +181,7 @@ interface Schedule {
   assignee?: string;
   project?: string;
   adjusted?: boolean;
+  status?: 'pending' | 'completed';
 }
 
 // 백엔드 데이터를 프론트엔드 Schedule 타입으로 변환하는 함수들
@@ -133,7 +198,8 @@ const transformPersonalSchedule = (personalSchedule: PersonalSchedule): Schedule
     priority: personalSchedule.importance === '높음' ? 'high' : personalSchedule.importance === '보통' ? 'medium' : 'low',
     type: 'personal',
     assignee: '개인',
-    project: '개인 일정'
+    project: '개인 일정',
+    status: (personalSchedule as any).status || 'pending'
   };
 };
 
@@ -151,7 +217,8 @@ const transformDepartmentSchedule = (departmentSchedule: DepartmentSchedule): Sc
     priority: 'medium', // 부서 일정은 기본적으로 중간 우선순위
     type: 'department',
     assignee: departmentSchedule.participants[0] || '부서',
-    project: '부서 일정'
+    project: '부서 일정',
+    status: (departmentSchedule as any).status || 'pending'
   };
 };
 
@@ -169,7 +236,8 @@ const transformProjectSchedule = (projectSchedule: ProjectSchedule): Schedule =>
     priority: 'high', // 프로젝트 마감은 높은 우선순위
     type: 'project',
     assignee: 'PM',
-    project: projectSchedule.projectName
+    project: projectSchedule.projectName,
+    status: (projectSchedule as any).status || 'pending'
   };
 };
 
@@ -237,6 +305,8 @@ export default function SchedulesPage() {
   const [activeTab, setActiveTab] = useState<'working' | 'done'>('working');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingSchedule, setDeletingSchedule] = useState<Schedule | null>(null);
 
   // 데이터 가져오기
   useEffect(() => {
@@ -293,10 +363,19 @@ export default function SchedulesPage() {
     return matchesSearch && matchesPriority && matchesType;
   });
 
-  // 일정 필터링 (탭별)
+  // 일정 필터링 (탭별) - 완료 상태와 날짜 기준으로 수정
   const now = new Date();
-  const workingSchedules = filteredSchedules.filter(s => new Date(s.endTime) >= now) as Schedule[];
-  const doneSchedules = filteredSchedules.filter(s => new Date(s.endTime) < now) as Schedule[];
+  const workingSchedules = filteredSchedules.filter(s => 
+    s.status !== 'completed' && new Date(s.endTime) >= now
+  ) as Schedule[];
+  const doneSchedules = filteredSchedules.filter(s => 
+    s.status === 'completed' || new Date(s.endTime) < now
+  ) as Schedule[];
+
+  // 미완료 일정 판별 함수
+  const isIncomplete = (schedule: Schedule) => {
+    return schedule.status !== 'completed' && new Date(schedule.endTime) < now;
+  };
 
   // 영역별 일정 분류
   const areaSchedules = areaOrder.reduce((acc, area) => {
@@ -378,6 +457,143 @@ export default function SchedulesPage() {
     setAdjusted([]);
     setShowAdjustModal(false);
   }
+
+  // 일정 수정 핸들러
+  const handleEditSchedule = (schedule: Schedule) => {
+    // 수정 모드로 create 페이지로 이동
+    router.push(`/schedules/create?mode=edit&id=${schedule.id}&type=${schedule.type}`);
+  };
+
+  // 일정 삭제 핸들러
+  const handleDeleteSchedule = (schedule: Schedule) => {
+    setDeletingSchedule(schedule);
+    setShowDeleteModal(true);
+  };
+
+  // 일정 완료 처리 핸들러
+  const handleCompleteSchedule = async (schedule: Schedule) => {
+    try {
+      setLoading(true);
+      
+      // 스케줄 타입에 따라 다른 API 호출
+      if (schedule.type === 'personal') {
+        await completePersonalSchedule(schedule.id);
+      } else if (schedule.type === 'department') {
+        await completeDepartmentSchedule(schedule.id);
+      } else if (schedule.type === 'project') {
+        await completeProjectSchedule(schedule.id);
+      }
+      
+      // 일정 목록 다시 로드
+      const allSchedules = await fetchAllSchedules();
+      const transformedSchedules = transformAllSchedules(allSchedules);
+      setSchedules(transformedSchedules);
+      
+      // 성공 토스트
+      if ((window as any).showToast) {
+        (window as any).showToast({
+          type: 'success',
+          title: '일정 완료',
+          message: '일정이 완료 처리되어 지난일정으로 이동했습니다.',
+        });
+      }
+    } catch (error) {
+      console.error('일정 완료 처리 실패:', error);
+      
+      // 에러 토스트
+      if ((window as any).showToast) {
+        (window as any).showToast({
+          type: 'error',
+          title: '완료 처리 실패',
+          message: '일정 완료 처리 중 오류가 발생했습니다. 다시 시도해주세요.',
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  // 일정 삭제 확인
+  const confirmDeleteSchedule = async () => {
+    if (!deletingSchedule) return;
+    
+    try {
+      setLoading(true);
+      
+      // 스케줄 타입에 따라 다른 API 호출
+      if (deletingSchedule.type === 'personal') {
+        await deletePersonalSchedule(deletingSchedule.id);
+      } else if (deletingSchedule.type === 'department') {
+        await deleteDepartmentSchedule(deletingSchedule.id);
+      } else if (deletingSchedule.type === 'project') {
+        await deleteProjectSchedule(deletingSchedule.id);
+      }
+      
+      // 일정 목록 다시 로드
+      const allSchedules = await fetchAllSchedules();
+      const transformedSchedules = transformAllSchedules(allSchedules);
+      setSchedules(transformedSchedules);
+      
+      setShowDeleteModal(false);
+      setDeletingSchedule(null);
+      
+      // 성공 토스트
+      if ((window as any).showToast) {
+        (window as any).showToast({
+          type: 'success',
+          title: '일정 삭제 완료',
+          message: '일정이 성공적으로 삭제되었습니다.',
+        });
+      }
+    } catch (error) {
+      console.error('일정 삭제 실패:', error);
+      
+      // 에러 토스트
+      if ((window as any).showToast) {
+        (window as any).showToast({
+          type: 'error',
+          title: '일정 삭제 실패',
+          message: '일정 삭제 중 오류가 발생했습니다. 다시 시도해주세요.',
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 마감일 지난 일정 자동 완료 처리
+  useEffect(() => {
+    const checkExpiredSchedules = () => {
+      const now = new Date();
+      const expiredSchedules = schedules.filter(schedule => {
+        const endTime = new Date(schedule.endTime);
+        return endTime < now && !schedule.adjusted; // 아직 완료 처리되지 않은 일정만
+      });
+      
+      if (expiredSchedules.length > 0) {
+        console.log(`${expiredSchedules.length}개의 일정이 마감되었습니다.`);
+        
+        // 성공 토스트
+        if ((window as any).showToast) {
+          (window as any).showToast({
+            type: 'info',
+            title: '마감된 일정',
+            message: `${expiredSchedules.length}개의 일정이 마감되어 지난일정으로 이동했습니다.`,
+          });
+        }
+      }
+    };
+    
+    // 초기 체크
+    checkExpiredSchedules();
+    
+    // 1분마다 체크
+    const interval = setInterval(checkExpiredSchedules, 60000);
+    
+    return () => clearInterval(interval);
+  }, [schedules]);
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -521,8 +737,25 @@ export default function SchedulesPage() {
                               <input type="checkbox" className="accent-primary-500" />
                               <span className="font-medium text-secondary-900 flex-1">{schedule.title}</span>
                               {schedule.adjusted && <Badge variant="info" size="sm">조정 완료</Badge>}
-                              <button className="text-xs text-red-500 hover:underline ml-2">삭제</button>
-                              <button className="text-xs text-primary-500 hover:underline">수정</button>
+                              {isIncomplete(schedule) && <Badge variant="danger" size="sm">미완료</Badge>}
+                              <button 
+                                onClick={() => handleCompleteSchedule(schedule)} 
+                                className="text-xs text-green-600 hover:underline"
+                              >
+                                완료
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteSchedule(schedule)} 
+                                className="text-xs text-red-500 hover:underline ml-2"
+                              >
+                                삭제
+                              </button>
+                              <button 
+                                onClick={() => handleEditSchedule(schedule)} 
+                                className="text-xs text-primary-500 hover:underline"
+                              >
+                                수정
+                              </button>
                             </div>
                             <div className="text-xs text-secondary-600">{schedule.description}</div>
                             <div className="flex items-center gap-2 mt-1">
@@ -557,7 +790,6 @@ export default function SchedulesPage() {
                           <li key={schedule.id} className="bg-white rounded-lg p-3 shadow border border-secondary-100 flex flex-col gap-1 opacity-60">
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-secondary-900 flex-1 line-through">{schedule.title}</span>
-                              <Badge variant="secondary" size="sm">완료</Badge>
                             </div>
                             <div className="text-xs text-secondary-400 line-through">{schedule.description}</div>
                             <div className="flex items-center gap-2 mt-1">
@@ -599,6 +831,41 @@ export default function SchedulesPage() {
               <button className="btn-secondary" onClick={cancelAdjustment}>취소</button>
               <button className="btn-primary" onClick={applyAdjustment}>적용</button>
             </div>
+          </Modal>
+
+
+
+          {/* 일정 삭제 확인 모달 */}
+          <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="일정 삭제">
+            {deletingSchedule && (
+              <div className="space-y-4">
+                <div className="text-secondary-700">
+                  <p>다음 일정을 삭제하시겠습니까?</p>
+                  <div className="mt-2 p-3 bg-secondary-50 rounded-lg">
+                    <p className="font-medium">{deletingSchedule.title}</p>
+                    <p className="text-sm text-secondary-600">{deletingSchedule.description}</p>
+                    <p className="text-sm text-secondary-500 mt-1">
+                      {new Date(deletingSchedule.startTime).toLocaleDateString('ko-KR')} {new Date(deletingSchedule.startTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-red-600 text-sm">이 작업은 되돌릴 수 없습니다.</p>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button 
+                    className="btn-secondary" 
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    취소
+                  </button>
+                  <button 
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors" 
+                    onClick={confirmDeleteSchedule}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            )}
           </Modal>
         </div>
       </main>
