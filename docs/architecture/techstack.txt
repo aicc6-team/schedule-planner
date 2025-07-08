@@ -28,8 +28,7 @@ npm install recoil
 # Firebase 클라이언트 연동
 npm install firebase
 
-# Google OAuth 및 Calendar API
-npm install @react-oauth/google
+
 
 # 날짜 처리
 npm install date-fns

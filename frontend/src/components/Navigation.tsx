@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -25,6 +25,76 @@ const navigation = [
   { name: '분석', href: '/analytics', icon: ChartBarIcon },
   { name: '설정', href: '/settings', icon: Cog6ToothIcon },
 ];
+
+// Google 로그인 컴포넌트
+function GoogleAuth() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [tokens, setTokens] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // localStorage에서 토큰 확인
+    const savedTokens = localStorage.getItem('google_tokens');
+    if (savedTokens) {
+      try {
+        const parsedTokens = JSON.parse(savedTokens);
+        setTokens(parsedTokens);
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error('토큰 파싱 오류:', error);
+        localStorage.removeItem('google_tokens');
+      }
+    }
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/google');
+      const data = await response.json();
+      
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+    } catch (error) {
+      console.error('로그인 오류:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('google_tokens');
+    setTokens(null);
+    setIsLoggedIn(false);
+  };
+
+  if (isLoggedIn) {
+    return (
+      <div className="space-y-2">
+        <div className="text-xs text-green-600 text-center font-medium">
+          ✅ Google 연동됨
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full text-xs bg-red-100 text-red-700 px-3 py-2 rounded-md hover:bg-red-200 transition-colors"
+        >
+          로그아웃
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleGoogleLogin}
+      disabled={isLoading}
+      className="w-full text-xs bg-blue-100 text-blue-700 px-3 py-2 rounded-md hover:bg-blue-200 transition-colors disabled:opacity-50"
+    >
+      {isLoading ? '연결 중...' : '🔗 Google 로그인'}
+    </button>
+  );
+}
 
 export default function Navigation() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -66,9 +136,7 @@ export default function Navigation() {
             })}
           </nav>
           <div className="border-t border-secondary-200 p-4">
-            <div className="text-xs text-secondary-500 text-center">
-              개발 모드 - 로그인 비활성화
-            </div>
+            <GoogleAuth />
           </div>
         </div>
       </div>
@@ -99,9 +167,7 @@ export default function Navigation() {
             })}
           </nav>
           <div className="border-t border-secondary-200 p-4">
-            <div className="text-xs text-secondary-500 text-center">
-              개발 모드 - 로그인 비활성화
-            </div>
+            <GoogleAuth />
           </div>
         </div>
       </div>

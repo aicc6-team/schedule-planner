@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation';
 import ScheduleCard from '@/components/ScheduleCard';
 import ProjectCard from '@/components/ProjectCard';
 import StatsCard from '@/components/StatsCard';
+import GoogleCalendarEvents from '@/components/GoogleCalendarEvents';
 import { 
   CalendarIcon, 
   UserGroupIcon, 
@@ -12,7 +13,8 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 
 // 임시 데이터
 const mockSchedules = [
@@ -70,8 +72,27 @@ const stats = [
   { name: '지연 일정', value: '2', icon: ExclamationTriangleIcon, color: 'red' as const },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [googleTokens, setGoogleTokens] = useState<any>(null);
+
+  // URL 파라미터에서 토큰 읽기
+  useEffect(() => {
+    const tokensParam = searchParams.get('tokens');
+    if (tokensParam) {
+      try {
+        const tokens = JSON.parse(decodeURIComponent(tokensParam));
+        setGoogleTokens(tokens);
+        
+        // URL에서 토큰 제거 (보안상)
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      } catch (error) {
+        console.error('토큰 파싱 오류:', error);
+      }
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-secondary-50">
@@ -98,7 +119,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* 오늘의 일정 */}
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -117,6 +138,11 @@ export default function DashboardPage() {
                   />
                 ))}
               </div>
+            </div>
+
+            {/* Google Calendar 이벤트 */}
+            <div>
+              <GoogleCalendarEvents tokens={googleTokens} />
             </div>
 
             {/* 진행중인 프로젝트 */}
@@ -193,5 +219,22 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-secondary-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-4 text-secondary-600">대시보드 로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 } 
