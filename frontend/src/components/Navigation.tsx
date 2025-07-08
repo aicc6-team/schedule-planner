@@ -49,12 +49,18 @@ function GoogleAuth() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
+    console.log('Google 로그인 버튼 클릭됨');
     try {
       const response = await fetch('/api/auth/google');
+      console.log('Google 로그인 API fetch 완료, 응답:', response);
       const data = await response.json();
-      
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
+      console.log('Google 로그인 API 응답 데이터:', data);
+
+      if (data.data && data.data.authUrl) {
+        console.log('authUrl 존재, 리다이렉트 시도:', data.data.authUrl);
+        window.location.href = data.data.authUrl;
+      } else {
+        console.error('authUrl이 응답에 없음:', data);
       }
     } catch (error) {
       console.error('로그인 오류:', error);
