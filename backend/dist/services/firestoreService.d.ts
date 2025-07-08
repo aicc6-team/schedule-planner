@@ -60,5 +60,17 @@ export declare const firestoreService: {
         department: DepartmentSchedule[];
         project: ProjectSchedule[];
     }>;
+    createPersonalSchedule(data: Omit<PersonalSchedule, "id" | "createdAt" | "updatedAt">): Promise<PersonalSchedule>;
+    getPersonalScheduleById(id: string): Promise<PersonalSchedule | null>;
+    updatePersonalSchedule(id: string, data: Partial<PersonalSchedule>): Promise<PersonalSchedule | null>;
+    deletePersonalSchedule(id: string): Promise<boolean>;
+    createDepartmentSchedule(data: Omit<DepartmentSchedule, "id" | "createdAt" | "updatedAt">): Promise<DepartmentSchedule>;
+    getDepartmentScheduleById(id: string): Promise<DepartmentSchedule | null>;
+    updateDepartmentSchedule(id: string, data: Partial<DepartmentSchedule>): Promise<DepartmentSchedule | null>;
+    deleteDepartmentSchedule(id: string): Promise<boolean>;
+    createProjectSchedule(data: Omit<ProjectSchedule, "id" | "createdAt" | "updatedAt">): Promise<ProjectSchedule>;
+    getProjectScheduleById(id: string): Promise<ProjectSchedule | null>;
+    updateProjectSchedule(id: string, data: Partial<ProjectSchedule>): Promise<ProjectSchedule | null>;
+    deleteProjectSchedule(id: string): Promise<boolean>;
 };
 //# sourceMappingURL=firestoreService.d.ts.map

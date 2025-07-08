@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import Badge from '@/components/Badge';
@@ -121,7 +121,8 @@ const updateProjectSchedule = async (id: string, data: any) => {
   return result.data;
 };
 
-export default function ScheduleCreatePage() {
+// useSearchParams를 사용하는 컴포넌트를 분리
+function ScheduleCreateContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -986,5 +987,13 @@ export default function ScheduleCreatePage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function ScheduleCreatePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ScheduleCreateContent />
+    </Suspense>
   );
 } 

@@ -131,14 +131,14 @@ export const scheduleController = {
         });
       }
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: schedule,
         message: '개인 일정 조회 성공'
       });
     } catch (error) {
       console.error('개인 일정 조회 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '개인 일정을 조회하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -165,14 +165,14 @@ export const scheduleController = {
         });
       }
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: schedule,
         message: '개인 일정 수정 성공'
       });
     } catch (error) {
       console.error('개인 일정 수정 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '개인 일정을 수정하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -192,13 +192,13 @@ export const scheduleController = {
       }
       await firestoreService.deletePersonalSchedule(id);
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: '개인 일정 삭제 성공'
       });
     } catch (error) {
       console.error('개인 일정 삭제 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '개인 일정을 삭제하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -246,14 +246,14 @@ export const scheduleController = {
         });
       }
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: schedule,
         message: '부서 일정 조회 성공'
       });
     } catch (error) {
       console.error('부서 일정 조회 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '부서 일정을 조회하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -280,14 +280,14 @@ export const scheduleController = {
         });
       }
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: schedule,
         message: '부서 일정 수정 성공'
       });
     } catch (error) {
       console.error('부서 일정 수정 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '부서 일정을 수정하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -307,13 +307,13 @@ export const scheduleController = {
       }
       await firestoreService.deleteDepartmentSchedule(id);
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: '부서 일정 삭제 성공'
       });
     } catch (error) {
       console.error('부서 일정 삭제 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '부서 일정을 삭제하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -361,14 +361,14 @@ export const scheduleController = {
         });
       }
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: schedule,
         message: '프로젝트 일정 조회 성공'
       });
     } catch (error) {
       console.error('프로젝트 일정 조회 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '프로젝트 일정을 조회하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -395,14 +395,14 @@ export const scheduleController = {
         });
       }
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: schedule,
         message: '프로젝트 일정 수정 성공'
       });
     } catch (error) {
       console.error('프로젝트 일정 수정 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '프로젝트 일정을 수정하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -422,13 +422,13 @@ export const scheduleController = {
       }
       await firestoreService.deleteProjectSchedule(id);
       
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: '프로젝트 일정 삭제 성공'
       });
     } catch (error) {
       console.error('프로젝트 일정 삭제 실패:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: '프로젝트 일정을 삭제하는 중 오류가 발생했습니다.',
         message: error instanceof Error ? error.message : '알 수 없는 오류'
