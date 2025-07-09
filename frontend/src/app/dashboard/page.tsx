@@ -25,9 +25,10 @@ const mockSchedules = [
     startTime: '2024-01-15T10:00:00',
     endTime: '2024-01-15T11:00:00',
     priority: 'high' as const,
-    type: 'team' as const,
+    type: 'department' as const,
     assignee: '홍길동',
     project: '웹사이트 리뉴얼',
+    status: 'pending' as const,
   },
   {
     id: '2',
@@ -39,6 +40,7 @@ const mockSchedules = [
     type: 'project' as const,
     assignee: '김철수',
     project: '웹사이트 리뉴얼',
+    status: 'pending' as const,
   },
 ];
 
@@ -135,9 +137,9 @@ function DashboardContent() {
                 {mockSchedules.map((schedule) => (
                   <ScheduleCard
                     key={schedule.id}
-                    {...schedule}
-                    onEdit={(id) => console.log('일정 수정:', id)}
-                    onDelete={(id) => console.log('일정 삭제:', id)}
+                    schedule={schedule}
+                    onEdit={(s) => console.log('일정 수정:', s.id)}
+                    onDelete={(s) => console.log('일정 삭제:', s.id)}
                   />
                 ))}
               </div>

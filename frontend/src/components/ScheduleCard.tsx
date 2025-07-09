@@ -1,171 +1,212 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  ClockIcon, 
-  UserIcon, 
-  CalendarIcon,
+import React from 'react';
+import { Schedule } from '@/types/schedule';
+import Badge from '@/components/Badge';
+import {
+  ClockIcon,
+  TagIcon,
+  UserCircleIcon,
   EllipsisVerticalIcon,
+  CheckCircleIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
+import { Menu, Transition } from '@headlessui/react';
 
 interface ScheduleCardProps {
-  id: string;
-  title: string;
-  description?: string;
-  startTime: string;
-  endTime: string;
-  priority: 'high' | 'medium' | 'low';
-  type: 'team' | 'project' | 'personal' | 'client' | 'design' | 'department' | 'company';
-  assignee?: string;
-  project?: string;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
+  schedule: Schedule;
+  onEdit: (schedule: Schedule) => void;
+  onDelete: (schedule: Schedule) => void;
+  onComplete?: (schedule: Schedule) => void;
+  isOverdue?: boolean;
 }
 
-const priorityColors = {
-  low: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-red-100 text-red-800',
-};
+const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete, onComplete, isOverdue }) => {
+  const { title, description, startTime, endTime, priority, type, assignee, project, status } = schedule;
 
-const priorityLabels = {
-  low: '낮음',
-  medium: '보통',
-  high: '높음',
-};
+  const getPriorityInfo = (priority: 'high' | 'medium' | 'low') => {
+    switch (priority) {
+      case 'high':
+        return {
+          text: '높음',
+          badgeVariant: 'danger',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-800',
+        } as const;
+      case 'medium':
+        return {
+          text: '보통',
+          badgeVariant: 'warning',
+          bgColor: 'bg-yellow-50',
+          borderColor: 'border-yellow-200',
+          textColor: 'text-yellow-800',
+        } as const;
+      case 'low':
+        return {
+          text: '낮음',
+          badgeVariant: 'success',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          textColor: 'text-green-800',
+        } as const;
+    }
+  };
 
-const typeClasses = {
-  personal: 'bg-blue-100 text-blue-800',
-  team: 'bg-green-100 text-green-800',
-  project: 'bg-purple-100 text-purple-800',
-  client: 'bg-orange-100 text-orange-800',
-  design: 'bg-pink-100 text-pink-800',
-  department: 'bg-cyan-100 text-cyan-800',
-  company: 'bg-gray-100 text-gray-800',
-};
+  const getTypeInfo = (type: 'personal' | 'department' | 'project' | 'company') => {
+    switch (type) {
+      case 'personal':
+        return { text: '개인', badgeVariant: 'primary' } as const;
+      case 'department':
+        return { text: '부서', badgeVariant: 'info' } as const;
+      case 'project':
+        return { text: '프로젝트', badgeVariant: 'purple' } as const;
+      case 'company':
+        return { text: '전사', badgeVariant: 'success' } as const;
+    }
+  };
+  
+  const priorityInfo = getPriorityInfo(priority);
+  const typeInfo = getTypeInfo(type);
 
-const typeLabels = {
-  personal: '개인',
-  team: '팀',
-  project: '프로젝트',
-  client: '고객',
-  design: '디자인',
-  department: '부서',
-  company: '회사',
-};
+  const cardClasses = `
+    rounded-lg border p-4 shadow-sm transition-all duration-200 flex flex-col h-full
+    ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-white'}
+    ${status === 'completed' ? 'opacity-60 bg-gray-50' : ''}
+  `;
 
-export default function ScheduleCard({
-  id,
-  title,
-  description,
-  startTime,
-  endTime,
-  priority,
-  type,
-  assignee,
-  project,
-  onEdit,
-  onDelete,
-}: ScheduleCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-
-  const formatTime = (time: string) => {
-    return new Date(time).toLocaleTimeString('ko-KR', {
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('ko-KR', {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
   };
 
-  const formatDate = (time: string) => {
-    return new Date(time).toLocaleDateString('ko-KR', {
-      month: 'short',
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR', {
+      month: 'long',
       day: 'numeric',
     });
   };
 
   return (
-    <div className="card hover:shadow-lg transition-shadow duration-200">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-secondary-900">{title}</h3>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${priorityColors[priority]}`}>
-              {priorityLabels[priority]}
-            </span>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${typeClasses[type]}`}>
-              {typeLabels[type]}
-            </span>
-          </div>
-          
-          {description && (
-            <p className="text-secondary-600 text-sm mb-3">{description}</p>
-          )}
-          
-          <div className="space-y-2">
-            <div className="flex items-center text-sm text-secondary-600">
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              {formatDate(startTime)}
-            </div>
-            
-            <div className="flex items-center text-sm text-secondary-600">
-              <ClockIcon className="h-4 w-4 mr-2" />
-              {formatTime(startTime)} - {formatTime(endTime)}
-            </div>
-            
-            {assignee && (
-              <div className="flex items-center text-sm text-secondary-600">
-                <UserIcon className="h-4 w-4 mr-2" />
-                {assignee}
-              </div>
-            )}
-            
-            {project && (
-              <div className="flex items-center text-sm text-secondary-600">
-                <span className="mr-2">📁</span>
-                {project}
-              </div>
-            )}
-          </div>
+    <div className={cardClasses}>
+      {/* 카드 헤더 */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex flex-col">
+          <h3 className={`font-bold text-lg ${status === 'completed' ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+            {title}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">{formatDate(startTime)}</p>
         </div>
-        
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-1 text-secondary-400 hover:text-secondary-600"
-          >
+
+        <Menu as="div" className="relative">
+          <Menu.Button className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <EllipsisVerticalIcon className="h-5 w-5" />
-          </button>
-          
-          {showMenu && (
-            <div className="absolute right-0 top-8 w-32 bg-white rounded-md shadow-lg border border-secondary-200 z-10">
-              <div className="py-1">
-                <button
-                  onClick={() => {
-                    onEdit?.(id);
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-100"
-                >
-                  <PencilIcon className="h-4 w-4 mr-2" />
-                  수정
-                </button>
-                <button
-                  onClick={() => {
-                    onDelete?.(id);
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                >
-                  <TrashIcon className="h-4 w-4 mr-2" />
-                  삭제
-                </button>
-              </div>
+          </Menu.Button>
+          <Transition
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
+          >
+            <Menu.Items className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              {status !== 'completed' && onComplete && !isOverdue && (
+                <Menu.Item>
+                  {({ active }: { active: boolean }) => (
+                    <button
+                      onClick={() => onComplete(schedule)}
+                      className={`${
+                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } group flex w-full items-center px-4 py-2 text-sm`}
+                    >
+                      <CheckCircleIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+                      완료
+                    </button>
+                  )}
+                </Menu.Item>
+              )}
+              <Menu.Item>
+                {({ active }: { active: boolean }) => (
+                  <button
+                    onClick={() => onEdit(schedule)}
+                    className={`${
+                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                    } group flex w-full items-center px-4 py-2 text-sm`}
+                  >
+                    <PencilIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+                    수정
+                  </button>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }: { active: boolean }) => (
+                  <button
+                    onClick={() => onDelete(schedule)}
+                    className={`${
+                      active ? 'bg-red-50 text-red-900' : 'text-red-700'
+                    } group flex w-full items-center px-4 py-2 text-sm`}
+                  >
+                    <TrashIcon className="mr-3 h-5 w-5 text-red-400 group-hover:text-red-500" />
+                    삭제
+                  </button>
+                )}
+              </Menu.Item>
+            </Menu.Items>
+          </Transition>
+        </Menu>
+      </div>
+
+      {/* 카드 본문 */}
+      <div className="flex-grow">
+        <p className={`text-sm ${status === 'completed' ? 'text-gray-400' : 'text-gray-600'}`}>{description}</p>
+      </div>
+
+      {/* 카드 푸터 */}
+      <div className="mt-4 pt-3 border-t border-gray-200">
+        <div className="flex items-center justify-between text-sm text-gray-500">
+           <div className="flex items-center gap-1">
+             <ClockIcon className="h-4 w-4" />
+             <span>{formatTime(startTime)} - {formatTime(endTime)}</span>
+           </div>
+           <Badge variant={priorityInfo.badgeVariant} size="sm">{priorityInfo.text}</Badge>
+        </div>
+        <div className="flex items-center justify-between mt-2 text-sm">
+          <div className="flex items-center gap-1 text-gray-500">
+            <TagIcon className="h-4 w-4" />
+            <span>{project}</span>
+          </div>
+          <Badge variant={typeInfo.badgeVariant} size="sm">{typeInfo.text}</Badge>
+        </div>
+        <div className="flex items-center justify-between mt-2 text-sm text-gray-500">
+          <div className="flex items-center gap-1">
+            <UserCircleIcon className="h-4 w-4" />
+            <span>{assignee}</span>
+          </div>
+          {status === 'completed' && (
+            <div className="flex items-center gap-1 text-green-600 font-medium">
+              <CheckCircleIcon className="h-4 w-4" />
+              <span>완료됨</span>
             </div>
+          )}
+          {isOverdue && (
+            <button
+              onClick={() => onComplete && onComplete(schedule)}
+              className="flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-md text-sm font-medium"
+            >
+              <ExclamationCircleIcon className="h-4 w-4" />
+              <span>미완료</span>
+            </button>
           )}
         </div>
       </div>
     </div>
   );
-} 
+};
+
+export default ScheduleCard; 
