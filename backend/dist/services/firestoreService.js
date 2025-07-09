@@ -44,15 +44,17 @@ exports.firestoreService = {
     },
     async getAllSchedules() {
         try {
-            const [personal, department, project] = await Promise.all([
+            const [personal, department, project, company] = await Promise.all([
                 this.getPersonalSchedules(),
                 this.getDepartmentSchedules(),
-                this.getProjectSchedules()
+                this.getProjectSchedules(),
+                this.getCompanySchedules()
             ]);
             return {
                 personal,
                 department,
-                project
+                project,
+                company
             };
         }
         catch (error) {
@@ -235,7 +237,17 @@ exports.firestoreService = {
         }
     },
     async getCompanySchedules() {
-        return [];
+        try {
+            const snapshot = await firebase_1.db.collection('company_schedules').get();
+            return snapshot.docs.map(doc => ({
+                schedule_id: doc.id,
+                ...doc.data()
+            }));
+        }
+        catch (error) {
+            console.error('회사 일정 조회 실패:', error);
+            throw new Error('회사 일정을 조회하는 중 오류가 발생했습니다.');
+        }
     },
     async createCompanySchedule(_data) {
         return {};

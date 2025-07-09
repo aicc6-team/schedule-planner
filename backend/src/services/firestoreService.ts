@@ -217,18 +217,21 @@ export const firestoreService = {
     personal: PersonalSchedule[];
     department: DepartmentSchedule[];
     project: ProjectSchedule[];
+    company: CompanySchedule[];
   }> {
     try {
-      const [personal, department, project] = await Promise.all([
+      const [personal, department, project, company] = await Promise.all([
         this.getPersonalSchedules(),
         this.getDepartmentSchedules(),
-        this.getProjectSchedules()
+        this.getProjectSchedules(),
+        this.getCompanySchedules()
       ]);
 
       return {
         personal,
         department,
-        project
+        project,
+        company
       };
     } catch (error) {
       console.error('전체 일정 조회 실패:', error);
@@ -433,8 +436,16 @@ export const firestoreService = {
 
   // === 회사 일정 CRUD ===
   async getCompanySchedules(): Promise<CompanySchedule[]> {
-    // TODO: 구현
-    return [];
+    try {
+      const snapshot = await db.collection('company_schedules').get();
+      return snapshot.docs.map(doc => ({
+        schedule_id: doc.id,
+        ...doc.data()
+      } as CompanySchedule));
+    } catch (error) {
+      console.error('회사 일정 조회 실패:', error);
+      throw new Error('회사 일정을 조회하는 중 오류가 발생했습니다.');
+    }
   },
   async createCompanySchedule(_data: Omit<CompanySchedule, 'schedule_id' | 'created_at' | 'updated_at'>): Promise<CompanySchedule> {
     // TODO: 구현

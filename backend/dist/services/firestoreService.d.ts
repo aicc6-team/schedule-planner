@@ -35,6 +35,8 @@ export interface ProjectSchedule {
     project_id: string;
     project_name: string;
     project_description: string;
+    project_start_date: string;
+    project_end_date: string;
     date: string;
     task_list: any;
     start_dates: any;
@@ -159,6 +161,7 @@ export declare const firestoreService: {
         personal: PersonalSchedule[];
         department: DepartmentSchedule[];
         project: ProjectSchedule[];
+        company: CompanySchedule[];
     }>;
     createPersonalSchedule(data: Omit<PersonalSchedule, "id" | "created_at" | "updated_at">): Promise<PersonalSchedule>;
     getPersonalScheduleById(id: string): Promise<PersonalSchedule | null>;

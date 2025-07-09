@@ -56,6 +56,8 @@ const projectSchedules: Omit<ProjectSchedule, 'id'>[] = [
     project_id: "project-001",
     project_name: "내 일정 프로젝트",
     project_description: "프로젝트 기획 정리",
+    project_start_date: "2025-07-01",
+    project_end_date: "2025-07-10",
     date: "2025-07-04",
     task_list: ["기획", "디자인", "개발"],
     start_dates: ["2025-07-01", "2025-07-03", "2025-07-05"],
