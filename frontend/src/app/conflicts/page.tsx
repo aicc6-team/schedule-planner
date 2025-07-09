@@ -75,7 +75,7 @@ interface Schedule {
 }
 
 interface PersonalSchedule {
-  id: string;
+  id?: string;
   title: string;
   description: string;
   date: string;
@@ -87,7 +87,7 @@ interface PersonalSchedule {
 }
 
 interface DepartmentSchedule {
-  id: string;
+  id?: string;
   title: string;
   objective: string;
   date: string;
@@ -97,7 +97,7 @@ interface DepartmentSchedule {
 }
 
 interface ProjectSchedule {
-  id: string;
+  id?: string;
   projectName: string;
   objective: string;
   category: string;
@@ -108,48 +108,57 @@ interface ProjectSchedule {
 }
 
 // 데이터 변환 함수들
-const transformPersonalSchedule = (personalSchedule: PersonalSchedule): Schedule => {
+const transformPersonalSchedule = (personalSchedule: PersonalSchedule): Schedule | null => {
+  if (!personalSchedule.date || !personalSchedule.time) return null;
   const startDateTime = `${personalSchedule.date}T${personalSchedule.time}:00`;
-  const endDateTime = new Date(new Date(startDateTime).getTime() + personalSchedule.durationMinutes * 60000).toISOString();
-  
+  const start = new Date(startDateTime);
+  if (isNaN(start.getTime())) return null;
+  const end = new Date(start.getTime() + (personalSchedule.durationMinutes || 60) * 60000);
+  if (isNaN(end.getTime())) return null;
   return {
-    id: personalSchedule.id,
+    id: personalSchedule.id || '',
     title: personalSchedule.title,
     description: personalSchedule.description,
-    startTime: startDateTime,
-    endTime: endDateTime,
+    startTime: start.toISOString(),
+    endTime: end.toISOString(),
     priority: personalSchedule.importance === '높음' ? 'high' : personalSchedule.importance === '보통' ? 'medium' : 'low',
     type: 'personal',
     status: personalSchedule.status as any || 'pending'
   };
 };
 
-const transformDepartmentSchedule = (departmentSchedule: DepartmentSchedule): Schedule => {
+const transformDepartmentSchedule = (departmentSchedule: DepartmentSchedule): Schedule | null => {
+  if (!departmentSchedule.date || !departmentSchedule.time) return null;
   const startDateTime = `${departmentSchedule.date}T${departmentSchedule.time}:00`;
-  const endDateTime = new Date(new Date(startDateTime).getTime() + 60 * 60000).toISOString();
-  
+  const start = new Date(startDateTime);
+  if (isNaN(start.getTime())) return null;
+  const end = new Date(start.getTime() + 60 * 60000);
+  if (isNaN(end.getTime())) return null;
   return {
-    id: departmentSchedule.id,
+    id: departmentSchedule.id || '',
     title: departmentSchedule.title,
     description: departmentSchedule.objective,
-    startTime: startDateTime,
-    endTime: endDateTime,
+    startTime: start.toISOString(),
+    endTime: end.toISOString(),
     priority: 'medium',
     type: 'department',
     status: departmentSchedule.status as any || 'pending'
   };
 };
 
-const transformProjectSchedule = (projectSchedule: ProjectSchedule): Schedule => {
-  const startDateTime = `${projectSchedule.endDate}T${projectSchedule.time}:00`;
-  const startTime = new Date(new Date(startDateTime).getTime() - 60 * 60000).toISOString();
-  
+const transformProjectSchedule = (projectSchedule: ProjectSchedule): Schedule | null => {
+  if (!projectSchedule.endDate || !projectSchedule.time) return null;
+  const endDateTime = `${projectSchedule.endDate}T${projectSchedule.time}:00`;
+  const end = new Date(endDateTime);
+  if (isNaN(end.getTime())) return null;
+  const start = new Date(end.getTime() - 60 * 60000);
+  if (isNaN(start.getTime())) return null;
   return {
-    id: projectSchedule.id,
+    id: projectSchedule.id || '',
     title: projectSchedule.projectName,
     description: projectSchedule.objective,
-    startTime: startTime,
-    endTime: startDateTime,
+    startTime: start.toISOString(),
+    endTime: end.toISOString(),
     priority: 'high',
     type: 'project',
     status: projectSchedule.status as any || 'pending'
@@ -157,21 +166,10 @@ const transformProjectSchedule = (projectSchedule: ProjectSchedule): Schedule =>
 };
 
 const transformAllSchedules = (allSchedules: {personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[]}): Schedule[] => {
-  const transformedSchedules: Schedule[] = [];
-  
-  allSchedules.personal.forEach(schedule => {
-    transformedSchedules.push(transformPersonalSchedule(schedule));
-  });
-  
-  allSchedules.department.forEach(schedule => {
-    transformedSchedules.push(transformDepartmentSchedule(schedule));
-  });
-  
-  allSchedules.project.forEach(schedule => {
-    transformedSchedules.push(transformProjectSchedule(schedule));
-  });
-  
-  return transformedSchedules;
+  const p = allSchedules.personal?.map(transformPersonalSchedule).filter(Boolean) as Schedule[] || [];
+  const d = allSchedules.department?.map(transformDepartmentSchedule).filter(Boolean) as Schedule[] || [];
+  const r = allSchedules.project?.map(transformProjectSchedule).filter(Boolean) as Schedule[] || [];
+  return [...p, ...d, ...r];
 };
 
 // mock 충돌 일정 데이터
@@ -360,19 +358,35 @@ function DroppableTimeCell({ weekIndex, dayIndex, hour, date }: DroppableTimeCel
   );
 }
 
-// === 충돌 그룹 계산 함수 ===
+// 충돌 검사 함수
+const findConflicts = (scheduleList: Schedule[]): Schedule[] => {
+  const conflicts: Schedule[] = [];
+  for (let i = 0; i < scheduleList.length; i++) {
+    for (let j = i + 1; j < scheduleList.length; j++) {
+      const a = scheduleList[i];
+      const b = scheduleList[j];
+      const aStart = new Date(a.startTime);
+      const aEnd = new Date(a.endTime);
+      const bStart = new Date(b.startTime);
+      const bEnd = new Date(b.endTime);
+      if (aStart < bEnd && bStart < aEnd) {
+        if (!conflicts.find(s => s.id === a.id)) conflicts.push(a);
+        if (!conflicts.find(s => s.id === b.id)) conflicts.push(b);
+      }
+    }
+  }
+  return conflicts;
+};
+
 function getConflictGroups(schedules: Schedule[]): Schedule[][] {
-  // 겹치는 일정끼리 그룹핑 (O(N^2) 단순 알고리즘)
   const groups: Schedule[][] = [];
   const visited = new Set<string>();
-
   for (let i = 0; i < schedules.length; i++) {
     if (visited.has(schedules[i].id)) continue;
     const group = [schedules[i]];
     visited.add(schedules[i].id);
     for (let j = i + 1; j < schedules.length; j++) {
       if (visited.has(schedules[j].id)) continue;
-      // 겹치는지 검사
       const aStart = new Date(schedules[i].startTime);
       const aEnd = new Date(schedules[i].endTime);
       const bStart = new Date(schedules[j].startTime);
@@ -450,45 +464,23 @@ export default function ConflictsPage() {
   const hours = Array.from({ length: 10 }).map((_, i) => 9 + i); // 9~18시
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
-  // 충돌 검사 함수
-  const findConflicts = (scheduleList: Schedule[]): Schedule[] => {
-    const conflicts: Schedule[] = [];
-    
-    for (let i = 0; i < scheduleList.length; i++) {
-      for (let j = i + 1; j < scheduleList.length; j++) {
-        const a = scheduleList[i];
-        const b = scheduleList[j];
-        
-        const aStart = new Date(a.startTime);
-        const aEnd = new Date(a.endTime);
-        const bStart = new Date(b.startTime);
-        const bEnd = new Date(b.endTime);
-        
-        // 시간 겹침 검사
-        if (aStart < bEnd && bStart < aEnd) {
-          if (!conflicts.find(s => s.id === a.id)) conflicts.push(a);
-          if (!conflicts.find(s => s.id === b.id)) conflicts.push(b);
-        }
-      }
-    }
-    
-    return conflicts;
-  };
-
   // 2주간 표시 범위의 일정들만 필터링
   const twoWeekSchedules = allSchedules.filter(schedule => {
     const scheduleDate = new Date(schedule.startTime);
     const startOfRange = new Date(week1Start);
     const endOfRange = new Date(week2Start);
     endOfRange.setDate(endOfRange.getDate() + 6); // 두 번째 주의 마지막 날
-    
     return scheduleDate >= startOfRange && scheduleDate <= endOfRange;
   });
 
+  // 충돌 검사 및 그룹화
   const conflictingSchedules = findConflicts(twoWeekSchedules);
-
-  // 충돌 그룹 계산
   const conflictGroups = getConflictGroups(conflictingSchedules);
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
+  const topGroup = conflictGroups[selectedGroupIndex];
+  const otherGroupsWithIndex = conflictGroups
+    .map((group, idx) => ({ group, idx }))
+    .filter(({ idx }) => idx !== selectedGroupIndex);
 
   // 시간표에서 일정의 위치를 계산하는 함수
   const getSchedulePosition = (schedule: Schedule, weekDates: Date[], weekIndex: number) => {
@@ -629,13 +621,13 @@ export default function ConflictsPage() {
                     <div className="text-secondary-500">충돌하는 일정이 없습니다.</div>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-4">
-                    {conflictGroups.map((group, idx) => (
-                      <div key={idx} className="p-3 rounded-lg border-2 border-red-400 bg-red-50">
-                        <div className="font-bold text-red-600 mb-2">동시 충돌 그룹 #{idx+1}</div>
+                  <>
+                    {topGroup && (
+                      <div className="p-3 rounded-lg border-2 border-red-400 bg-red-50 mb-4">
+                        <div className="font-bold text-red-600 mb-2">충돌 그룹 {selectedGroupIndex + 1}</div>
                         <div className="flex gap-2">
-                          {group.map(schedule => (
-                            <div key={schedule.id} className="flex-1 bg-white rounded shadow p-2 min-w-[120px]">
+                          {topGroup.map(schedule => (
+                            <div key={schedule.id} className="bg-white rounded shadow p-2 flex-1">
                               <div className="font-semibold text-[13px] truncate">{schedule.title}</div>
                               <div className="text-[11px] opacity-80">
                                 {new Date(schedule.startTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
@@ -647,8 +639,34 @@ export default function ConflictsPage() {
                           ))}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                    {otherGroupsWithIndex.length > 0 && (
+                      <div className="flex flex-row gap-3 overflow-x-auto pb-2">
+                        {otherGroupsWithIndex.map(({ group, idx }) => (
+                          <div
+                            key={idx}
+                            className="min-w-[300px] max-w-[400px] p-1 rounded-lg border-2 border-red-400 bg-red-50 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-400 transition"
+                            onClick={() => setSelectedGroupIndex(idx)}
+                          >
+                            <div className="font-bold text-red-600 mb-1 text-[15px]">충돌 그룹 {idx + 1}</div>
+                            <div className="flex gap-2">
+                              {group.map(schedule => (
+                                <div key={schedule.id} className="bg-white rounded shadow p-2 flex-1">
+                                  <div className="font-semibold text-[13px] truncate">{schedule.title}</div>
+                                  <div className="text-[11px] opacity-80">
+                                    {new Date(schedule.startTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                                    ~
+                                    {new Date(schedule.endTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                  <div className="text-xs text-gray-400 truncate">{schedule.description}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               {/* 상단 우측: AI 분석 결과 메시지 */}

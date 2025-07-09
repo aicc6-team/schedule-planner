@@ -145,11 +145,6 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Google Calendar 이벤트 */}
-            <div>
-              <GoogleCalendarEvents tokens={googleTokens} />
-            </div>
-
             {/* 진행중인 프로젝트 */}
             <div>
               <div className="flex items-center justify-between mb-4">

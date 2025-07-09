@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin123@email.com');
+  const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -35,10 +35,30 @@ function LoginForm() {
     }
   }, [searchParams]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 로그인 로직 구현
-    console.log('로그인 시도:', { email, password });
+    setIsLoading(true);
+    setError(null);
+    try {
+      // 실제 백엔드 라우터 경로로 요청
+      const response = await fetch('http://localhost:3001/api/auth/google/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: email, password }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        router.push('/schedules');
+      } else {
+        setError(data.error || '로그인에 실패했습니다.');
+      }
+    } catch (err) {
+      setError('서버 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
