@@ -65,8 +65,8 @@ exports.firestoreService = {
             const now = new Date().toISOString();
             const scheduleData = {
                 ...data,
-                createdAt: now,
-                updatedAt: now
+                created_at: now,
+                updated_at: now
             };
             const docRef = await firebase_1.db.collection('personal_schedules').add(scheduleData);
             return {
@@ -98,7 +98,7 @@ exports.firestoreService = {
         try {
             const updateData = {
                 ...data,
-                updatedAt: new Date().toISOString()
+                updated_at: new Date().toISOString()
             };
             await firebase_1.db.collection('personal_schedules').doc(id).update(updateData);
             return await this.getPersonalScheduleById(id);
@@ -123,8 +123,8 @@ exports.firestoreService = {
             const now = new Date().toISOString();
             const scheduleData = {
                 ...data,
-                createdAt: now,
-                updatedAt: now
+                created_at: now,
+                updated_at: now
             };
             const docRef = await firebase_1.db.collection('department_schedules').add(scheduleData);
             return {
@@ -156,7 +156,7 @@ exports.firestoreService = {
         try {
             const updateData = {
                 ...data,
-                updatedAt: new Date().toISOString()
+                updated_at: new Date().toISOString()
             };
             await firebase_1.db.collection('department_schedules').doc(id).update(updateData);
             return await this.getDepartmentScheduleById(id);
@@ -181,8 +181,8 @@ exports.firestoreService = {
             const now = new Date().toISOString();
             const scheduleData = {
                 ...data,
-                createdAt: now,
-                updatedAt: now
+                created_at: now,
+                updated_at: now
             };
             const docRef = await firebase_1.db.collection('project_schedules').add(scheduleData);
             return {
@@ -214,7 +214,7 @@ exports.firestoreService = {
         try {
             const updateData = {
                 ...data,
-                updatedAt: new Date().toISOString()
+                updated_at: new Date().toISOString()
             };
             await firebase_1.db.collection('project_schedules').doc(id).update(updateData);
             return await this.getProjectScheduleById(id);
@@ -233,6 +233,90 @@ exports.firestoreService = {
             console.error('프로젝트 일정 삭제 실패:', error);
             throw new Error('프로젝트 일정을 삭제하는 중 오류가 발생했습니다.');
         }
+    },
+    async getCompanySchedules() {
+        return [];
+    },
+    async createCompanySchedule(_data) {
+        return {};
+    },
+    async getCompanyScheduleById(_id) {
+        return null;
+    },
+    async updateCompanySchedule(_id, _data) {
+        return null;
+    },
+    async deleteCompanySchedule(_id) {
+        return false;
+    },
+    async getScheduleConflicts() {
+        return [];
+    },
+    async createScheduleConflict(_data) {
+        return {};
+    },
+    async getScheduleConflictById(_id) {
+        return null;
+    },
+    async updateScheduleConflict(_id, _data) {
+        return null;
+    },
+    async deleteScheduleConflict(_id) {
+        return false;
+    },
+    async getPersonalScheduleAnalysis(_date) {
+        return null;
+    },
+    async createPersonalScheduleAnalysis(_data) {
+        return {};
+    },
+    async updatePersonalScheduleAnalysis(_date, _data) {
+        return null;
+    },
+    async getDepartmentScheduleAnalysis(_departmentName, _date) {
+        return null;
+    },
+    async createDepartmentScheduleAnalysis(_data) {
+        return {};
+    },
+    async updateDepartmentScheduleAnalysis(_departmentName, _date, _data) {
+        return null;
+    },
+    async getProjectScheduleAnalysis(_projectId, _date) {
+        return null;
+    },
+    async createProjectScheduleAnalysis(_data) {
+        return {};
+    },
+    async updateProjectScheduleAnalysis(_projectId, _date, _data) {
+        return null;
+    },
+    async getCompanyScheduleAnalysis(_scheduleId) {
+        return null;
+    },
+    async createCompanyScheduleAnalysis(_data) {
+        return {};
+    },
+    async updateCompanyScheduleAnalysis(_scheduleId, _data) {
+        return null;
+    },
+    async getComprehensiveAnalysisReports() {
+        return [];
+    },
+    async createComprehensiveAnalysisReport(_data) {
+        return {};
+    },
+    async getComprehensiveAnalysisReportById(_id) {
+        return null;
+    },
+    async getAIConflictScheduleAnalysisRequests() {
+        return [];
+    },
+    async createAIConflictScheduleAnalysisRequest(_data) {
+        return {};
+    },
+    async getAIConflictScheduleAnalysisRequestById(_id) {
+        return null;
     }
 };
 //# sourceMappingURL=firestoreService.js.map

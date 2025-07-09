@@ -1,168 +1,197 @@
 import { db } from '../config/firebase';
 import 'dotenv/config';
-
-// 타입 정의
-interface PersonalSchedule {
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  durationMinutes: number;
-  importance: string;
-  emotion: string;
-  projectId: string;
-  assignee: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface DepartmentSchedule {
-  title: string;
-  objective: string;
-  date: string;
-  time: string;
-  participants: string[];
-  department: string;
-  projectId: string;
-  organizer: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ProjectSchedule {
-  projectId: string;
-  projectName: string;
-  objective: string;
-  category: string;
-  startDate: string;
-  endDate: string;
-  time: string;
-  roles: {
-    pm: number;
-    backend: number;
-    frontend: number;
-    designer: number;
-    marketer: number;
-    sales: number;
-    general: number;
-    others: number;
-  };
-  participants: string[];
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import {
+  PersonalSchedule,
+  DepartmentSchedule,
+  ProjectSchedule,
+  CompanySchedule,
+  ScheduleConflict,
+  PersonalScheduleAnalysis,
+  DepartmentScheduleAnalysis,
+  ProjectScheduleAnalysis,
+  CompanyScheduleAnalysis,
+  ComprehensiveAnalysisReport,
+  AIConflictScheduleAnalysis,
+} from '../services/firestoreService';
 
 // 시드 데이터
-const personalSchedules: PersonalSchedule[] = [
+const personalSchedules: Omit<PersonalSchedule, 'id'>[] = [
   {
     title: "백엔드 API 구축",
     description: "백엔드 API 구축",
     date: "2025-07-04",
-    time: "13:10",
-    durationMinutes: 30,
-    importance: "높음",
+    start_time: "2025-07-04T13:10:00",
+    end_time: "2025-07-04T13:40:00",
+    duration_minutes: 30,
+    status: "완료",
+    tag: "개발",
     emotion: "보통",
-    projectId: "project-001",
+    created_at: "2025-07-04T05:29:00.279Z",
+    updated_at: "2025-07-04T05:29:00.279Z"
+  },
+];
+
+const departmentSchedules: Omit<DepartmentSchedule, 'id'>[] = [
+  {
+    department_name: "개발팀",
     assignee: "김개발",
-    status: "pending",
-    createdAt: "2025-07-04T05:29:00.279Z",
-    updatedAt: "2025-07-04T05:29:00.279Z"
-  },
-  {
-    title: "프론트엔드 컴포넌트 개발",
-    description: "React 컴포넌트 개발",
-    date: "2025-07-05",
-    time: "14:00",
-    durationMinutes: 120,
-    importance: "중간",
-    emotion: "좋음",
-    projectId: "project-001",
-    assignee: "박프론트",
-    status: "pending",
-    createdAt: "2025-07-04T05:29:00.279Z",
-    updatedAt: "2025-07-04T05:29:00.279Z"
-  }
-];
-
-const departmentSchedules: DepartmentSchedule[] = [
-  {
-    title: "부서 회의",
-    objective: "주간 회의",
     date: "2025-07-04",
-    time: "13:10",
-    participants: ["김팀장", "이대리", "김개발"],
-    department: "개발팀",
-    projectId: "project-001",
-    organizer: "김팀장",
-    status: "pending",
-    createdAt: "2025-07-04T05:29:00.279Z",
-    updatedAt: "2025-07-04T05:29:00.279Z"
+    title: "주간 회의",
+    description: "주간 회의",
+    start_time: "2025-07-04T13:10:00",
+    end_time: "2025-07-04T14:10:00",
+    delay_hours: 0,
+    schedule_type: "회의",
+    collaboration_pairs: [{ "member1": "김팀장", "member2": "이대리" }],
+    duration_minutes: 60,
+    quality: 4.5,
+    status: "완료",
+    created_at: "2025-07-04T05:29:00.279Z",
+    updated_at: "2025-07-04T05:29:00.279Z"
   },
+];
+
+const projectSchedules: Omit<ProjectSchedule, 'id'>[] = [
   {
-    title: "기획 검토 회의",
-    objective: "프로젝트 기획 검토",
-    date: "2025-07-06",
-    time: "10:00",
-    participants: ["김팀장", "박기획", "이대리"],
-    department: "기획팀",
-    projectId: "project-001",
-    organizer: "박기획",
-    status: "pending",
-    createdAt: "2025-07-04T05:29:00.279Z",
-    updatedAt: "2025-07-04T05:29:00.279Z"
+    project_id: "project-001",
+    project_name: "내 일정 프로젝트",
+    project_description: "프로젝트 기획 정리",
+    date: "2025-07-04",
+    task_list: ["기획", "디자인", "개발"],
+    start_dates: ["2025-07-01", "2025-07-03", "2025-07-05"],
+    durations: [2, 3, 5],
+    dependencies: {"디자인": "기획", "개발": "디자인"},
+    planned_completion_dates: ["2025-07-03", "2025-07-06", "2025-07-10"],
+    actual_completion_dates: ["2025-07-03", "2025-07-07", null],
+    simulation_completion_dates: {},
+    progress: {"기획": 100, "디자인": 100, "개발": 50},
+    delay_times: {"디자인": 1},
+    intervals: {},
+    budget: {"total": 5000, "current": 2500},
+    status: "진행중",
+    created_at: "2025-07-04T05:29:00.279Z",
+    updated_at: "2025-07-04T05:29:00.279Z"
   }
 ];
 
-const projectSchedules: ProjectSchedule[] = [
+const companySchedules: Omit<CompanySchedule, 'schedule_id'>[] = [
   {
-    projectId: "project-001",
-    projectName: "내 일정 프로젝트",
-    objective: "프로젝트 기획 정리",
-    category: "기획",
-    startDate: "2025-07-01",
-    endDate: "2025-07-04",
-    time: "13:10",
-    roles: {
-      pm: 1,
-      backend: 2,
-      frontend: 2,
-      designer: 1,
-      marketer: 0,
-      sales: 0,
-      general: 0,
-      others: 0
-    },
-    participants: ["김개발", "이대리", "박프론트"],
-    status: "pending",
-    createdAt: "2025-07-04T05:29:00.279Z",
-    updatedAt: "2025-07-04T05:29:00.279Z"
-  },
-  {
-    projectId: "project-002",
-    projectName: "모바일 앱 개발",
-    objective: "모바일 앱 개발 및 출시",
-    category: "개발",
-    startDate: "2025-07-10",
-    endDate: "2025-08-15",
-    time: "09:00",
-    roles: {
-      pm: 1,
-      backend: 1,
-      frontend: 2,
-      designer: 2,
-      marketer: 1,
-      sales: 0,
-      general: 0,
-      others: 0
-    },
-    participants: ["김팀장", "박개발자", "이디자이너"],
-    status: "pending",
-    createdAt: "2025-07-04T05:29:00.279Z",
-    updatedAt: "2025-07-04T05:29:00.279Z"
+    title: "전사 워크샵",
+    description: "2025년 상반기 전사 워크샵",
+    start_datetime: "2025-08-01T10:00:00",
+    end_datetime: "2025-08-02T18:00:00",
+    organizer: "인사팀",
+    supporting_organizations: ["총무팀"],
+    attendees: ["전직원"],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
+];
+
+const scheduleConflicts: Omit<ScheduleConflict, 'conflict_id'>[] = [
+  {
+    conflict_schedule1_id: "personal-schedule-id-1", // 예시 ID
+    conflict_schedule1_type: "PersonalSchedule",
+    conflict_schedule2_id: "department-schedule-id-1", // 예시 ID
+    conflict_schedule2_type: "DepartmentSchedule",
+    adjusted_schedule_id: "personal-schedule-id-1",
+    adjusted_schedule_type: "PersonalSchedule",
+    adjusted_date: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+const personalScheduleAnalyses: PersonalScheduleAnalysis[] = [
+    {
+        date: "2025-07-04",
+        total_schedules: 10,
+        completed_schedules: 8,
+        start_time_distribution: {"09:00": 3, "10:00": 5, "14:00": 2},
+        end_time_distribution: {"10:00": 4, "11:00": 4, "15:00": 2},
+        completion_rate_by_tag: {"개발": 0.8, "기획": 0.9},
+        duration_distribution: {"30분": 5, "60분": 4, "120분": 1},
+        task_count_by_emotion: {"좋음": 3, "보통": 6, "나쁨": 1},
+        task_count_by_status: {"완료": 8, "지연": 1, "미이행": 1},
+        schedule_count_by_time_slot: {"오전": 8, "오후": 2},
+        cumulative_completions: {"2025-07-04": 8}
+    }
+];
+
+const departmentScheduleAnalyses: DepartmentScheduleAnalysis[] = [
+    {
+        department_name: "개발팀",
+        date: "2025-07-04",
+        average_delay_per_member: {"김개발": 0.5, "이개발": 0.2},
+        schedule_type_ratio: {"회의": 0.4, "개발": 0.6},
+        bottleneck_time_slots: {"14:00-15:00": 5},
+        collaboration_network: {},
+        workload_by_member_and_type: {},
+        execution_time_stats: {},
+        quality_stats: {},
+        monthly_schedule_trends: {},
+        issue_occurrence_rate: {}
+    }
+];
+
+const projectScheduleAnalyses: ProjectScheduleAnalysis[] = [
+    {
+        project_id: "project-001",
+        date: "2025-07-04",
+        task_list: [],
+        start_dates: [],
+        durations: [],
+        dependencies: [],
+        planned_completion_dates: [],
+        actual_completion_dates: [],
+        simulation_completion_dates: [],
+        progress: {},
+        delay_times: {},
+        intervals: {},
+        cumulative_budget: {},
+        stage_status: {}
+    }
+];
+
+const companyScheduleAnalyses: CompanyScheduleAnalysis[] = [
+    {
+        schedule_id: "company-schedule-id-1", // 예시 ID
+        analysis_start_date: "2025-07-01",
+        analysis_end_date: "2025-07-31",
+        total_schedules: 5,
+        schedule_duration_distribution: {},
+        time_slot_distribution: {},
+        attendee_participation_counts: {},
+        organizer_schedule_counts: {},
+        supporting_organization_collaborations: {},
+        monthly_schedule_counts: {},
+        schedule_category_ratio: {},
+        updated_at: new Date().toISOString()
+    }
+];
+
+const comprehensiveAnalysisReports: Omit<ComprehensiveAnalysisReport, 'report_id'>[] = [
+    {
+        report_type: "종합",
+        related_id: "2025-07-04",
+        created_at: new Date().toISOString(),
+        analysis_start_date: "2025-07-01",
+        analysis_end_date: "2025-07-31",
+        summary: "7월 종합 분석 보고서 요약입니다.",
+        chart_data: {},
+        raw_data: {}
+    }
+];
+
+const aiConflictScheduleAnalyses: Omit<AIConflictScheduleAnalysis, 'request_id'>[] = [
+    {
+        conflict_id: "conflict-id-1", // 예시 ID
+        user_id: "user-id-1",
+        request_datetime: new Date().toISOString(),
+        request_params: {},
+        status: "완료",
+        completion_datetime: new Date().toISOString()
+    }
 ];
 
 // 시드 함수들
@@ -205,6 +234,94 @@ export const seedProjectSchedules = async () => {
   console.log('✅ 프로젝트 일정 시드 데이터 생성 완료');
 };
 
+export const seedCompanySchedules = async () => {
+    console.log('🌱 회사 일정 시드 데이터 생성 중...');
+    const batch = db.batch();
+    companySchedules.forEach((schedule) => {
+        const docRef = db.collection('company_schedules').doc();
+        batch.set(docRef, schedule);
+    });
+    await batch.commit();
+    console.log('✅ 회사 일정 시드 데이터 생성 완료');
+};
+
+export const seedScheduleConflicts = async () => {
+    console.log('🌱 일정 충돌 시드 데이터 생성 중...');
+    const batch = db.batch();
+    scheduleConflicts.forEach((conflict) => {
+        const docRef = db.collection('schedule_conflicts').doc();
+        batch.set(docRef, conflict);
+    });
+    await batch.commit();
+    console.log('✅ 일정 충돌 시드 데이터 생성 완료');
+};
+
+export const seedPersonalScheduleAnalyses = async () => {
+    console.log('🌱 개인 일정 분석 시드 데이터 생성 중...');
+    const batch = db.batch();
+    personalScheduleAnalyses.forEach((analysis) => {
+        const docRef = db.collection('personal_schedule_analyses').doc(analysis.date);
+        batch.set(docRef, analysis);
+    });
+    await batch.commit();
+    console.log('✅ 개인 일정 분석 시드 데이터 생성 완료');
+};
+
+export const seedDepartmentScheduleAnalyses = async () => {
+    console.log('🌱 부서 일정 분석 시드 데이터 생성 중...');
+    const batch = db.batch();
+    departmentScheduleAnalyses.forEach((analysis) => {
+        const docRef = db.collection('department_schedule_analyses').doc(`${analysis.department_name}_${analysis.date}`);
+        batch.set(docRef, analysis);
+    });
+    await batch.commit();
+    console.log('✅ 부서 일정 분석 시드 데이터 생성 완료');
+};
+
+export const seedProjectScheduleAnalyses = async () => {
+    console.log('🌱 프로젝트 일정 분석 시드 데이터 생성 중...');
+    const batch = db.batch();
+    projectScheduleAnalyses.forEach((analysis) => {
+        const docRef = db.collection('project_schedule_analyses').doc(`${analysis.project_id}_${analysis.date}`);
+        batch.set(docRef, analysis);
+    });
+    await batch.commit();
+    console.log('✅ 프로젝트 일정 분석 시드 데이터 생성 완료');
+};
+
+export const seedCompanyScheduleAnalyses = async () => {
+    console.log('🌱 회사 일정 분석 시드 데이터 생성 중...');
+    const batch = db.batch();
+    companyScheduleAnalyses.forEach((analysis) => {
+        const docRef = db.collection('company_schedule_analyses').doc(analysis.schedule_id);
+        batch.set(docRef, analysis);
+    });
+    await batch.commit();
+    console.log('✅ 회사 일정 분석 시드 데이터 생성 완료');
+};
+
+export const seedComprehensiveAnalysisReports = async () => {
+    console.log('🌱 종합 분석 보고서 시드 데이터 생성 중...');
+    const batch = db.batch();
+    comprehensiveAnalysisReports.forEach((report) => {
+        const docRef = db.collection('comprehensive_analysis_reports').doc();
+        batch.set(docRef, report);
+    });
+    await batch.commit();
+    console.log('✅ 종합 분석 보고서 시드 데이터 생성 완료');
+};
+
+export const seedAIConflictScheduleAnalyses = async () => {
+    console.log('🌱 AI 충돌 일정 분석 시드 데이터 생성 중...');
+    const batch = db.batch();
+    aiConflictScheduleAnalyses.forEach((analysis) => {
+        const docRef = db.collection('ai_conflict_schedule_analyses').doc();
+        batch.set(docRef, analysis);
+    });
+    await batch.commit();
+    console.log('✅ AI 충돌 일정 분석 시드 데이터 생성 완료');
+};
+
 // 모든 시드 데이터 생성
 export const seedAllData = async () => {
   try {
@@ -213,6 +330,14 @@ export const seedAllData = async () => {
     await seedPersonalSchedules();
     await seedDepartmentSchedules();
     await seedProjectSchedules();
+    await seedCompanySchedules();
+    await seedScheduleConflicts();
+    await seedPersonalScheduleAnalyses();
+    await seedDepartmentScheduleAnalyses();
+    await seedProjectScheduleAnalyses();
+    await seedCompanyScheduleAnalyses();
+    await seedComprehensiveAnalysisReports();
+    await seedAIConflictScheduleAnalyses();
     
     console.log('🎉 모든 시드 데이터 생성 완료!');
   } catch (error) {
