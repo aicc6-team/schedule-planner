@@ -582,16 +582,13 @@ export default function ConflictsPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-2xl font-bold text-secondary-900">일정 충돌</h1>
-              <div className="flex items-center gap-4">
-                {isUpdating && (
-                  <div className="flex items-center gap-2 text-blue-600">
-                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                    <span className="text-sm">일정 업데이트 중...</span>
-                  </div>
-                )}
+          <div className="p-8">
+            <header className="flex items-center pb-6">
+              <div className="flex items-end justify-between w-full">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">일정 충돌</h3>
+                  <p className="text-gray-500 mb-4">충돌한 일정을 쉽게 관리하세요</p>
+                </div>
                 <button
                   onClick={() => router.push('/schedules')}
                   className="btn-secondary flex items-center gap-1 px-4 py-2 text-sm"
@@ -600,7 +597,8 @@ export default function ConflictsPage() {
                   <ArrowRightIcon className="h-4 w-4" />
                 </button>
               </div>
-            </div>
+            </header>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* 상단 좌측: 충돌 일정 리스트 */}
               <div className="card min-h-[200px] flex flex-col">

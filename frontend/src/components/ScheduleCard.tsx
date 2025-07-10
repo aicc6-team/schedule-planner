@@ -7,8 +7,8 @@ import {
   ClockIcon,
   TagIcon,
   UserCircleIcon,
-  CheckCircleIcon,
-  PencilIcon,
+  CheckIcon,
+  PencilSquareIcon,
   TrashIcon,
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
@@ -113,7 +113,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
               className="p-1.5 rounded-md text-green-600 hover:bg-green-50 transition-colors"
               title="완료"
             >
-              <CheckCircleIcon className="h-4 w-4" />
+              <CheckIcon className="h-5 w-5 text-green-600 opacity-80" />
             </button>
           )}
           {!isOverdue && !isPastTab && (
@@ -121,10 +121,10 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
               <button
                 type="button"
                 onClick={() => router.push(`/schedules/create?id=${schedule.id}&type=${schedule.type}&mode=edit`)}
-                className="p-1.5 rounded-md text-blue-600 hover:bg-blue-50 transition-colors"
+                className="p-1.5 rounded-md text-blue-500 hover:bg-blue-50 transition-colors"
                 title="수정"
               >
-                <PencilIcon className="h-4 w-4" />
+                <PencilSquareIcon className="h-5 w-5 text-blue-500 opacity-80" />
               </button>
               <button
                 type="button"
@@ -132,7 +132,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
                 className="p-1.5 rounded-md text-red-600 hover:bg-red-50 transition-colors"
                 title="삭제"
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon className="h-5 w-5 text-red-600 opacity-80" />
               </button>
             </>
           )}
@@ -142,7 +142,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
               onClick={() => onComplete(schedule)}
               className="flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 px-1 py-0.5 rounded text-xs font-medium"
             >
-              <ExclamationCircleIcon className="h-3 w-3" />
+              <ExclamationCircleIcon className="h-3 w-3" strokeWidth={2.5} />
               <span>미완료</span>
             </button>
           )}
@@ -182,7 +182,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
           </div>
           {status === 'completed' && !isOverdue && !isPastTab && (
             <div className="flex items-center gap-1 text-green-600 font-medium">
-              <CheckCircleIcon className="h-3 w-3" />
+              <CheckIcon className="h-4 w-4 text-green-600 opacity-80" />
               <span>완료</span>
             </div>
           )}

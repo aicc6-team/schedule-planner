@@ -351,38 +351,46 @@ export default function SchedulesPage() {
       <Navigation />
       <main className="lg:pl-64">
        <div className="p-8">
-        <header className="flex items-center justify-between pb-6 border-b border-gray-200">
+        <header className="flex items-center pb-6">
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900">일정 관리</h1>
+            <h3 className="text-2xl font-bold text-gray-900">일정 관리</h3>
             <p className="text-gray-500 mb-4">모든 일정을 한 곳에서 관리하세요</p>
-            
-            <div className="flex rounded-md shadow-sm">
-              <button
-                onClick={() => setActiveTab('ongoing')}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg border border-gray-200 ${activeTab === 'ongoing' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                진행 일정
-              </button>
-              <button
-                onClick={() => setActiveTab('past')}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border border-gray-200 -ml-px ${activeTab === 'past' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                지난 일정
-              </button>
-            </div>
           </div>
-          
+        </header>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex border-b border-gray-200 w-fit">
+            <button
+              onClick={() => setActiveTab('ongoing')}
+              className={`px-6 py-3 text-base font-semibold focus:outline-none transition rounded-t-md
+                ${activeTab === 'ongoing'
+                  ? 'border-b-2 border-blue-500 text-blue-500 bg-blue-50 shadow'
+                  : 'border-b-2 border-transparent text-gray-700 bg-white hover:bg-blue-50'}
+              `}
+            >
+              진행 일정
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`px-6 py-3 text-base font-semibold focus:outline-none transition rounded-t-md ml-2
+                ${activeTab === 'past'
+                  ? 'border-b-2 border-blue-500 text-blue-500 bg-blue-50 shadow'
+                  : 'border-b-2 border-transparent text-gray-700 bg-white hover:bg-blue-50'}
+              `}
+            >
+              지난 일정
+            </button>
+          </div>
           <div className="flex items-center">
             <button 
               onClick={() => { setIsAnalyzing(true); setTimeout(() => setIsAnalyzing(false), 2000)}}
               disabled={isAnalyzing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
             >
               <SparklesIcon className={`h-5 w-5 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
               {isAnalyzing ? 'AI 분석 중...' : 'AI 자동 분석'}
             </button>
           </div>
-        </header>
+        </div>
 
         {loading && <div className="text-center py-10">로딩 중...</div>}
         {error && <div className="text-center py-10 text-red-500">오류: {error}</div>}
@@ -395,14 +403,14 @@ export default function SchedulesPage() {
               const currentPage = currentPages[area.key] || 1;
               
               return (
-              <div key={area.key} className={`rounded-xl shadow-sm border ${area.color} ${area.border} flex flex-col`}>
+              <div key={area.key} className={`rounded-xl shadow-sm border ${area.color} ${area.border} flex flex-col min-h-[1100px] max-h-[1100px]`}>
                 <div className={`p-4 border-b ${area.border}`}>
                   <h2 className={`font-bold text-lg ${area.text}`}>{area.label}</h2>
                   <p className={`text-sm ${area.text} opacity-80`}>
                     {totalSchedules}개의 일정
                   </p>
                 </div>
-                <div className="p-4 space-y-4 flex-grow">
+                <div className="p-4 space-y-4 flex-grow overflow-y-auto">
                   {paginatedSchedulesByArea[area.key]?.length > 0 ? (
                     paginatedSchedulesByArea[area.key].map(schedule => {
                       const isOverdue = new Date(schedule.endTime) < now && schedule.status === 'pending';

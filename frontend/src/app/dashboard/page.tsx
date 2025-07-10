@@ -179,7 +179,7 @@ function DashboardContent() {
                     <CalendarIcon className="h-6 w-6" />
                   </div>
                   <div className="ml-4">
-                    <h3 className="font-medium text-secondary-900">새 일정 추가</h3>
+                    <h3 className="text-2xl text-secondary-900">새 일정 추가</h3>
                     <p className="text-sm text-secondary-600">일정을 등록하세요</p>
                   </div>
                 </div>

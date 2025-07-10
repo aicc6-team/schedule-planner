@@ -15,8 +15,7 @@ import {
   DocumentTextIcon,
   UsersIcon,
   PlusIcon,
-  CheckIcon,
-  ChevronDownIcon
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { Listbox } from '@headlessui/react';
 
@@ -588,17 +587,15 @@ function ScheduleCreateContent() {
     <div className="min-h-screen bg-slate-50">
       <Navigation />
       <main className="lg:pl-64">
-        <div className="bg-white border-b border-slate-200 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <nav className="text-sm text-slate-500 mb-2">
-                <span>일정 관리</span> <span className="mx-2">/</span> <span className="text-slate-700">{isEditMode ? '일정 수정' : '새 일정 추가'}</span>
-              </nav>
-              <h1 className="text-2xl font-bold text-slate-900">{isEditMode ? '일정 수정' : '새 일정 추가'}</h1>
+        <div className="p-8">
+          <header className="flex items-center justify-between pb-6">
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold text-slate-900">{isEditMode ? '일정 수정' : '새 일정 추가'}</h3>
               <p className="text-slate-600 mt-1">{isEditMode ? '기존 일정을 수정하고 관리하세요' : '새로운 일정을 등록하고 관리하세요'}</p>
             </div>
-          </div>
+          </header>
         </div>
+        
         <div className="p-8">
           {isLoading ? (
             <div className="max-w-7xl mx-auto">
@@ -611,9 +608,9 @@ function ScheduleCreateContent() {
             <div className="max-w-7xl mx-auto">
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="flex-1 flex flex-col items-center mb-4">
-                <h2 className="text-2xl font-bold text-blue-600 mb-2">개인</h2>
-                <section className="w-full bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col relative">
-                  <div className="flex gap-2 absolute top-0 right-4 mt-2">
+                <div className="w-full flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-blue-600 m-0 text-left">개인</h2>
+                  <div className="flex gap-2 flex-shrink-0">
                     <button 
                       type="button" 
                       onClick={() => setPersonalForm({ 
@@ -640,6 +637,8 @@ function ScheduleCreateContent() {
                       {isSubmitting ? '저장 중...' : '저장'}
                     </button>
                   </div>
+                </div>
+                <section className="w-full bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col relative">
                   <form className="flex-1 flex flex-col gap-2 mt-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">제목 *</label>
                     <input 
@@ -661,14 +660,12 @@ function ScheduleCreateContent() {
                     />
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">날짜 *</label>
-                    <div className="relative">
-                      <input 
-                        type="date" 
-                        value={personalForm.date} 
-                        onChange={e => handlePersonalChange('date', e.target.value)} 
-                        className={`w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none ${errors.personal_date ? 'border-red-500' : ''}`}
-                      />
-                    </div>
+                    <input 
+                      type="date" 
+                      value={personalForm.date} 
+                      onChange={e => handlePersonalChange('date', e.target.value)} 
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.personal_date ? 'border-red-500' : ''}`}
+                    />
                     {errors.personal_date && <span className="text-red-500 text-xs">{errors.personal_date}</span>}
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">시간 *</label>
@@ -692,38 +689,28 @@ function ScheduleCreateContent() {
                     <input type="range" min={1} max={24} value={personalForm.durationHours} onChange={e => handlePersonalChange('durationHours', Number(e.target.value))} className="w-full accent-blue-600" />
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">중요도</label>
-                    <div className="relative">
-                      <select value={personalForm.importance} onChange={e => handlePersonalChange('importance', e.target.value)} className="w-full rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none appearance-none">
-                        <option value="low">낮음</option>
-                        <option value="medium">보통</option>
-                        <option value="high">높음</option>
-                      </select>
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                        <ChevronDownIcon className="w-5 h-5" />
-                      </span>
-                    </div>
+                    <select value={personalForm.importance} onChange={e => handlePersonalChange('importance', e.target.value)} className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
+                      <option value="low">낮음</option>
+                      <option value="medium">보통</option>
+                      <option value="high">높음</option>
+                    </select>
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">감정상태</label>
-                    <div className="relative">
-                      <select value={personalForm.emotion} onChange={e => handlePersonalChange('emotion', e.target.value)} className="w-full rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none appearance-none">
-                        <option value="happy">기쁨</option>
-                        <option value="normal">보통</option>
-                        <option value="sad">슬픔</option>
-                        <option value="angry">화남</option>
-                      </select>
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                        <ChevronDownIcon className="w-5 h-5" />
-                      </span>
-                    </div>
+                    <select value={personalForm.emotion} onChange={e => handlePersonalChange('emotion', e.target.value)} className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
+                      <option value="happy">기쁨</option>
+                      <option value="normal">보통</option>
+                      <option value="sad">슬픔</option>
+                      <option value="angry">화남</option>
+                    </select>
                     
 
                   </form>
                 </section>
               </div>
               <div className="flex-1 flex flex-col items-center mb-4">
-                <h2 className="text-2xl font-bold text-green-600 mb-2">부서</h2>
-                <section className="w-full bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col relative">
-                  <div className="flex gap-2 absolute top-0 right-4 mt-2">
+                <div className="w-full flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-green-600 m-0 text-left">부서</h2>
+                  <div className="flex gap-2 flex-shrink-0">
                     <button 
                       type="button" 
                       onClick={() => setDepartmentForm({ 
@@ -748,6 +735,8 @@ function ScheduleCreateContent() {
                       {isSubmitting ? '저장 중...' : '저장'}
                     </button>
                   </div>
+                </div>
+                <section className="w-full bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col relative">
                   <form className="flex-1 flex flex-col gap-2 mt-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">제목 *</label>
                     <input 
@@ -769,14 +758,12 @@ function ScheduleCreateContent() {
                     />
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">날짜 *</label>
-                    <div className="relative">
-                      <input 
-                        type="date" 
-                        value={departmentForm.date} 
-                        onChange={e => handleDepartmentChange('date', e.target.value)} 
-                        className={`w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none ${errors.department_date ? 'border-red-500' : ''}`}
-                      />
-                    </div>
+                    <input 
+                      type="date" 
+                      value={departmentForm.date} 
+                      onChange={e => handleDepartmentChange('date', e.target.value)} 
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.department_date ? 'border-red-500' : ''}`}
+                    />
                     {errors.department_date && <span className="text-red-500 text-xs">{errors.department_date}</span>}
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">시간 *</label>
@@ -804,9 +791,9 @@ function ScheduleCreateContent() {
                 </section>
               </div>
               <div className="flex-1 flex flex-col items-center mb-4">
-                <h2 className="text-2xl font-bold text-orange-500 mb-2">프로젝트</h2>
-                <section className="w-full bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col relative">
-                  <div className="flex gap-2 absolute top-0 right-4 mt-2">
+                <div className="w-full flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-orange-500 m-0 text-left">프로젝트</h2>
+                  <div className="flex gap-2 flex-shrink-0">
                     <button 
                       type="button" 
                       onClick={() => setProjectForm({ 
@@ -841,6 +828,8 @@ function ScheduleCreateContent() {
                       {isSubmitting ? '저장 중...' : '저장'}
                     </button>
                   </div>
+                </div>
+                <section className="w-full bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col relative">
                   <form className="flex-1 flex flex-col gap-2 mt-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">프로젝트명 *</label>
                     <input 
@@ -862,28 +851,21 @@ function ScheduleCreateContent() {
                     />
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">카테고리</label>
-                    <div className="relative">
-                      <select value={projectForm.category} onChange={e => handleProjectChange('category', e.target.value)} className="w-full rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none appearance-none">
-                        <option value="">선택하세요</option>
-                        <option value="웹">웹</option>
-                        <option value="앱">앱</option>
-                        <option value="AI">AI</option>
-                        <option value="기타">기타</option>
-                      </select>
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                        <ChevronDownIcon className="w-5 h-5" />
-                      </span>
-                    </div>
+                    <select value={projectForm.category} onChange={e => handleProjectChange('category', e.target.value)} className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
+                      <option value="">선택하세요</option>
+                      <option value="웹">웹</option>
+                      <option value="앱">앱</option>
+                      <option value="AI">AI</option>
+                      <option value="기타">기타</option>
+                    </select>
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">종료일 *</label>
-                    <div className="relative">
-                      <input 
-                        type="date" 
-                        value={projectForm.endDate} 
-                        onChange={e => handleProjectChange('endDate', e.target.value)} 
-                        className={`w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none ${errors.project_endDate ? 'border-red-500' : ''}`}
-                      />
-                    </div>
+                    <input 
+                      type="date" 
+                      value={projectForm.endDate} 
+                      onChange={e => handleProjectChange('endDate', e.target.value)} 
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.project_endDate ? 'border-red-500' : ''}`}
+                    />
                     {errors.project_endDate && <span className="text-red-500 text-xs">{errors.project_endDate}</span>}
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">마감 시간 *</label>
@@ -903,99 +885,83 @@ function ScheduleCreateContent() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">PM수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.pm} 
-                            onChange={e => handleProjectChange('roles.pm', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.pm} 
+                          onChange={e => handleProjectChange('roles.pm', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">백엔드수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.backend} 
-                            onChange={e => handleProjectChange('roles.backend', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.backend} 
+                          onChange={e => handleProjectChange('roles.backend', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">프론트수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.frontend} 
-                            onChange={e => handleProjectChange('roles.frontend', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.frontend} 
+                          onChange={e => handleProjectChange('roles.frontend', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">디자이너수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.designer} 
-                            onChange={e => handleProjectChange('roles.designer', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.designer} 
+                          onChange={e => handleProjectChange('roles.designer', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">마케터수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.marketer} 
-                            onChange={e => handleProjectChange('roles.marketer', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.marketer} 
+                          onChange={e => handleProjectChange('roles.marketer', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">영업수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.sales} 
-                            onChange={e => handleProjectChange('roles.sales', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.sales} 
+                          onChange={e => handleProjectChange('roles.sales', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">일반직수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.general} 
-                            onChange={e => handleProjectChange('roles.general', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.general} 
+                          onChange={e => handleProjectChange('roles.general', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">기타인원수</label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            value={projectForm.roles.others} 
-                            onChange={e => handleProjectChange('roles.others', Number(e.target.value))} 
-                            className="w-full rounded-lg bg-white py-2 pl-3 pr-3 text-left shadow-md border border-gray-300 focus:outline-none" 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={projectForm.roles.others} 
+                          onChange={e => handleProjectChange('roles.others', Number(e.target.value))} 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
+                        />
                       </div>
                     </div>
                   </form>
