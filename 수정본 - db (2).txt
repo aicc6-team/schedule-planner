@@ -1,0 +1,189 @@
+// 개인일정 테이블: 기본 개인 일정 정보 저장
+Table PersonalSchedule {
+  id varchar [pk] // 일정 고유 아이디
+  date date // 일정 날짜
+  title varchar // 일정 제목
+  description text // 일정 설명
+  start_time datetime // 일정 시작 시간
+  end_time datetime // 일정 종료 시간
+  duration_minutes int // 업무 소요 시간 (분)
+  status varchar // 일정 상태 (완료, 지연 등)
+  tag varchar // 업무 태그
+  emotion varchar // 감정 상태
+  created_at datetime // 생성 일시
+  updated_at datetime // 수정 일시
+}
+
+// 부서일정 테이블: 부서별 일정 정보 저장
+Table DepartmentSchedule {
+  id varchar [pk] // 일정 고유 아이디
+  department_name varchar // 부서명
+  assignee varchar // 담당자명
+  date date // 일정 날짜
+  title varchar // 일정 제목
+  description text // 일정 설명
+  start_time datetime // 일정 시작 시간
+  end_time datetime // 일정 종료 시간
+  delay_hours float // 응답 지연 시간 (시간 단위)
+  schedule_type varchar // 일정 유형
+  collaboration_pairs json // 협업 참여자 쌍 데이터
+  duration_minutes int // 업무 소요 시간 (분)
+  quality float // 업무 품질 점수
+  status varchar // 일정 상태
+  created_at datetime // 생성 일시
+  updated_at datetime // 수정 일시
+}
+
+// 프로젝트일정 테이블: 프로젝트별 일정 정보 저장
+Table ProjectSchedule {
+  id varchar [pk] // 프로젝트 일정 고유 아이디
+  project_id varchar // 프로젝트 고유 아이디
+  project_name varchar // 프로젝트명 (일정 제목)
+  project_description text // 프로젝트 설명 (일정 설명)
+  date date // 분석 기준 날짜
+  task_list json // 작업 단계 리스트
+  start_dates json // 작업별 시작일 리스트
+  durations json // 작업별 기간(일 단위)
+  dependencies json // 단계별 종속 관계
+  planned_completion_dates json // 계획 완료일 리스트
+  actual_completion_dates json // 실제 완료일 리스트
+  simulation_completion_dates json // 완료일 시뮬레이션 데이터
+  progress json // 단계별 진행률
+  delay_times json // 단계별 지연 시간
+  intervals json // 단계 간 간격
+  budget json // 누적 예산 소모
+  status json // 단계별 상태 (완료, 진행, 지연)
+  created_at datetime // 생성 일시
+  updated_at datetime // 수정 일시
+}
+
+// 회사일정 테이블: 구글 캘린더 기반 회사 일정 정보 저장
+Table CompanySchedule {
+  schedule_id varchar [pk] // 구글 캘린더 이벤트 ID
+  title varchar // 일정 제목
+  description text // 일정 설명
+  start_datetime datetime // 일정 시작일 및 시간
+  end_datetime datetime // 일정 종료일 및 시간
+  organizer varchar // 주최 기관명
+  supporting_organizations json // 협조 기관 리스트
+  attendees json // 참석자 리스트
+  created_at datetime // 생성 일시
+  updated_at datetime // 수정 일시
+}
+
+// 일정충돌 테이블: 충돌 일정 관리
+Table ScheduleConflict {
+  conflict_id varchar [pk] // 충돌 일정 고유 아이디
+  conflict_schedule1_id varchar // 충돌 대상 일정1 ID (예: 개인일정 아이디)
+  conflict_schedule1_type varchar // 충돌 대상1 유형 (personal, department, project, company)
+  conflict_schedule2_id varchar // 충돌 대상 일정2 ID
+  conflict_schedule2_type varchar // 충돌 대상2 유형
+  adjusted_schedule_id varchar // 조정된 일정 ID
+  adjusted_schedule_type varchar // 조정된 일정 유형
+  adjusted_date datetime // 일정 변경 일시
+  created_at datetime // 생성 일시
+  updated_at datetime // 수정 일시
+}
+
+// 개인일정분석 테이블: 개인 일정 분석 데이터 저장
+Table PersonalScheduleAnalysis {
+  date date [pk] // 분석 기준 날짜
+  total_schedules int // 총 일정 수
+  completed_schedules int // 완료된 일정 수
+  start_time_distribution json // 시간대별 시작 일정 건수 분포
+  end_time_distribution json // 시간대별 종료 일정 건수 분포
+  completion_rate_by_tag json // 태그별 완료율 및 평균 소요 시간
+  duration_distribution json // 소요 시간 분포 데이터
+  task_count_by_emotion json // 감정 상태별 업무 수
+  task_count_by_status json // 상태별 업무 수 (완료, 지연, 미이행)
+  schedule_count_by_time_slot json // 시간대별 일정 건수
+  cumulative_completions json // 시간 경과에 따른 누적 완료 업무 수
+}
+
+// 부서일정분석 테이블: 부서별 일정 분석 데이터 저장
+Table DepartmentScheduleAnalysis {
+  department_name varchar [pk] // 부서명
+  date date [pk] // 분석 날짜
+  average_delay_per_member json // 팀원별 평균 응답 및 지연 시간
+  schedule_type_ratio json // 일정 유형별 비율 (회의, 실행, 검토 등)
+  bottleneck_time_slots json // 시간대별 병목 현상 건수
+  collaboration_network json // 협업 네트워크 참여 횟수
+  workload_by_member_and_type json // 팀원별 업무 유형별 투입 시간
+  execution_time_stats json // 업무 수행시간 최소, 최대, 중앙값
+  quality_stats json // 업무 품질 평균, 최소, 최대값
+  monthly_schedule_trends json // 월별 일정 건수 추이
+  issue_occurrence_rate json // 태그별, 팀별 지연 건수
+}
+
+// 프로젝트일정분석 테이블: 프로젝트별 일정 분석 데이터 저장
+Table ProjectScheduleAnalysis {
+  project_id varchar [pk] // 프로젝트 ID
+  date date [pk] // 분석 날짜
+  task_list json // 작업 리스트
+  start_dates json // 시작일 리스트
+  durations json // 단계별 기간
+  dependencies json // 작업 간 종속 관계
+  planned_completion_dates json // 계획 완료일 리스트
+  actual_completion_dates json // 실제 완료일 리스트
+  simulation_completion_dates json // 완료일 시뮬레이션
+  progress json // 단계별 진행률
+  delay_times json // 단계별 지연 시간
+  intervals json // 단계 간 간격
+  cumulative_budget json // 예산 누적 소모
+  stage_status json // 단계별 상태 (완료, 진행, 지연)
+}
+
+// 회사일정분석 테이블: 회사 일정 분석 데이터 저장
+Table CompanyScheduleAnalysis {
+  schedule_id varchar [pk] // 회사 일정 고유 아이디
+  analysis_start_date date // 분석 기간 시작일
+  analysis_end_date date // 분석 기간 종료일
+  total_schedules int // 총 일정 건수
+  schedule_duration_distribution json // 일정 기간별 분포
+  time_slot_distribution json // 시간대별 분포
+  attendee_participation_counts json // 참석자별 참여 횟수
+  organizer_schedule_counts json // 주최 기관별 일정 수
+  supporting_organization_collaborations json // 협조 기관별 협력 횟수
+  monthly_schedule_counts json // 월별 일정 건수 추이
+  schedule_category_ratio json // 일정 카테고리별 비율
+  updated_at datetime // 갱신 일시
+}
+
+// 종합분석보고서 테이블: 개인/부서/프로젝트/회사별 종합 보고서 저장
+Table ComprehensiveAnalysisReport {
+  report_id varchar [pk] // 보고서 고유 아이디
+  report_type varchar // 보고서 유형 (개인, 부서, 프로젝트, 회사, 종합 등)
+  related_id varchar // 관련 대상 ID (날짜, 부서명, 프로젝트ID, 일정ID 등)
+  created_at datetime // 보고서 생성 일시
+  analysis_start_date date // 분석 시작일
+  analysis_end_date date // 분석 종료일
+  summary text // 보고서 요약
+  chart_data json // 차트 데이터
+  raw_data json // 원본 분석 데이터
+}
+
+// AI 충돌일정분석 요청 테이블
+Table AIConflictScheduleAnalysis {
+  request_id varchar [pk] // 요청 고유 아이디
+  conflict_id varchar // 충돌 일정 고유 아이디
+  user_id varchar // 요청 사용자 아이디
+  request_datetime datetime // 요청 일시
+  request_params json // 요청 파라미터
+  status varchar // 상태 (대기, 진행, 완료 등)
+  completion_datetime datetime // 완료 일시
+}
+
+// 관계 정의
+Ref: PersonalSchedule.date > PersonalScheduleAnalysis.date
+Ref: DepartmentSchedule.department_name > DepartmentScheduleAnalysis.department_name
+Ref: DepartmentSchedule.date > DepartmentScheduleAnalysis.date
+Ref: ProjectSchedule.project_id > ProjectScheduleAnalysis.project_id
+Ref: ProjectSchedule.date > ProjectScheduleAnalysis.date
+Ref: CompanySchedule.schedule_id > CompanyScheduleAnalysis.schedule_id
+Ref: AIConflictScheduleAnalysis.conflict_id > ScheduleConflict.conflict_id
+Ref: ScheduleConflict.conflict_schedule1_id > PersonalSchedule.id
+Ref: ScheduleConflict.conflict_schedule2_id > PersonalSchedule.id
+Ref: ComprehensiveAnalysisReport.related_id > PersonalScheduleAnalysis.date
+Ref: ComprehensiveAnalysisReport.related_id > DepartmentScheduleAnalysis.date
+Ref: ComprehensiveAnalysisReport.related_id > ProjectScheduleAnalysis.date
+Ref: ComprehensiveAnalysisReport.related_id > CompanyScheduleAnalysis.schedule_id

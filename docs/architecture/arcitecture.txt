@@ -1,0 +1,125 @@
+[기술 명세서 + 디렉토리 구조 + 프로세스 정의서] – "내 일정을 부탁해"
+
+====================
+1. 기술 명세서
+====================
+
+1.1 프론트엔드 기술 스택
+- Next.js 14 (React 기반, App Router)
+- TypeScript
+- Tailwind CSS
+- Recoil (상태관리)
+- Chart.js (데이터 시각화)
+
+1.2 백엔드 기술 스택
+- Node.js + Express
+- TypeScript
+- Firebase Admin SDK
+- Google APIs (Calendar, People)
+- JWT 인증
+
+1.3 AI 서버 기술 스택
+- Python 3.11+
+- FastAPI
+- LangChain
+- OpenAI API
+- Firebase Admin SDK
+
+1.4 외부 API
+- Google Calendar API: 일정 동기화 (OAuth 인증 기반)
+- OpenAI API: 일정 분석 및 조언 기능 (GPT-4 모델 기반)
+
+1.5 데이터베이스
+- Firebase Realtime Database: 실시간 일정 데이터
+- Firebase Authentication: 사용자 인증
+
+1.6 비기능 기술 요소
+- 보안: HTTPS, OAuth2 인증, JWT 토큰, Firebase DB 권한 규칙
+- 백업: Firebase DB Export 기능 사용
+- 배포: Vercel (프론트) + Railway (백엔드) + Railway (AI 서버)
+
+====================
+2. 디렉토리 구조
+====================
+
+/project-root/
+├── frontend/                 # Next.js 프론트엔드
+│   ├── src/
+│   │   ├── app/             # App Router
+│   │   │   └── components/      # 재사용 컴포넌트
+│   │   ├── hooks/          # 커스텀 훅
+│   │   ├── stores/         # Recoil 상태 관리
+│   │   ├── types/          # TypeScript 타입 정의
+│   │   └── utils/          # 유틸리티 함수
+│   │   └── app/             # App Router
+│   ├── public/             # 정적 파일
+│   └── package.json
+├── backend/                 # Node.js 백엔드
+│   ├── src/
+│   │   ├── controllers/    # API 컨트롤러
+│   │   ├── middleware/     # 미들웨어
+│   │   ├── routes/         # API 라우트
+│   │   ├── services/       # 비즈니스 로직
+│   │   ├── types/          # TypeScript 타입
+│   │   └── utils/          # 유틸리티
+│   ├── package.json
+│   └── tsconfig.json
+├── ai-server/              # Python AI 서버
+│   ├── app/
+│   │   ├── api/            # FastAPI 엔드포인트
+│   │   ├── services/       # AI 서비스 로직
+│   │   ├── models/         # 데이터 모델
+│   │   └── utils/          # 유틸리티
+│   ├── requirements.txt
+│   └── main.py
+└── docs/                   # 프로젝트 문서
+
+====================
+3. 프로세스 정의서
+====================
+
+3.1 사용자 플로우
+
+(1) 사용자 로그인
+    - Google OAuth를 통해 로그인
+    - Next.js 프론트엔드에서 인증 처리
+    - JWT 토큰 발급 및 저장
+    - 사용자 역할(관리자/팀원 등) 로딩
+
+(2) 일정 등록
+    - Next.js 일정 페이지에서 일정 입력
+    - 백엔드 API를 통해 Firebase DB에 저장
+    - 실시간 데이터 동기화
+
+(3) 일정 공유
+    - 프로젝트 생성 시 구성원 선택
+    - 백엔드에서 권한 설정 및 Firebase DB 업데이트
+    - 구성원은 해당 프로젝트 일정에 접근 가능
+
+(4) 일정 분석
+    - Next.js 분석 페이지 접속 시 사용자 일정 자동 로딩
+    - Chart.js를 통해 시각화
+    - AI 서버 API 호출하여 OpenAI 기반 조언 자동 생성
+
+(5) 구글 캘린더 연동
+    - 사용자가 로그인 후 캘린더 연동 버튼 클릭
+    - 백엔드에서 Google Calendar API로 일정 push
+    - iframe으로 구글 캘린더 보기 지원
+
+(6) AI 일정 최적화
+    - 사용자가 마감일 입력 시
+    - AI 서버에서 LangChain + OpenAI로 역산 일정 생성
+    - 백엔드를 통해 개인 일정에 자동 삽입
+    - 충돌 일정 확인 및 경고
+
+3.2 관리자 프로세스
+
+- 사용자 목록 확인 및 권한 부여
+- 프로젝트 생성 및 멤버 초대
+- 일정 통계 확인 (완료율, 참여율 등)
+
+3.3 알림/리마인드 프로세스 (예정 기능)
+- 백엔드 스케줄러 또는 외부 스케줄러 연동
+- 마감일 기준 1시간 전, 30분 전 이메일/슬랙 알림
+
+--- END ---
