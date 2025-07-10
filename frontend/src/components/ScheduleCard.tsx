@@ -7,13 +7,12 @@ import {
   ClockIcon,
   TagIcon,
   UserCircleIcon,
-  EllipsisVerticalIcon,
   CheckCircleIcon,
   PencilIcon,
   TrashIcon,
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
-import { Menu, Transition } from '@headlessui/react';
+import { useRouter } from 'next/navigation';
 
 interface ScheduleCardProps {
   schedule: Schedule;
@@ -21,9 +20,11 @@ interface ScheduleCardProps {
   onDelete: (schedule: Schedule) => void;
   onComplete?: (schedule: Schedule) => void;
   isOverdue?: boolean;
+  isPastTab?: boolean;
 }
 
-const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete, onComplete, isOverdue }) => {
+const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete, onComplete, isOverdue, isPastTab }) => {
+  const router = useRouter();
   const { title, description, startTime, endTime, priority, type, assignee, project, status } = schedule;
 
   const getPriorityInfo = (priority: 'high' | 'medium' | 'low') => {
@@ -72,7 +73,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
   const typeInfo = getTypeInfo(type);
 
   const cardClasses = `
-    rounded-lg border p-4 shadow-sm transition-all duration-200 flex flex-col h-full
+    rounded-lg border p-3 shadow-sm transition-all duration-200 flex flex-col h-full
     ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-white'}
     ${status === 'completed' ? 'opacity-60 bg-gray-50' : ''}
   `;
@@ -95,113 +96,95 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
   return (
     <div className={cardClasses}>
       {/* 카드 헤더 */}
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex items-start justify-between mb-1.5">
         <div className="flex flex-col">
-          <h3 className={`font-bold text-lg ${status === 'completed' ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+          <h3 className={`font-bold text-sm ${status === 'completed' ? 'line-through text-gray-500' : 'text-gray-800'}`}>
             {title}
           </h3>
-          <p className="text-sm text-gray-500 mt-1">{formatDate(startTime)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{formatDate(startTime)}</p>
         </div>
 
-        <Menu as="div" className="relative">
-          <Menu.Button className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-            <EllipsisVerticalIcon className="h-5 w-5" />
-          </Menu.Button>
-          <Transition
-            enter="transition ease-out duration-100"
-            enterFrom="transform opacity-0 scale-95"
-            enterTo="transform opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="transform opacity-100 scale-100"
-            leaveTo="transform opacity-0 scale-95"
-          >
-            <Menu.Items className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-              {status !== 'completed' && onComplete && !isOverdue && (
-                <Menu.Item>
-                  {({ active }: { active: boolean }) => (
-                    <button
-                      onClick={() => onComplete(schedule)}
-                      className={`${
-                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                      } group flex w-full items-center px-4 py-2 text-sm`}
-                    >
-                      <CheckCircleIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
-                      완료
-                    </button>
-                  )}
-                </Menu.Item>
-              )}
-              <Menu.Item>
-                {({ active }: { active: boolean }) => (
-                  <button
-                    onClick={() => onEdit(schedule)}
-                    className={`${
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                    } group flex w-full items-center px-4 py-2 text-sm`}
-                  >
-                    <PencilIcon className="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
-                    수정
-                  </button>
-                )}
-              </Menu.Item>
-              <Menu.Item>
-                {({ active }: { active: boolean }) => (
-                  <button
-                    onClick={() => onDelete(schedule)}
-                    className={`${
-                      active ? 'bg-red-50 text-red-900' : 'text-red-700'
-                    } group flex w-full items-center px-4 py-2 text-sm`}
-                  >
-                    <TrashIcon className="mr-3 h-5 w-5 text-red-400 group-hover:text-red-500" />
-                    삭제
-                  </button>
-                )}
-              </Menu.Item>
-            </Menu.Items>
-          </Transition>
-        </Menu>
+        {/* 액션 버튼들을 가로로 배치 */}
+        <div className="flex items-center gap-1">
+          {status !== 'completed' && onComplete && !isOverdue && !isPastTab && (
+            <button
+              type="button"
+              onClick={() => onComplete(schedule)}
+              className="p-1.5 rounded-md text-green-600 hover:bg-green-50 transition-colors"
+              title="완료"
+            >
+              <CheckCircleIcon className="h-4 w-4" />
+            </button>
+          )}
+          {!isOverdue && !isPastTab && (
+            <>
+              <button
+                type="button"
+                onClick={() => router.push(`/schedules/create?id=${schedule.id}&type=${schedule.type}&mode=edit`)}
+                className="p-1.5 rounded-md text-blue-600 hover:bg-blue-50 transition-colors"
+                title="수정"
+              >
+                <PencilIcon className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(schedule)}
+                className="p-1.5 rounded-md text-red-600 hover:bg-red-50 transition-colors"
+                title="삭제"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          {(isOverdue || isPastTab) && onComplete && schedule.status === 'pending' && (
+            <button
+              type="button"
+              onClick={() => onComplete(schedule)}
+              className="flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 px-1 py-0.5 rounded text-xs font-medium"
+            >
+              <ExclamationCircleIcon className="h-3 w-3" />
+              <span>미완료</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 카드 본문 */}
-      <div className="flex-grow">
-        <p className={`text-sm ${status === 'completed' ? 'text-gray-400' : 'text-gray-600'}`}>{description}</p>
+      <div className="flex-grow mb-1.5">
+        <p className={`text-xs ${status === 'completed' ? 'text-gray-400' : 'text-gray-600'} line-clamp-1`}>{description}</p>
       </div>
 
-      {/* 카드 푸터 */}
-      <div className="mt-4 pt-3 border-t border-gray-200">
-        <div className="flex items-center justify-between text-sm text-gray-500">
+      {/* 카드 푸터 - 더 컴팩트하게 */}
+      <div className="pt-1.5 border-t border-gray-200">
+        {/* 시간과 우선순위를 한 줄에 */}
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-0.5">
            <div className="flex items-center gap-1">
-             <ClockIcon className="h-4 w-4" />
+             <ClockIcon className="h-3 w-3" />
              <span>{formatTime(startTime)} - {formatTime(endTime)}</span>
            </div>
            <Badge variant={priorityInfo.badgeVariant} size="sm">{priorityInfo.text}</Badge>
         </div>
-        <div className="flex items-center justify-between mt-2 text-sm">
+        
+        {/* 프로젝트와 타입을 한 줄에 */}
+        <div className="flex items-center justify-between text-xs mb-0.5">
           <div className="flex items-center gap-1 text-gray-500">
-            <TagIcon className="h-4 w-4" />
-            <span>{project}</span>
+            <TagIcon className="h-3 w-3" />
+            <span className="truncate max-w-20">{project}</span>
           </div>
           <Badge variant={typeInfo.badgeVariant} size="sm">{typeInfo.text}</Badge>
         </div>
-        <div className="flex items-center justify-between mt-2 text-sm text-gray-500">
+        
+        {/* 담당자와 상태를 한 줄에 */}
+        <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-1">
-            <UserCircleIcon className="h-4 w-4" />
-            <span>{assignee}</span>
+            <UserCircleIcon className="h-3 w-3" />
+            <span className="truncate max-w-16">{assignee}</span>
           </div>
-          {status === 'completed' && (
+          {status === 'completed' && !isOverdue && !isPastTab && (
             <div className="flex items-center gap-1 text-green-600 font-medium">
-              <CheckCircleIcon className="h-4 w-4" />
-              <span>완료됨</span>
+              <CheckCircleIcon className="h-3 w-3" />
+              <span>완료</span>
             </div>
-          )}
-          {isOverdue && (
-            <button
-              onClick={() => onComplete && onComplete(schedule)}
-              className="flex items-center gap-1 text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-md text-sm font-medium"
-            >
-              <ExclamationCircleIcon className="h-4 w-4" />
-              <span>미완료</span>
-            </button>
           )}
         </div>
       </div>

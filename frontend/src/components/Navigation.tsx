@@ -12,15 +12,17 @@ import {
   XMarkIcon,
   PlusIcon,
   CalendarDaysIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 const mainNavigation = [
+  { name: '일정 입력', href: '/schedules/create', icon: PlusIcon },
   { name: '일정 관리', href: '/schedules', icon: CalendarIcon },
   { name: '일정 충돌', href: '/conflicts', icon: ExclamationTriangleIcon },
   { name: '캘린더', href: '/calendar', icon: CalendarDaysIcon },
-  { name: '일정 입력', href: '/schedules/create', icon: PlusIcon },
   { name: '분석', href: '/analytics', icon: ChartBarIcon },
+  { name: '레포트', href: '/reports', icon: DocumentTextIcon },
 ];
 
 const bottomNavigation = [
