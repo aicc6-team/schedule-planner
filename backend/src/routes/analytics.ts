@@ -1,6 +1,6 @@
 import express from 'express';
 import { db } from '../config/firebase';
-import { DocumentSnapshot } from 'firebase-admin/firestore';
+import { DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import { 
   getRecentPersonalSchedule, 
   getKoreanAnalysis, 
@@ -65,7 +65,18 @@ const router = express.Router();
 // GET /api/analytics/personalTasks - PersonalScheduleAnalysis 컬렉션의 모든 데이터 가져오기
 router.get('/personalTasks', async (_req, res) => {
   try {
-    const snapshot = await db.collection('PersonalScheduleAnalysis').get();
+    // 오늘과 3개월 전 날짜 계산
+    const today = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
+    const endTimestamp = Timestamp.fromDate(today);
+
+    // 날짜 조건 추가 (Timestamp 타입으로 비교)
+    const snapshot = await db.collection('PersonalScheduleAnalysis')
+      .where('date', '>=', startTimestamp)
+      .where('date', '<=', endTimestamp)
+      .get();
     
     const tasks = snapshot.docs.map((doc: DocumentSnapshot) => ({
       id: doc.id,
@@ -84,6 +95,13 @@ router.get('/departmentTasks', async (req, res) => {
   try {
     const { department_name, date } = req.query;
     
+    // 오늘과 3개월 전 날짜 계산
+    const today = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
+    const endTimestamp = Timestamp.fromDate(today);
+
     let query: any = db.collection('DepartmentScheduleAnalysis');
     
     // 부서명 필터링
@@ -91,9 +109,11 @@ router.get('/departmentTasks', async (req, res) => {
       query = query.where('department_name', '==', department_name);
     }
     
-    // 날짜 필터링
+    // 날짜 필터링 (쿼리 파라미터 우선, 없으면 3개월 조건)
     if (date) {
       query = query.where('date', '==', date);
+    } else {
+      query = query.where('date', '>=', startTimestamp).where('date', '<=', endTimestamp);
     }
     
     const snapshot = await query.get();
@@ -117,6 +137,13 @@ router.get('/companyTasks', async (req, res) => {
   try {
     const { schedule_id, analysis_start_date, analysis_end_date } = req.query;
     
+    // 오늘과 3개월 전 날짜 계산
+    const today = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
+    const endTimestamp = Timestamp.fromDate(today);
+
     let query: any = db.collection('CompanyScheduleAnalysis');
     
     // schedule_id 필터링
@@ -124,14 +151,13 @@ router.get('/companyTasks', async (req, res) => {
       query = query.where('schedule_id', '==', schedule_id);
     }
     
-    // 분석 시작일 필터링
-    if (analysis_start_date) {
-      query = query.where('analysis_start_date', '==', analysis_start_date);
-    }
-    
-    // 분석 종료일 필터링
-    if (analysis_end_date) {
-      query = query.where('analysis_end_date', '==', analysis_end_date);
+    // 분석 시작일/종료일 필터링 (파라미터 우선, 없으면 3개월 조건)
+    if (analysis_start_date && analysis_end_date) {
+      query = query.where('analysis_start_date', '==', analysis_start_date)
+                   .where('analysis_end_date', '==', analysis_end_date);
+    } else {
+      query = query.where('analysis_start_date', '>=', startTimestamp)
+                   .where('analysis_end_date', '<=', endTimestamp);
     }
     
     const snapshot = await query.get();
@@ -155,6 +181,13 @@ router.get('/projectTasks', async (req, res) => {
   try {
     const { project_id, date } = req.query;
     
+    // 오늘과 3개월 전 날짜 계산
+    const today = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
+    const endTimestamp = Timestamp.fromDate(today);
+
     let query: any = db.collection('ProjectScheduleAnalysis');
     
     // project_id 필터링
@@ -162,9 +195,11 @@ router.get('/projectTasks', async (req, res) => {
       query = query.where('project_id', '==', project_id);
     }
     
-    // 날짜 필터링
+    // 날짜 필터링 (쿼리 파라미터 우선, 없으면 3개월 조건)
     if (date) {
       query = query.where('date', '==', date);
+    } else {
+      query = query.where('date', '>=', startTimestamp).where('date', '<=', endTimestamp);
     }
     
     const snapshot = await query.get();

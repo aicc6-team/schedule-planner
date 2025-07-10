@@ -173,7 +173,7 @@ export const firestoreService = {
   // 개인 일정 컬렉션 조회
   async getPersonalSchedules(): Promise<PersonalSchedule[]> {
     try {
-      const snapshot = await db.collection('personal_schedules').get();
+      const snapshot = await db.collection('PersonalSchedule').get();
       return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -187,7 +187,7 @@ export const firestoreService = {
   // 부서 일정 컬렉션 조회
   async getDepartmentSchedules(): Promise<DepartmentSchedule[]> {
     try {
-      const snapshot = await db.collection('department_schedules').get();
+      const snapshot = await db.collection('DepartmentSchedule').get();
       return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -201,7 +201,7 @@ export const firestoreService = {
   // 프로젝트 일정 컬렉션 조회
   async getProjectSchedules(): Promise<ProjectSchedule[]> {
     try {
-      const snapshot = await db.collection('project_schedules').get();
+      const snapshot = await db.collection('ProjectSchedule').get();
       return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
