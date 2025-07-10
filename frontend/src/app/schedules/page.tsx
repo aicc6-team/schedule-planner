@@ -9,6 +9,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { Schedule } from '@/types/schedule';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
+import Modal from '@/components/Modal';
+import EditScheduleForm from '@/components/EditScheduleForm';
 
 // API 호출 함수들 - 전체 일정 조회만 남기고 나머지는 생략 (실제 파일에는 존재)
 const API_BASE_URL = 'http://localhost:3001';
@@ -169,7 +171,7 @@ const areaOrder = [
   { key: 'project', label: '프로젝트 영역', color: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-900' },
 ];
 
-const ITEMS_PER_PAGE = 3;
+const ITEMS_PER_PAGE = 5;
 
 export default function SchedulesPage() {
   const router = useRouter();
@@ -184,6 +186,10 @@ export default function SchedulesPage() {
     company: 1,
     project: 1,
   });
+  const [editTarget, setEditTarget] = useState<Schedule | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // NOTE: 삭제, 수정 등 다른 상태와 핸들러는 편의상 생략 (실제 코드에는 존재)
 
@@ -204,8 +210,16 @@ export default function SchedulesPage() {
     loadSchedules();
   }, []);
 
-  const handleEditSchedule = (schedule: Schedule) => { /* ... */ };
-  const handleDeleteSchedule = (schedule: Schedule) => { /* ... */ };
+  const handleEditSchedule = (schedule: Schedule) => {
+    setEditTarget(schedule);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteSchedule = (schedule: Schedule) => {
+    setDeleteTarget(schedule);
+    setShowDeleteConfirm(true);
+  };
+
   const handleCompleteSchedule = async (scheduleToComplete: Schedule) => {
     const originalStatus = scheduleToComplete.status;
     
@@ -272,6 +286,12 @@ export default function SchedulesPage() {
     const endTime = new Date(schedule.endTime);
     const isOverdue = endTime < now && schedule.status === 'pending';
     return schedule.status === 'completed' || isOverdue;
+  }).sort((a, b) => {
+    // 미완료(pending) 일정이 먼저, 완료(completed) 일정이 뒤에 오도록
+    if (a.status === 'pending' && b.status !== 'pending') return -1;
+    if (a.status !== 'pending' && b.status === 'pending') return 1;
+    // 같은 상태라면 시작 시간 오름차순
+    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
   });
 
   const filteredSchedules = activeTab === 'ongoing' ? ongoingSchedules : pastSchedules;
@@ -290,61 +310,107 @@ export default function SchedulesPage() {
     return acc;
   }, {} as Record<string, Schedule[]>);
 
+  const handleEditSubmit = async (formData: any) => {
+    if (!editTarget) return;
+    setShowEditModal(false);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/schedules/${editTarget.type}/${editTarget.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error('일정 수정에 실패했습니다.');
+      const allSchedules = await fetchAllSchedules();
+      setSchedules(transformAllSchedules(allSchedules));
+    } catch (e) {
+      alert('일정 수정에 실패했습니다.');
+    } finally {
+      setEditTarget(null);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setShowDeleteConfirm(false);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/schedules/${deleteTarget.type}/${deleteTarget.id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('일정 삭제에 실패했습니다.');
+      const allSchedules = await fetchAllSchedules();
+      setSchedules(transformAllSchedules(allSchedules));
+    } catch (e) {
+      alert('일정 삭제에 실패했습니다.');
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <main className="lg:pl-64">
        <div className="p-8">
-        <header className="flex items-center justify-between pb-6 border-b border-gray-200">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">일정 관리</h1>
-            <p className="text-gray-500">모든 일정을 한 곳에서 관리하세요</p>
+        <header className="flex items-center pb-6">
+          <div className="flex-1">
+            <h3 className="text-2xl font-bold text-gray-900">일정 관리</h3>
+            <p className="text-gray-500 mb-4">모든 일정을 한 곳에서 관리하세요</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex rounded-md shadow-sm">
-              <button
-                onClick={() => setActiveTab('ongoing')}
-                className={`px-4 py-2 text-sm font-medium rounded-l-lg border border-gray-200 ${activeTab === 'ongoing' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                진행 일정
-              </button>
-              <button
-                onClick={() => setActiveTab('past')}
-                className={`px-4 py-2 text-sm font-medium rounded-r-lg border border-gray-200 -ml-px ${activeTab === 'past' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-              >
-                지난 일정
-              </button>
-            </div>
+        </header>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex border-b border-gray-200 w-fit">
+            <button
+              onClick={() => setActiveTab('ongoing')}
+              className={`px-6 py-3 text-base font-semibold focus:outline-none transition rounded-t-md
+                ${activeTab === 'ongoing'
+                  ? 'border-b-2 border-blue-500 text-blue-500 bg-blue-50 shadow'
+                  : 'border-b-2 border-transparent text-gray-700 bg-white hover:bg-blue-50'}
+              `}
+            >
+              진행 일정
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`px-6 py-3 text-base font-semibold focus:outline-none transition rounded-t-md ml-2
+                ${activeTab === 'past'
+                  ? 'border-b-2 border-blue-500 text-blue-500 bg-blue-50 shadow'
+                  : 'border-b-2 border-transparent text-gray-700 bg-white hover:bg-blue-50'}
+              `}
+            >
+              지난 일정
+            </button>
+          </div>
+          <div className="flex items-center">
             <button 
               onClick={() => { setIsAnalyzing(true); setTimeout(() => setIsAnalyzing(false), 2000)}}
               disabled={isAnalyzing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
             >
               <SparklesIcon className={`h-5 w-5 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
               {isAnalyzing ? 'AI 분석 중...' : 'AI 자동 분석'}
             </button>
           </div>
-        </header>
+        </div>
 
         {loading && <div className="text-center py-10">로딩 중...</div>}
         {error && <div className="text-center py-10 text-red-500">오류: {error}</div>}
 
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 mt-8 items-start">
             {areaOrder.map(area => {
               const totalSchedules = schedulesByArea[area.key]?.length || 0;
               const totalPages = Math.ceil(totalSchedules / ITEMS_PER_PAGE);
               const currentPage = currentPages[area.key] || 1;
               
               return (
-              <div key={area.key} className={`rounded-xl shadow-sm border ${area.color} ${area.border} flex flex-col`}>
+              <div key={area.key} className={`rounded-xl shadow-sm border ${area.color} ${area.border} flex flex-col min-h-[1100px] max-h-[1100px]`}>
                 <div className={`p-4 border-b ${area.border}`}>
                   <h2 className={`font-bold text-lg ${area.text}`}>{area.label}</h2>
                   <p className={`text-sm ${area.text} opacity-80`}>
                     {totalSchedules}개의 일정
                   </p>
                 </div>
-                <div className="p-4 space-y-4 flex-grow">
+                <div className="p-4 space-y-4 flex-grow overflow-y-auto">
                   {paginatedSchedulesByArea[area.key]?.length > 0 ? (
                     paginatedSchedulesByArea[area.key].map(schedule => {
                       const isOverdue = new Date(schedule.endTime) < now && schedule.status === 'pending';
@@ -356,6 +422,7 @@ export default function SchedulesPage() {
                           onDelete={handleDeleteSchedule}
                           onComplete={handleCompleteSchedule}
                           isOverdue={isOverdue && activeTab === 'past'}
+                          isPastTab={activeTab === 'past'}
                         />
                       )
                     })
@@ -392,6 +459,26 @@ export default function SchedulesPage() {
         )}
        </div>
       </main>
+      {/* 일정 수정 모달 */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="일정 수정" size="md">
+        {editTarget && (
+          <EditScheduleForm
+            schedule={editTarget}
+            onSubmit={handleEditSubmit}
+            onCancel={() => setShowEditModal(false)}
+          />
+        )}
+      </Modal>
+      {/* 일정 삭제 확인 모달 */}
+      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="일정 삭제 확인" size="sm">
+        <div className="space-y-4">
+          <p>정말로 이 일정을 삭제하시겠습니까?</p>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded bg-gray-100 text-gray-700">취소</button>
+            <button onClick={handleDeleteConfirm} className="px-4 py-2 rounded bg-red-600 text-white">삭제</button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 } 

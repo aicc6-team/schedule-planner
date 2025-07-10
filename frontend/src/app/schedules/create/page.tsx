@@ -17,6 +17,7 @@ import {
   PlusIcon,
   CheckIcon
 } from '@heroicons/react/24/outline';
+import { Listbox } from '@headlessui/react';
 
 const scheduleTypes = [
   {
@@ -158,8 +159,8 @@ function ScheduleCreateContent() {
     title: '',
     description: '',
     date: new Date().toISOString().slice(0, 10),
-    time: new Date().toTimeString().slice(0, 5),
-    durationMinutes: 30,
+    hour: new Date().getHours(),
+    durationHours: 1,
     importance: 'medium',
     emotion: 'normal',
     status: 'pending',
@@ -169,7 +170,7 @@ function ScheduleCreateContent() {
     title: '',
     objective: '',
     date: new Date().toISOString().slice(0, 10),
-    time: new Date().toTimeString().slice(0, 5),
+    hour: new Date().getHours(),
     participants: [] as string[],
     status: 'pending',
   });
@@ -179,7 +180,7 @@ function ScheduleCreateContent() {
     objective: '',
     category: '',
     endDate: new Date().toISOString().slice(0, 10),
-    time: new Date().toTimeString().slice(0, 5),
+    hour: new Date().getHours(),
     roles: {
       pm: 0,
       backend: 0,
@@ -211,8 +212,8 @@ function ScheduleCreateContent() {
           title: scheduleData.title || '',
           description: scheduleData.description || '',
           date: scheduleData.date || '',
-          time: scheduleData.time || '',
-          durationMinutes: scheduleData.durationMinutes || 30,
+          hour: scheduleData.time ? Number(scheduleData.time.split(':')[0]) : 0,
+          durationHours: scheduleData.durationMinutes ? Math.max(1, Math.round(scheduleData.durationMinutes / 60)) : 1,
           importance: scheduleData.importance || 'medium',
           emotion: scheduleData.emotion || 'normal',
           status: scheduleData.status || 'pending',
@@ -223,7 +224,7 @@ function ScheduleCreateContent() {
           title: scheduleData.title || '',
           objective: scheduleData.objective || '',
           date: scheduleData.date || '',
-          time: scheduleData.time || '',
+          hour: scheduleData.time ? Number(scheduleData.time.split(':')[0]) : 0,
           participants: scheduleData.participants || [],
           status: scheduleData.status || 'pending',
         });
@@ -234,17 +235,8 @@ function ScheduleCreateContent() {
           objective: scheduleData.objective || '',
           category: scheduleData.category || '',
           endDate: scheduleData.endDate || '',
-          time: scheduleData.time || '',
-          roles: scheduleData.roles || {
-            pm: 0,
-            backend: 0,
-            frontend: 0,
-            designer: 0,
-            marketer: 0,
-            sales: 0,
-            general: 0,
-            others: 0,
-          },
+          hour: scheduleData.time ? Number(scheduleData.time.split(':')[0]) : 0,
+          roles: scheduleData.roles || { pm: 0, backend: 0, frontend: 0, designer: 0, marketer: 0, sales: 0, general: 0, others: 0 },
           status: scheduleData.status || 'pending',
         });
       }
@@ -310,7 +302,7 @@ function ScheduleCreateContent() {
     if (!personalForm.date) {
       newErrors.personal_date = '날짜를 선택해주세요.';
     }
-    if (!personalForm.time) {
+    if (!personalForm.hour) {
       newErrors.personal_time = '시간을 선택해주세요.';
     }
     
@@ -326,7 +318,7 @@ function ScheduleCreateContent() {
     if (!departmentForm.date) {
       newErrors.department_date = '날짜를 선택해주세요.';
     }
-    if (!departmentForm.time) {
+    if (!departmentForm.hour) {
       newErrors.department_time = '시간을 선택해주세요.';
     }
     
@@ -342,7 +334,7 @@ function ScheduleCreateContent() {
     if (!projectForm.endDate) {
       newErrors.project_endDate = '종료일을 선택해주세요.';
     }
-    if (!projectForm.time) {
+    if (!projectForm.hour) {
       newErrors.project_time = '시간을 선택해주세요.';
     }
     
@@ -416,11 +408,12 @@ function ScheduleCreateContent() {
 
     setIsSubmitting(true);
     try {
-      // 백엔드가 기대하는 필드들을 기본값으로 추가
       const scheduleData = {
         ...personalForm,
-        projectId: '', // 기본값
-        assignee: '사용자' // 기본값
+        time: `${personalForm.hour.toString().padStart(2, '0')}:00`,
+        durationMinutes: personalForm.durationHours * 60,
+        projectId: '',
+        assignee: '사용자',
       };
       
       if (isEditMode && scheduleType === 'personal') {
@@ -445,8 +438,8 @@ function ScheduleCreateContent() {
         title: '',
         description: '',
         date: new Date().toISOString().slice(0, 10),
-        time: new Date().toTimeString().slice(0, 5),
-        durationMinutes: 30,
+        hour: new Date().getHours(),
+        durationHours: 1,
         importance: 'medium',
         emotion: 'normal',
         status: 'pending',
@@ -476,12 +469,12 @@ function ScheduleCreateContent() {
 
     setIsSubmitting(true);
     try {
-      // 백엔드가 기대하는 필드들을 기본값으로 추가
       const scheduleData = {
         ...departmentForm,
-        department: '', // 기본값
-        projectId: '', // 기본값
-        organizer: '관리자' // 기본값
+        time: `${departmentForm.hour.toString().padStart(2, '0')}:00`,
+        department: '',
+        projectId: '',
+        organizer: '관리자',
       };
       
       if (isEditMode && scheduleType === 'department') {
@@ -506,7 +499,7 @@ function ScheduleCreateContent() {
         title: '',
         objective: '',
         date: new Date().toISOString().slice(0, 10),
-        time: new Date().toTimeString().slice(0, 5),
+        hour: new Date().getHours(),
         participants: [],
         status: 'pending',
       });
@@ -535,12 +528,12 @@ function ScheduleCreateContent() {
 
     setIsSubmitting(true);
     try {
-      // 백엔드가 기대하는 필드들을 기본값으로 추가
       const scheduleData = {
         ...projectForm,
-        projectId: '', // 기본값
-        startDate: projectForm.endDate, // 종료일과 동일하게 설정
-        participants: [] // 기본값
+        time: `${projectForm.hour.toString().padStart(2, '0')}:00`,
+        projectId: '',
+        startDate: projectForm.endDate,
+        participants: [],
       };
       
       if (isEditMode && scheduleType === 'project') {
@@ -566,7 +559,7 @@ function ScheduleCreateContent() {
         objective: '',
         category: '',
         endDate: new Date().toISOString().slice(0, 10),
-        time: new Date().toTimeString().slice(0, 5),
+        hour: new Date().getHours(),
         roles: {
           pm: 0,
           backend: 0,
@@ -594,17 +587,15 @@ function ScheduleCreateContent() {
     <div className="min-h-screen bg-slate-50">
       <Navigation />
       <main className="lg:pl-64">
-        <div className="bg-white border-b border-slate-200 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <nav className="text-sm text-slate-500 mb-2">
-                <span>일정 관리</span> <span className="mx-2">/</span> <span className="text-slate-700">{isEditMode ? '일정 수정' : '새 일정 추가'}</span>
-              </nav>
-              <h1 className="text-2xl font-bold text-slate-900">{isEditMode ? '일정 수정' : '새 일정 추가'}</h1>
+        <div className="p-8">
+          <header className="flex items-center justify-between pb-6">
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold text-slate-900">{isEditMode ? '일정 수정' : '새 일정 추가'}</h3>
               <p className="text-slate-600 mt-1">{isEditMode ? '기존 일정을 수정하고 관리하세요' : '새로운 일정을 등록하고 관리하세요'}</p>
             </div>
-          </div>
+          </header>
         </div>
+        
         <div className="p-8">
           {isLoading ? (
             <div className="max-w-7xl mx-auto">
@@ -617,17 +608,17 @@ function ScheduleCreateContent() {
             <div className="max-w-7xl mx-auto">
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="flex-1 flex flex-col items-center mb-4">
-                <h2 className="text-2xl font-bold text-blue-600 mb-2">개인</h2>
-                <section className="w-full bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col relative">
-                  <div className="flex gap-2 absolute top-0 right-4 mt-2">
+                <div className="w-full flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-blue-600 m-0 text-left">개인</h2>
+                  <div className="flex gap-2 flex-shrink-0">
                     <button 
                       type="button" 
                       onClick={() => setPersonalForm({ 
                         title: '', 
                         description: '',
                         date: new Date().toISOString().slice(0, 10), 
-                        time: new Date().toTimeString().slice(0, 5), 
-                        durationMinutes: 30, 
+                        hour: new Date().getHours(),
+                        durationHours: 1,
                         importance: 'medium', 
                         emotion: 'normal', 
                         status: 'pending' 
@@ -646,13 +637,15 @@ function ScheduleCreateContent() {
                       {isSubmitting ? '저장 중...' : '저장'}
                     </button>
                   </div>
+                </div>
+                <section className="w-full bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col relative">
                   <form className="flex-1 flex flex-col gap-2 mt-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">제목 *</label>
                     <input 
                       type="text" 
                       value={personalForm.title} 
                       onChange={e => handlePersonalChange('title', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.personal_title ? 'border-red-500' : ''}`}
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.personal_title ? 'border-red-500' : ''}`}
                       placeholder="일정 제목을 입력하세요"
                     />
                     {errors.personal_title && <span className="text-red-500 text-xs">{errors.personal_title}</span>}
@@ -662,7 +655,7 @@ function ScheduleCreateContent() {
                       rows={2} 
                       value={personalForm.description} 
                       onChange={e => handlePersonalChange('description', e.target.value)} 
-                      className="px-2 py-1 border rounded text-sm"
+                      className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none"
                       placeholder="일정에 대한 설명을 입력하세요"
                     />
                     
@@ -671,47 +664,39 @@ function ScheduleCreateContent() {
                       type="date" 
                       value={personalForm.date} 
                       onChange={e => handlePersonalChange('date', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.personal_date ? 'border-red-500' : ''}`}
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.personal_date ? 'border-red-500' : ''}`}
                     />
                     {errors.personal_date && <span className="text-red-500 text-xs">{errors.personal_date}</span>}
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">시간 *</label>
-                    <input 
-                      type="time" 
-                      value={personalForm.time} 
-                      onChange={e => handlePersonalChange('time', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.personal_time ? 'border-red-500' : ''}`}
-                    />
+                    <Listbox value={personalForm.hour} onChange={v => handlePersonalChange('hour', v)}>
+                      <div className="relative">
+                        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
+                          {personalForm.hour}시
+                        </Listbox.Button>
+                        <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <Listbox.Option key={i} value={i} className={({ active }) => `cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`}>{i}시</Listbox.Option>
+                          ))}
+                        </Listbox.Options>
+                      </div>
+                    </Listbox>
                     {errors.personal_time && <span className="text-red-500 text-xs">{errors.personal_time}</span>}
-                    
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">소요시간(분)</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min="5"
-                        max="480"
-                        step="5"
-                        value={personalForm.durationMinutes}
-                        onChange={e => handlePersonalChange('durationMinutes', Number(e.target.value))}
-                        className="w-full h-2 accent-blue-500 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:transition-all"
-                        style={{ minWidth: 0 }}
-                      />
-                      <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200 shadow-sm">{personalForm.durationMinutes}분</span>
+                    <div className="flex flex-row items-start mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 mt-2 flex-1">소요시간(시간)</label>
+                      <span className="block text-sm font-medium text-blue-700 text-right flex-none mt-2">{personalForm.durationHours}시간</span>
                     </div>
-                    <div className="flex justify-between text-[11px] text-slate-400 mt-0.5 px-1">
-                      <span>5분</span>
-                      <span>8시간</span>
-                    </div>
+                    <input type="range" min={1} max={24} value={personalForm.durationHours} onChange={e => handlePersonalChange('durationHours', Number(e.target.value))} className="w-full accent-blue-600" />
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">중요도</label>
-                    <select value={personalForm.importance} onChange={e => handlePersonalChange('importance', e.target.value)} className="px-2 py-1 border rounded text-sm">
+                    <select value={personalForm.importance} onChange={e => handlePersonalChange('importance', e.target.value)} className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
                       <option value="low">낮음</option>
                       <option value="medium">보통</option>
                       <option value="high">높음</option>
                     </select>
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">감정상태</label>
-                    <select value={personalForm.emotion} onChange={e => handlePersonalChange('emotion', e.target.value)} className="px-2 py-1 border rounded text-sm">
+                    <select value={personalForm.emotion} onChange={e => handlePersonalChange('emotion', e.target.value)} className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
                       <option value="happy">기쁨</option>
                       <option value="normal">보통</option>
                       <option value="sad">슬픔</option>
@@ -723,16 +708,16 @@ function ScheduleCreateContent() {
                 </section>
               </div>
               <div className="flex-1 flex flex-col items-center mb-4">
-                <h2 className="text-2xl font-bold text-green-600 mb-2">부서</h2>
-                <section className="w-full bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col relative">
-                  <div className="flex gap-2 absolute top-0 right-4 mt-2">
+                <div className="w-full flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-green-600 m-0 text-left">부서</h2>
+                  <div className="flex gap-2 flex-shrink-0">
                     <button 
                       type="button" 
                       onClick={() => setDepartmentForm({ 
                         title: '', 
                         objective: '',
                         date: new Date().toISOString().slice(0, 10), 
-                        time: new Date().toTimeString().slice(0, 5), 
+                        hour: new Date().getHours(),
                         participants: [], 
                         status: 'pending' 
                       })} 
@@ -750,13 +735,15 @@ function ScheduleCreateContent() {
                       {isSubmitting ? '저장 중...' : '저장'}
                     </button>
                   </div>
+                </div>
+                <section className="w-full bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col relative">
                   <form className="flex-1 flex flex-col gap-2 mt-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">제목 *</label>
                     <input 
                       type="text" 
                       value={departmentForm.title} 
                       onChange={e => handleDepartmentChange('title', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.department_title ? 'border-red-500' : ''}`}
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.department_title ? 'border-red-500' : ''}`}
                       placeholder="부서 일정 제목을 입력하세요"
                     />
                     {errors.department_title && <span className="text-red-500 text-xs">{errors.department_title}</span>}
@@ -766,7 +753,7 @@ function ScheduleCreateContent() {
                       rows={2} 
                       value={departmentForm.objective} 
                       onChange={e => handleDepartmentChange('objective', e.target.value)} 
-                      className="px-2 py-1 border rounded text-sm"
+                      className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none"
                       placeholder="부서 일정의 목적을 입력하세요"
                     />
                     
@@ -775,36 +762,38 @@ function ScheduleCreateContent() {
                       type="date" 
                       value={departmentForm.date} 
                       onChange={e => handleDepartmentChange('date', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.department_date ? 'border-red-500' : ''}`}
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.department_date ? 'border-red-500' : ''}`}
                     />
                     {errors.department_date && <span className="text-red-500 text-xs">{errors.department_date}</span>}
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">시간 *</label>
-                    <input 
-                      type="time" 
-                      value={departmentForm.time} 
-                      onChange={e => handleDepartmentChange('time', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.department_time ? 'border-red-500' : ''}`}
-                    />
-                    {errors.department_time && <span className="text-red-500 text-xs">{errors.department_time}</span>}
-                    
+                    <Listbox value={departmentForm.hour} onChange={v => handleDepartmentChange('hour', v)}>
+                      <div className="relative">
+                        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
+                          {departmentForm.hour}시
+                        </Listbox.Button>
+                        <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <Listbox.Option key={i} value={i} className={({ active }) => `cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-green-100 text-green-900' : 'text-gray-900'}`}>{i}시</Listbox.Option>
+                          ))}
+                        </Listbox.Options>
+                      </div>
+                    </Listbox>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">참여자</label>
                     <input 
                       type="text" 
                       value={departmentForm.participants.join(', ')} 
                       onChange={e => handleDepartmentChange('participants', e.target.value.split(',').map(name => name.trim()).filter(name => name))} 
-                      className="px-2 py-1 border rounded text-sm"
+                      className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none"
                       placeholder="참여자 이름을 입력하세요 (콤마로 여러 명 입력 가능)" 
                     />
-                    
-
                   </form>
                 </section>
               </div>
               <div className="flex-1 flex flex-col items-center mb-4">
-                <h2 className="text-2xl font-bold text-orange-500 mb-2">프로젝트</h2>
-                <section className="w-full bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col relative">
-                  <div className="flex gap-2 absolute top-0 right-4 mt-2">
+                <div className="w-full flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-orange-500 m-0 text-left">프로젝트</h2>
+                  <div className="flex gap-2 flex-shrink-0">
                     <button 
                       type="button" 
                       onClick={() => setProjectForm({ 
@@ -812,7 +801,7 @@ function ScheduleCreateContent() {
                         objective: '',
                         category: '',
                         endDate: new Date().toISOString().slice(0, 10), 
-                        time: new Date().toTimeString().slice(0, 5), 
+                        hour: new Date().getHours(),
                         roles: {
                           pm: 0,
                           backend: 0,
@@ -839,13 +828,15 @@ function ScheduleCreateContent() {
                       {isSubmitting ? '저장 중...' : '저장'}
                     </button>
                   </div>
+                </div>
+                <section className="w-full bg-orange-50 border border-orange-200 rounded-xl p-4 flex flex-col relative">
                   <form className="flex-1 flex flex-col gap-2 mt-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">프로젝트명 *</label>
                     <input 
                       type="text" 
                       value={projectForm.projectName} 
                       onChange={e => handleProjectChange('projectName', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.project_projectName ? 'border-red-500' : ''}`}
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.project_projectName ? 'border-red-500' : ''}`}
                       placeholder="프로젝트명을 입력하세요"
                     />
                     {errors.project_projectName && <span className="text-red-500 text-xs">{errors.project_projectName}</span>}
@@ -855,12 +846,12 @@ function ScheduleCreateContent() {
                       rows={2} 
                       value={projectForm.objective} 
                       onChange={e => handleProjectChange('objective', e.target.value)} 
-                      className="px-2 py-1 border rounded text-sm"
+                      className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none"
                       placeholder="프로젝트의 목적을 입력하세요"
                     />
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">카테고리</label>
-                    <select value={projectForm.category} onChange={e => handleProjectChange('category', e.target.value)} className="px-2 py-1 border rounded text-sm">
+                    <select value={projectForm.category} onChange={e => handleProjectChange('category', e.target.value)} className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
                       <option value="">선택하세요</option>
                       <option value="웹">웹</option>
                       <option value="앱">앱</option>
@@ -873,19 +864,23 @@ function ScheduleCreateContent() {
                       type="date" 
                       value={projectForm.endDate} 
                       onChange={e => handleProjectChange('endDate', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.project_endDate ? 'border-red-500' : ''}`}
+                      className={`w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none ${errors.project_endDate ? 'border-red-500' : ''}`}
                     />
                     {errors.project_endDate && <span className="text-red-500 text-xs">{errors.project_endDate}</span>}
                     
                     <label className="block text-xs font-semibold text-slate-700 mb-1">마감 시간 *</label>
-                    <input 
-                      type="time" 
-                      value={projectForm.time} 
-                      onChange={e => handleProjectChange('time', e.target.value)} 
-                      className={`px-2 py-1 border rounded text-sm ${errors.project_time ? 'border-red-500' : ''}`}
-                    />
-                    {errors.project_time && <span className="text-red-500 text-xs">{errors.project_time}</span>}
-                    
+                    <Listbox value={projectForm.hour} onChange={v => handleProjectChange('hour', v)}>
+                      <div className="relative">
+                        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none">
+                          {projectForm.hour}시
+                        </Listbox.Button>
+                        <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <Listbox.Option key={i} value={i} className={({ active }) => `cursor-pointer select-none py-2 pl-4 pr-4 ${active ? 'bg-orange-100 text-orange-900' : 'text-gray-900'}`}>{i}시</Listbox.Option>
+                          ))}
+                        </Listbox.Options>
+                      </div>
+                    </Listbox>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">역할별 인원수</label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       <div>
@@ -895,7 +890,7 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.pm} 
                           onChange={e => handleProjectChange('roles.pm', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                       <div>
@@ -905,7 +900,7 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.backend} 
                           onChange={e => handleProjectChange('roles.backend', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                       <div>
@@ -915,7 +910,7 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.frontend} 
                           onChange={e => handleProjectChange('roles.frontend', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                       <div>
@@ -925,7 +920,7 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.designer} 
                           onChange={e => handleProjectChange('roles.designer', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                       <div>
@@ -935,7 +930,7 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.marketer} 
                           onChange={e => handleProjectChange('roles.marketer', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                       <div>
@@ -945,7 +940,7 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.sales} 
                           onChange={e => handleProjectChange('roles.sales', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                       <div>
@@ -955,7 +950,7 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.general} 
                           onChange={e => handleProjectChange('roles.general', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                       <div>
@@ -965,12 +960,10 @@ function ScheduleCreateContent() {
                           min="0" 
                           value={projectForm.roles.others} 
                           onChange={e => handleProjectChange('roles.others', Number(e.target.value))} 
-                          className="px-2 py-1 border rounded w-full text-sm" 
+                          className="w-full cursor-pointer rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md border border-gray-300 focus:outline-none" 
                         />
                       </div>
                     </div>
-                    
-
                   </form>
                 </section>
               </div>
