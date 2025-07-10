@@ -5,6 +5,15 @@
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@/config/*": ["config/*"],
+      "@/routes/*": ["routes/*"],
+      "@/middleware/*": ["middleware/*"],
+      "@/services/*": ["services/*"],
+      "@/types/*": ["types/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

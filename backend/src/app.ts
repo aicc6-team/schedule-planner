@@ -7,6 +7,7 @@ import 'dotenv/config';
 
 // 라우터 import
 import scheduleRoutes from './routes/schedules';
+import analyticsRoutes from './routes/analytics';
 import googleAuthRoutes from './routes/googleAuth';
 
 // 미들웨어 import
@@ -45,6 +46,7 @@ app.use(requestLogger);
 // API 라우터 설정
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/auth/google', googleAuthRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 /*
 === 구현된 일정 관리 API 엔드포인트 목록 ===
@@ -111,4 +113,4 @@ app.use('*', (req, res) => {
 // 에러 핸들링 미들웨어 (마지막에 배치)
 app.use(errorHandler);
 
-export default app;
+export default app; 
