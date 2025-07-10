@@ -208,14 +208,14 @@ export default function CalendarPage() {
       <Navigation />
       
       <main className="lg:pl-64">
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
-          {/* 헤더 */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-secondary-900">캘린더</h1>
-              <p className="text-secondary-600">Google Calendar 일정을 확인하세요</p>
+        <div className="p-8">
+          <header className="flex items-center justify-between pb-6">
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold text-gray-900">캘린더</h3>
+              <p className="text-gray-500 mb-4">Google Calendar 일정을 확인하세요</p>
             </div>
-            <div className="flex gap-3 mt-4 sm:mt-0">
+
+            <div className="flex rounded-md shadow-sm">
               <button 
                 onClick={fetchCalendarEvents}
                 disabled={loading || !tokens}
@@ -231,7 +231,7 @@ export default function CalendarPage() {
                 새 일정
               </button>
             </div>
-          </div>
+          </header>
 
           {/* 로그인 상태 확인 */}
           {!tokens && (

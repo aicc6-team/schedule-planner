@@ -41,3 +41,14 @@ module.exports = {
   plugins: [],
 }
 
+// tailwind.config.ts (또는 .js)
+export default {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"Pretendard Variable"', 'sans-serif'],
+        pretendard: ['"Pretendard Variable"', 'sans-serif'],
+      },
+    },
+  },
+};
