@@ -1,0 +1,19 @@
+{
+  "projectName": "내 일정 프로젝트",
+  "objective": "프로젝트 기획 정리",
+  "category": "기획",
+  "endDate": "2025-07-04",
+  "time": "13:10",
+  "roles": {
+    "pm": 1,
+    "backend": 2,
+    "frontend": 2,
+    "designer": 1,
+    "marketer": 0,
+    "sales": 0,
+    "general": 0,
+    "others": 0
+  },
+  "createdAt": "2025-07-04T05:29:00.279347",
+  "updatedAt": "2025-07-04T05:29:00.279347"
+}
