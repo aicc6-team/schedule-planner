@@ -424,39 +424,52 @@ export default function DepartmentAnalytics() {
                   <span className="mx-2">•</span>
                   총 {departmentAnalysis.reduce((sum, item) => sum + (item.total_schedules ?? 0), 0)}개 일정
                   <span className="mx-2">•</span>
-                  평균 지연시간: {departmentAnalysis.length > 0 && departmentAnalysis[0].average_delay_per_member ?
-                    (Object.values(departmentAnalysis[0].average_delay_per_member).reduce((sum, v) => sum + v, 0) / Object.keys(departmentAnalysis[0].average_delay_per_member).length).toFixed(1)
-                    : 0}분
+                  평균 지연시간: {
+                    departmentAnalysis.length > 0 && departmentAnalysis[0].average_delay_per_member
+                      ? (() => {
+                          const values = Object.values(departmentAnalysis[0].average_delay_per_member)
+                            .map(v => typeof v === "number" && !isNaN(v) ? v : 0);
+                          const count = values.length;
+                          if (count === 0) return 0;
+                          const sum = values.reduce((sum, v) => sum + v, 0);
+                          return (sum / count).toFixed(1);
+                        })()
+                      : 0
+                  }분
                 </>
               )}
             </p>
           </div>
-          <button
-            onClick={generateReport}
-            disabled={isGeneratingReport || departmentAnalysis.length === 0}
-            className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
-              isGeneratingReport || departmentAnalysis.length === 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
-            }`}
-          >
-            {isGeneratingReport ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>레포트 생성 중...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>레포트 다운로드</span>
-              </>
-            )}
-          </button>
+          {(!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) ? (
+            <div className="text-gray-400 text-sm">데이터를 불러오는 중입니다...</div>
+          ) : (
+            <button
+              onClick={generateReport}
+              disabled={isGeneratingReport}
+              className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
+                isGeneratingReport
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
+              }`}
+            >
+              {isGeneratingReport ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>레포트 생성 중...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>레포트 다운로드</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
       {/* 3x3 그리드: 9개 부서 일정 분석 차트 */}

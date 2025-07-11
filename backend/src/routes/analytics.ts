@@ -72,16 +72,27 @@ router.get('/personalTasks', async (_req, res) => {
     const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
     const endTimestamp = Timestamp.fromDate(today);
 
-    // 날짜 조건 추가 (Timestamp 타입으로 비교)
     const snapshot = await db.collection('PersonalScheduleAnalysis')
       .where('date', '>=', startTimestamp)
       .where('date', '<=', endTimestamp)
       .get();
-    
-    const tasks = snapshot.docs.map((doc: DocumentSnapshot) => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+
+    const tasks = snapshot.docs.map((doc: DocumentSnapshot) => {
+      const data = doc.data();
+      let dateString = '';
+      if (data && data['date'] && typeof data['date'].toDate === 'function') {
+        dateString = data['date'].toDate().toISOString().slice(0, 10);
+      } else if (data && data['date'] && typeof data['date'] === 'string') {
+        dateString = data['date'].slice(0, 10);
+      } else {
+        dateString = '';
+      }
+      return {
+        id: doc.id,
+        ...data,
+        date: dateString,
+      };
+    });
 
     res.json(tasks);
   } catch (error) {
@@ -118,10 +129,22 @@ router.get('/departmentTasks', async (req, res) => {
     
     const snapshot = await query.get();
     
-    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => ({
-      id: doc.id,
-      ...doc.data()
-    })) as unknown as DepartmentScheduleAnalysis[];
+    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
+      const data = doc.data();
+      let dateString = '';
+      if (data && data['date'] && typeof data['date'].toDate === 'function') {
+        dateString = data['date'].toDate().toISOString().slice(0, 10);
+      } else if (data && data['date'] && typeof data['date'] === 'string') {
+        dateString = data['date'].slice(0, 10);
+      } else {
+        dateString = '';
+      }
+      return {
+        id: doc.id,
+        ...data,
+        date: dateString,
+      };
+    }) as DepartmentScheduleAnalysis[];
 
     // 데이터가 배열인지 확인하고 반환
     const analysisArray = Array.isArray(analysis) ? analysis : [];
@@ -162,10 +185,27 @@ router.get('/companyTasks', async (req, res) => {
     
     const snapshot = await query.get();
     
-    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => ({
-      id: doc.id,
-      ...doc.data()
-    })) as unknown as CompanyScheduleAnalysis[];
+    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
+      const data = doc.data();
+      let startDateStr = '';
+      let endDateStr = '';
+      if (data && data['analysis_start_date'] && typeof data['analysis_start_date'].toDate === 'function') {
+        startDateStr = data['analysis_start_date'].toDate().toISOString().slice(0, 10);
+      } else if (data && data['analysis_start_date'] && typeof data['analysis_start_date'] === 'string') {
+        startDateStr = data['analysis_start_date'].slice(0, 10);
+      }
+      if (data && data['analysis_end_date'] && typeof data['analysis_end_date'].toDate === 'function') {
+        endDateStr = data['analysis_end_date'].toDate().toISOString().slice(0, 10);
+      } else if (data && data['analysis_end_date'] && typeof data['analysis_end_date'] === 'string') {
+        endDateStr = data['analysis_end_date'].slice(0, 10);
+      }
+      return {
+        id: doc.id,
+        ...data,
+        analysis_start_date: startDateStr,
+        analysis_end_date: endDateStr,
+      };
+    }) as CompanyScheduleAnalysis[];
 
     // 데이터가 배열인지 확인하고 반환
     const analysisArray = Array.isArray(analysis) ? analysis : [];
@@ -204,10 +244,22 @@ router.get('/projectTasks', async (req, res) => {
     
     const snapshot = await query.get();
     
-    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => ({
-      id: doc.id,
-      ...doc.data()
-    })) as unknown as ProjectScheduleAnalysis[];
+    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
+      const data = doc.data();
+      let dateString = '';
+      if (data && data['date'] && typeof data['date'].toDate === 'function') {
+        dateString = data['date'].toDate().toISOString().slice(0, 10);
+      } else if (data && data['date'] && typeof data['date'] === 'string') {
+        dateString = data['date'].slice(0, 10);
+      } else {
+        dateString = '';
+      }
+      return {
+        id: doc.id,
+        ...data,
+        date: dateString,
+      };
+    }) as ProjectScheduleAnalysis[];
 
     // 데이터가 배열인지 확인하고 반환
     const analysisArray = Array.isArray(analysis) ? analysis : [];

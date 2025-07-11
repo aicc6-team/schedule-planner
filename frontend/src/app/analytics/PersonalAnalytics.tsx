@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState, useRef } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement } from 'chart.js';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ChartTypeRegistry } from 'chart.js';
 import { Doughnut, Line, Bar, Scatter } from 'react-chartjs-2';
+// import { ChartJSOrUndefined } from 'react-chartjs-2/dist/types';
 import dayjs from 'dayjs';
+
+// ChartJSOrUndefined 타입 직접 선언
+type ChartJSOrUndefined<TType extends keyof ChartTypeRegistry = keyof ChartTypeRegistry> = ChartJS<TType> | undefined;
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
 
@@ -39,18 +43,35 @@ export default function PersonalAnalytics() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // 차트 ref 배열 (컴포넌트 함수 내부로 이동)
-  const chartRefs = Array.from({ length: 10 }, () => useRef<any>(null));
+  const chartRefs = useMemo(
+    () =>
+      Array.from({ length: 9 }, () =>
+        React.createRef<ChartJSOrUndefined<keyof ChartTypeRegistry>>()
+      ),
+    []
+  );
 
   useEffect(() => {
+
     fetch('http://localhost:3001/api/analytics/personalTasks')
       .then(res => res.json())
       .then((data: PersonalScheduleAnalysis[]) => {
+
+        console.log('패치받은 데이터', data);
         // 데이터가 배열인지 확인하고 설정
         const analyticsArray = Array.isArray(data) ? data : [];
         setAnalyticsData(analyticsArray);
+
+
+        setTimeout(() => {
+          console.log('setAnalyticsData 직후 상태:', analyticsData);
+        }, 100); // 상태 동기화 확인
+
       })
       .catch(console.error);
   }, []);
+
+  console.log('generateReport에서 analyticsData:', analyticsData);
 
   // 레포트 생성 함수
   const generateReport = async () => {
@@ -63,12 +84,22 @@ export default function PersonalAnalytics() {
 
       // 차트 이미지 추출
       const chartImages = chartRefs.map(ref => {
-        if (ref.current && ref.current.toBase64Image) {
+        if (ref.current && typeof ref.current.toBase64Image === "function") {
           return ref.current.toBase64Image();
         }
         return null;
       });
 
+      const chartInfo = chartRefs.map((ref, i) => ({
+        idx: i,
+        type: ref.current?.constructor?.name,
+        hasToBase64: !!ref.current?.toBase64Image,
+        current: ref.current
+      }));
+
+
+      console.log('chartInfo --------------------', analyticsData);
+      
       const response = await fetch('http://localhost:3001/api/analytics/generateReport', {
         method: 'POST',
         headers: {
@@ -114,7 +145,10 @@ export default function PersonalAnalytics() {
       return { labels: [], data: [] };
     }
     
-    const labels = analyticsData.map(item => dayjs(item.date).format('M/D'));
+    const labels = analyticsData.map(item => {
+      const date = dayjs(item.date);
+      return date.isValid() ? date.format('M/D') : 'Invalid Date';
+    });
     const data = analyticsData.map(item => 
       item.total_schedules > 0 ? (item.completed_schedules / item.total_schedules) * 100 : 0
     );
@@ -209,11 +243,17 @@ export default function PersonalAnalytics() {
       return { labels: [], datasets: [] };
     }
     
-    const sortedData = [...analyticsData].sort((a, b) => 
-      dayjs(a.date).unix() - dayjs(b.date).unix()
-    );
+    const sortedData = [...analyticsData].sort((a, b) => {
+      const dateA = dayjs(a.date);
+      const dateB = dayjs(b.date);
+      if (!dateA.isValid() || !dateB.isValid()) return 0;
+      return dateA.unix() - dateB.unix();
+    });
     
-    const labels = sortedData.map(item => dayjs(item.date).format('M/D'));
+    const labels = sortedData.map(item => {
+      const date = dayjs(item.date);
+      return date.isValid() ? date.format('M/D') : 'Invalid Date';
+    });
     const data = sortedData.map(item => {
       const cumulativeData = item.cumulative_completions;
       return cumulativeData && Object.keys(cumulativeData).length > 0 
@@ -279,6 +319,10 @@ export default function PersonalAnalytics() {
     return { labels, data };
   }, [analyticsData]);
   
+
+  console.log('렌더 중 analyticsData:', analyticsData);
+
+
   return (
     <>
       {/* 레포트 버튼 섹션 */}
@@ -289,7 +333,13 @@ export default function PersonalAnalytics() {
             <p className="text-gray-600 text-sm">
               {analyticsData.length > 0 && (
                 <>
-                  분석 기간: {dayjs(analyticsData[0].date).format('YYYY-MM-DD')} ~ {dayjs(analyticsData[analyticsData.length - 1].date).format('YYYY-MM-DD')}
+                  분석 기간: {
+                    (() => {
+                      const startDate = dayjs(analyticsData[0].date);
+                      const endDate = dayjs(analyticsData[analyticsData.length - 1].date);
+                      return `${startDate.isValid() ? startDate.format('YYYY-MM-DD') : 'Invalid Date'} ~ ${endDate.isValid() ? endDate.format('YYYY-MM-DD') : 'Invalid Date'}`;
+                    })()
+                  }
                   <span className="mx-2">•</span>
                   총 {analyticsData.reduce((sum, item) => sum + item.total_schedules, 0)}개 일정
                   <span className="mx-2">•</span>
@@ -336,7 +386,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">일별 이행률</div>
           <div className="flex-1 flex items-center">
             <Line 
-              ref={chartRefs[0]}
+              ref={chartRefs[0] as any}
               data={{ 
                 labels: dailyCompletion.labels, 
                 datasets: [{ 
@@ -392,13 +442,24 @@ export default function PersonalAnalytics() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">태그별 완료율</div>
           <Bar
-            ref={chartRefs[2]}
+            ref={chartRefs[2] as any}
             data={{
               labels: tagStats.labels,
               datasets: [{
                 label: '완료율(%)',
                 data: tagStats.data,
-                backgroundColor: '#60a5fa',
+                backgroundColor: [
+                  '#93c5fd', // 연파랑
+                  '#fcd34d', // 연노랑
+                  '#6ee7b7', // 연초록
+                  '#c4b5fd', // 연보라
+                  '#fca5a5', // 연빨강
+                  '#a7f3d0', // 민트
+                  '#f9a8d4', // 연핑크
+                  '#fde68a', // 연주황
+                  '#fbcfe8', // 연분홍
+                  '#ddd6fe', // 연보라2
+                ],
                 barThickness: 26,
                 maxBarThickness: 36,
               }],
@@ -415,7 +476,7 @@ export default function PersonalAnalytics() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">소요시간 분포</div>
           <Bar
-            ref={chartRefs[3]}
+            ref={chartRefs[3] as any}
             data={{
               labels: durationHistogram.labels,
               datasets: [{
@@ -438,7 +499,7 @@ export default function PersonalAnalytics() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">감정 상태별 업무 수</div>
           <Bar
-            ref={chartRefs[4]}
+            ref={chartRefs[4] as any}
             data={{
               labels: emotionStats.labels,
               datasets: [{
@@ -461,7 +522,7 @@ export default function PersonalAnalytics() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">상태별 업무 수</div>
           <Bar
-            ref={chartRefs[5]}
+            ref={chartRefs[5] as any}
             data={{
               labels: statusStats.labels,
               datasets: [{
@@ -484,7 +545,7 @@ export default function PersonalAnalytics() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">시간대별 일정 건수</div>
           <Bar
-            ref={chartRefs[6]}
+            ref={chartRefs[6] as any}
             data={{
               labels: timeSlotStats.labels,
               datasets: [{
@@ -507,7 +568,7 @@ export default function PersonalAnalytics() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">누적 완료 추이</div>
           <Line
-            ref={chartRefs[7]}
+            ref={chartRefs[7] as any}
             data={cumulativeCompletion}
             options={{
               plugins: { legend: { display: false } },
@@ -521,7 +582,7 @@ export default function PersonalAnalytics() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">시작/종료 시간 분포</div>
           <Bar
-            ref={chartRefs[8]}
+            ref={chartRefs[8] as any}
             data={
               {
                 ...timeDistributionComparison,
