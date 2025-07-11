@@ -24,4 +24,39 @@
   .input-field {
     @apply w-full px-3 py-2 border border-secondary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
-} 
+}
+
+table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+td, th {
+  vertical-align: middle !important;
+  text-align: center !important;
+  padding: 16px 8px !important;
+  color: #222 !important;
+  box-sizing: border-box;
+  word-break: break-all;
+}
+
+/* Handsontable 셀 전체 */
+.handsontable .htCore td,
+.handsontable .htCore th {
+  vertical-align: middle !important;
+  text-align: center !important;
+  padding: 16px 8px !important;
+  font-size: 1.1rem;
+  box-sizing: border-box;
+}
+
+/* Handsontable 행 번호(왼쪽 row header)는 항상 가운데 정렬 */
+.handsontable .htRowHeader {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 16px 8px !important;
+  font-size: 1.1rem;
+}
+
+/* Handsontable 첫 번째 데이터 열(이름)만 좌측 정렬 */
+ 

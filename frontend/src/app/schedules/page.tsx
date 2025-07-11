@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Navigation from '@/components/Navigation';
+import { useRouter } from 'next/navigation';
 import ScheduleCard from '@/components/ScheduleCard';
 import { 
   SparklesIcon,
 } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/navigation';
 import { Schedule } from '@/types/schedule';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 import Modal from '@/components/Modal';
@@ -348,7 +347,6 @@ export default function SchedulesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
       <main className="lg:pl-64">
        <div className="p-8">
         <header className="flex items-center justify-between pb-6 border-b border-gray-200">
@@ -385,16 +383,13 @@ export default function SchedulesPage() {
         </header>
 
         {loading && <div className="text-center py-10">로딩 중...</div>}
-        {error && <div className="text-center py-10 text-red-500">오류: {error}</div>}
 
-        {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 mt-8 items-start">
-            {areaOrder.map(area => {
-              const totalSchedules = schedulesByArea[area.key]?.length || 0;
-              const totalPages = Math.ceil(totalSchedules / ITEMS_PER_PAGE);
-              const currentPage = currentPages[area.key] || 1;
-              
-              return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 mt-8 items-start">
+          {areaOrder.map(area => {
+            const totalSchedules = schedulesByArea[area.key]?.length || 0;
+            const totalPages = Math.ceil(totalSchedules / ITEMS_PER_PAGE);
+            const currentPage = currentPages[area.key] || 1;
+            return (
               <div key={area.key} className={`rounded-xl shadow-sm border ${area.color} ${area.border} flex flex-col`}>
                 <div className={`p-4 border-b ${area.border}`}>
                   <h2 className={`font-bold text-lg ${area.text}`}>{area.label}</h2>
@@ -403,7 +398,11 @@ export default function SchedulesPage() {
                   </p>
                 </div>
                 <div className="p-4 space-y-4 flex-grow">
-                  {paginatedSchedulesByArea[area.key]?.length > 0 ? (
+                  {loading ? (
+                    <div className="text-center py-10">로딩 중...</div>
+                  ) : error ? (
+                    <div className="text-center py-10 text-red-500">데이터를 불러올 수 없습니다.</div>
+                  ) : paginatedSchedulesByArea[area.key]?.length > 0 ? (
                     paginatedSchedulesByArea[area.key].map(schedule => {
                       const isOverdue = new Date(schedule.endTime) < now && schedule.status === 'pending';
                       return (
@@ -420,7 +419,7 @@ export default function SchedulesPage() {
                     })
                   ) : (
                     <div className="text-center py-10 text-gray-500 h-full flex items-center justify-center">
-                       <p>일정이 없습니다.</p>
+                      <p>일정이 없습니다.</p>
                     </div>
                   )}
                 </div>
@@ -446,9 +445,9 @@ export default function SchedulesPage() {
                   </div>
                 )}
               </div>
-            )})}
-          </div>
-        )}
+            );
+          })}
+        </div>
        </div>
       </main>
       {/* 일정 수정 모달 */}
