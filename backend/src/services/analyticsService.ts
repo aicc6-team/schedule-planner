@@ -227,7 +227,10 @@ export function generatePDFBuffer(
     doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#E5E7EB').lineWidth(1.2).stroke();
     doc.moveDown(1.2);
 
+<<<<<<< HEAD
     /* 일단 주석
+=======
+>>>>>>> origin/dev
     // ======================= 1. 요약 =========================
     doc.font('Bold').fontSize(13).fillColor('#22223B');
     doc.text('1. 요약');
@@ -250,6 +253,7 @@ export function generatePDFBuffer(
     });
 
     doc.moveDown(1);
+<<<<<<< HEAD
     */
 
     console.log('statsTable --------------------', statsTable);
@@ -257,6 +261,12 @@ export function generatePDFBuffer(
     // ======================= 2. 분석 요약 =========================
     if (summary) {
       doc.font('Bold').fontSize(13).fillColor('#22223B').text('1. 분석 요약');
+=======
+
+    // ======================= 2. 분석 요약 =========================
+    if (summary) {
+      doc.font('Bold').fontSize(13).fillColor('#22223B').text('2. 분석 요약');
+>>>>>>> origin/dev
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(11).fillColor('#22223B').text(summary);
       doc.moveDown(1);
@@ -264,7 +274,11 @@ export function generatePDFBuffer(
 
     // ======================= 3. 개선 조언 =========================
     if (advice) {
+<<<<<<< HEAD
       doc.font('Bold').fontSize(13).fillColor('#22223B').text('2. 개선 조언');
+=======
+      doc.font('Bold').fontSize(13).fillColor('#22223B').text('3. 개선 조언');
+>>>>>>> origin/dev
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(11).fillColor('#22223B').text(advice);
       doc.moveDown(1);
@@ -272,7 +286,11 @@ export function generatePDFBuffer(
 
     // ======================= 4. 상세 일정 =========================
     if (scheduleData && scheduleData.length > 0) {
+<<<<<<< HEAD
       doc.font('Bold').fontSize(13).fillColor('#22223B').text('3. 상세 일정');
+=======
+      doc.font('Bold').fontSize(13).fillColor('#22223B').text('4. 상세 일정');
+>>>>>>> origin/dev
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(10).fillColor('#22223B');
       scheduleData.forEach((item, idx) => {
@@ -289,6 +307,7 @@ export function generatePDFBuffer(
         doc.font('Bold').fontSize(12).fillColor('#22223B').text(chartDescriptions[idx] || '', { align: 'left' });
         doc.moveDown(0.2);
         try {
+<<<<<<< HEAD
           // PDF 전용: 흰 배경, 연한 테두리, 넉넉한 여백
           const chartX = 70, chartY = doc.y, chartW = 400, chartH = 180;
           doc.save();
@@ -297,6 +316,11 @@ export function generatePDFBuffer(
           const base64 = img.replace(/^data:image\/png;base64,/, '');
           const buf = Buffer.from(base64, 'base64');
           doc.image(buf, chartX + 10, chartY + 10, { fit: [chartW - 20, chartH - 20], align: 'center', valign: 'center' });
+=======
+          const base64 = img.replace(/^data:image\/png;base64,/, '');
+          const buf = Buffer.from(base64, 'base64');
+          doc.image(buf, { fit: [300, 150], align: 'center', valign: 'center' });
+>>>>>>> origin/dev
         } catch (e) {
           doc.font('Regular').fontSize(10).fillColor('red').text('차트 이미지를 불러올 수 없습니다.');
         }

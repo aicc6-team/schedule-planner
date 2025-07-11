@@ -1,6 +1,10 @@
 import express from 'express';
 import { db } from '../config/firebase';
+<<<<<<< HEAD
 import { DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
+=======
+import { DocumentSnapshot } from 'firebase-admin/firestore';
+>>>>>>> origin/dev
 import { 
   getRecentPersonalSchedule, 
   getKoreanAnalysis, 
@@ -65,6 +69,7 @@ const router = express.Router();
 // GET /api/analytics/personalTasks - PersonalScheduleAnalysis 컬렉션의 모든 데이터 가져오기
 router.get('/personalTasks', async (_req, res) => {
   try {
+<<<<<<< HEAD
     // 오늘과 3개월 전 날짜 계산
     const today = new Date();
     const threeMonthsAgo = new Date();
@@ -93,6 +98,14 @@ router.get('/personalTasks', async (_req, res) => {
         date: dateString,
       };
     });
+=======
+    const snapshot = await db.collection('PersonalScheduleAnalysis').get();
+    
+    const tasks = snapshot.docs.map((doc: DocumentSnapshot) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+>>>>>>> origin/dev
 
     res.json(tasks);
   } catch (error) {
@@ -106,6 +119,7 @@ router.get('/departmentTasks', async (req, res) => {
   try {
     const { department_name, date } = req.query;
     
+<<<<<<< HEAD
     // 오늘과 3개월 전 날짜 계산
     const today = new Date();
     const threeMonthsAgo = new Date();
@@ -113,6 +127,8 @@ router.get('/departmentTasks', async (req, res) => {
     const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
     const endTimestamp = Timestamp.fromDate(today);
 
+=======
+>>>>>>> origin/dev
     let query: any = db.collection('DepartmentScheduleAnalysis');
     
     // 부서명 필터링
@@ -120,15 +136,22 @@ router.get('/departmentTasks', async (req, res) => {
       query = query.where('department_name', '==', department_name);
     }
     
+<<<<<<< HEAD
     // 날짜 필터링 (쿼리 파라미터 우선, 없으면 3개월 조건)
     if (date) {
       query = query.where('date', '==', date);
     } else {
       query = query.where('date', '>=', startTimestamp).where('date', '<=', endTimestamp);
+=======
+    // 날짜 필터링
+    if (date) {
+      query = query.where('date', '==', date);
+>>>>>>> origin/dev
     }
     
     const snapshot = await query.get();
     
+<<<<<<< HEAD
     const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
       const data = doc.data();
       let dateString = '';
@@ -145,6 +168,12 @@ router.get('/departmentTasks', async (req, res) => {
         date: dateString,
       };
     }) as DepartmentScheduleAnalysis[];
+=======
+    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => ({
+      id: doc.id,
+      ...doc.data()
+    })) as unknown as DepartmentScheduleAnalysis[];
+>>>>>>> origin/dev
 
     // 데이터가 배열인지 확인하고 반환
     const analysisArray = Array.isArray(analysis) ? analysis : [];
@@ -160,6 +189,7 @@ router.get('/companyTasks', async (req, res) => {
   try {
     const { schedule_id, analysis_start_date, analysis_end_date } = req.query;
     
+<<<<<<< HEAD
     // 오늘과 3개월 전 날짜 계산
     const today = new Date();
     const threeMonthsAgo = new Date();
@@ -167,6 +197,8 @@ router.get('/companyTasks', async (req, res) => {
     const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
     const endTimestamp = Timestamp.fromDate(today);
 
+=======
+>>>>>>> origin/dev
     let query: any = db.collection('CompanyScheduleAnalysis');
     
     // schedule_id 필터링
@@ -174,6 +206,7 @@ router.get('/companyTasks', async (req, res) => {
       query = query.where('schedule_id', '==', schedule_id);
     }
     
+<<<<<<< HEAD
     // 분석 시작일/종료일 필터링 (파라미터 우선, 없으면 3개월 조건)
     if (analysis_start_date && analysis_end_date) {
       query = query.where('analysis_start_date', '==', analysis_start_date)
@@ -181,10 +214,21 @@ router.get('/companyTasks', async (req, res) => {
     } else {
       query = query.where('analysis_start_date', '>=', startTimestamp)
                    .where('analysis_end_date', '<=', endTimestamp);
+=======
+    // 분석 시작일 필터링
+    if (analysis_start_date) {
+      query = query.where('analysis_start_date', '==', analysis_start_date);
+    }
+    
+    // 분석 종료일 필터링
+    if (analysis_end_date) {
+      query = query.where('analysis_end_date', '==', analysis_end_date);
+>>>>>>> origin/dev
     }
     
     const snapshot = await query.get();
     
+<<<<<<< HEAD
     const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
       const data = doc.data();
       let startDateStr = '';
@@ -206,6 +250,12 @@ router.get('/companyTasks', async (req, res) => {
         analysis_end_date: endDateStr,
       };
     }) as CompanyScheduleAnalysis[];
+=======
+    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => ({
+      id: doc.id,
+      ...doc.data()
+    })) as unknown as CompanyScheduleAnalysis[];
+>>>>>>> origin/dev
 
     // 데이터가 배열인지 확인하고 반환
     const analysisArray = Array.isArray(analysis) ? analysis : [];
@@ -221,6 +271,7 @@ router.get('/projectTasks', async (req, res) => {
   try {
     const { project_id, date } = req.query;
     
+<<<<<<< HEAD
     // 오늘과 3개월 전 날짜 계산
     const today = new Date();
     const threeMonthsAgo = new Date();
@@ -228,6 +279,8 @@ router.get('/projectTasks', async (req, res) => {
     const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
     const endTimestamp = Timestamp.fromDate(today);
 
+=======
+>>>>>>> origin/dev
     let query: any = db.collection('ProjectScheduleAnalysis');
     
     // project_id 필터링
@@ -235,15 +288,22 @@ router.get('/projectTasks', async (req, res) => {
       query = query.where('project_id', '==', project_id);
     }
     
+<<<<<<< HEAD
     // 날짜 필터링 (쿼리 파라미터 우선, 없으면 3개월 조건)
     if (date) {
       query = query.where('date', '==', date);
     } else {
       query = query.where('date', '>=', startTimestamp).where('date', '<=', endTimestamp);
+=======
+    // 날짜 필터링
+    if (date) {
+      query = query.where('date', '==', date);
+>>>>>>> origin/dev
     }
     
     const snapshot = await query.get();
     
+<<<<<<< HEAD
     const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
       const data = doc.data();
       let dateString = '';
@@ -260,6 +320,12 @@ router.get('/projectTasks', async (req, res) => {
         date: dateString,
       };
     }) as ProjectScheduleAnalysis[];
+=======
+    const analysis = snapshot.docs.map((doc: DocumentSnapshot) => ({
+      id: doc.id,
+      ...doc.data()
+    })) as unknown as ProjectScheduleAnalysis[];
+>>>>>>> origin/dev
 
     // 데이터가 배열인지 확인하고 반환
     const analysisArray = Array.isArray(analysis) ? analysis : [];
