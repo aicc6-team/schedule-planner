@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const showNavigation = pathname !== "/";
+  const hideNavigationPaths = ["/", "/login", "/signup"];
+  const showNavigation = !hideNavigationPaths.includes(pathname);
 
   return (
     <div className="flex min-h-screen bg-secondary-50">
