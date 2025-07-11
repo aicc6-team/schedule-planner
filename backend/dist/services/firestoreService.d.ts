@@ -1,43 +1,43 @@
 export interface PersonalSchedule {
     id: string;
-    date: string;
+    date: Date;
     title: string;
     description: string;
-    start_time: string;
-    end_time: string;
+    start_time: Date;
+    end_time: Date;
     duration_minutes: number;
     status: string;
     tag: string;
     emotion: string;
-    created_at: string;
-    updated_at: string;
+    created_at: Date;
+    updated_at: Date;
 }
 export interface DepartmentSchedule {
     id: string;
     department_name: string;
     assignee: string;
-    date: string;
+    date: Date;
     title: string;
     description: string;
-    start_time: string;
-    end_time: string;
+    start_time: Date;
+    end_time: Date;
     delay_hours: number;
     schedule_type: string;
     collaboration_pairs: any;
     duration_minutes: number;
     quality: number;
     status: string;
-    created_at: string;
-    updated_at: string;
+    created_at: Date;
+    updated_at: Date;
 }
 export interface ProjectSchedule {
     id: string;
     project_id: string;
     project_name: string;
     project_description: string;
-    project_start_date: string;
-    project_end_date: string;
-    date: string;
+    project_start_date: Date;
+    project_end_date: Date;
+    date: Date;
     task_list: any;
     start_dates: any;
     durations: any;
@@ -50,20 +50,20 @@ export interface ProjectSchedule {
     intervals: any;
     budget: any;
     status: any;
-    created_at: string;
-    updated_at: string;
+    created_at: Date;
+    updated_at: Date;
 }
 export interface CompanySchedule {
     schedule_id: string;
     title: string;
     description: string;
-    start_datetime: string;
-    end_datetime: string;
+    start_datetime: Date;
+    end_datetime: Date;
     organizer: string;
     supporting_organizations: any;
     attendees: any;
-    created_at: string;
-    updated_at: string;
+    created_at: Date;
+    updated_at: Date;
 }
 export interface ScheduleConflict {
     conflict_id: string;
@@ -73,12 +73,12 @@ export interface ScheduleConflict {
     conflict_schedule2_type: string;
     adjusted_schedule_id: string;
     adjusted_schedule_type: string;
-    adjusted_date: string;
-    created_at: string;
-    updated_at: string;
+    adjusted_date: Date;
+    created_at: Date;
+    updated_at: Date;
 }
 export interface PersonalScheduleAnalysis {
-    date: string;
+    date: Date;
     total_schedules: number;
     completed_schedules: number;
     start_time_distribution: any;
@@ -92,7 +92,7 @@ export interface PersonalScheduleAnalysis {
 }
 export interface DepartmentScheduleAnalysis {
     department_name: string;
-    date: string;
+    date: Date;
     average_delay_per_member: any;
     schedule_type_ratio: any;
     bottleneck_time_slots: any;
@@ -105,7 +105,7 @@ export interface DepartmentScheduleAnalysis {
 }
 export interface ProjectScheduleAnalysis {
     project_id: string;
-    date: string;
+    date: Date;
     task_list: any;
     start_dates: any;
     durations: any;
@@ -121,8 +121,8 @@ export interface ProjectScheduleAnalysis {
 }
 export interface CompanyScheduleAnalysis {
     schedule_id: string;
-    analysis_start_date: string;
-    analysis_end_date: string;
+    analysis_start_date: Date;
+    analysis_end_date: Date;
     total_schedules: number;
     schedule_duration_distribution: any;
     time_slot_distribution: any;
@@ -131,15 +131,15 @@ export interface CompanyScheduleAnalysis {
     supporting_organization_collaborations: any;
     monthly_schedule_counts: any;
     schedule_category_ratio: any;
-    updated_at: string;
+    updated_at: Date;
 }
 export interface ComprehensiveAnalysisReport {
     report_id: string;
     report_type: string;
     related_id: string;
-    created_at: string;
-    analysis_start_date: string;
-    analysis_end_date: string;
+    created_at: Date;
+    analysis_start_date: Date;
+    analysis_end_date: Date;
     summary: string;
     chart_data: any;
     raw_data: any;
@@ -148,10 +148,17 @@ export interface AIConflictScheduleAnalysis {
     request_id: string;
     conflict_id: string;
     user_id: string;
-    request_datetime: string;
+    request_datetime: Date;
     request_params: any;
     status: string;
-    completion_datetime: string;
+    completion_datetime: Date;
+}
+export interface User {
+    user_id: string;
+    name: string;
+    department: string;
+    position: string;
+    role: string;
 }
 export declare const firestoreService: {
     getPersonalSchedules(): Promise<PersonalSchedule[]>;

@@ -10,5 +10,6 @@ export declare const seedProjectScheduleAnalyses: () => Promise<void>;
 export declare const seedCompanyScheduleAnalyses: () => Promise<void>;
 export declare const seedComprehensiveAnalysisReports: () => Promise<void>;
 export declare const seedAIConflictScheduleAnalyses: () => Promise<void>;
+export declare const seedUsers: () => Promise<void>;
 export declare const seedAllData: () => Promise<void>;
 //# sourceMappingURL=seedFirestore.d.ts.map

@@ -10,6 +10,7 @@ const compression_1 = __importDefault(require("compression"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 require("dotenv/config");
 const schedules_1 = __importDefault(require("./routes/schedules"));
+const analytics_1 = __importDefault(require("./routes/analytics"));
 const googleAuth_1 = __importDefault(require("./routes/googleAuth"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const requestLogger_1 = require("./middleware/requestLogger");
@@ -35,6 +36,7 @@ app.use('/api/', limiter);
 app.use(requestLogger_1.requestLogger);
 app.use('/api/schedules', schedules_1.default);
 app.use('/api/auth/google', googleAuth_1.default);
+app.use('/api/analytics', analytics_1.default);
 app.get('/health', (_req, res) => {
     res.status(200).json({
         status: 'OK',

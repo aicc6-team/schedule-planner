@@ -5,7 +5,7 @@ const firebase_1 = require("../config/firebase");
 exports.firestoreService = {
     async getPersonalSchedules() {
         try {
-            const snapshot = await firebase_1.db.collection('personal_schedules').get();
+            const snapshot = await firebase_1.db.collection('PersonalSchedule').get();
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -18,7 +18,7 @@ exports.firestoreService = {
     },
     async getDepartmentSchedules() {
         try {
-            const snapshot = await firebase_1.db.collection('department_schedules').get();
+            const snapshot = await firebase_1.db.collection('DepartmentSchedule').get();
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -31,7 +31,7 @@ exports.firestoreService = {
     },
     async getProjectSchedules() {
         try {
-            const snapshot = await firebase_1.db.collection('project_schedules').get();
+            const snapshot = await firebase_1.db.collection('ProjectSchedule').get();
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -64,16 +64,20 @@ exports.firestoreService = {
     },
     async createPersonalSchedule(data) {
         try {
-            const now = new Date().toISOString();
             const scheduleData = {
                 ...data,
-                created_at: now,
-                updated_at: now
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
-            const docRef = await firebase_1.db.collection('personal_schedules').add(scheduleData);
+            const docRef = await firebase_1.db.collection('PersonalSchedule').add(scheduleData);
             return {
                 id: docRef.id,
-                ...scheduleData
+                ...scheduleData,
+                date: new Date(scheduleData.date),
+                start_time: new Date(scheduleData.start_time),
+                end_time: new Date(scheduleData.end_time),
+                created_at: new Date(scheduleData.created_at),
+                updated_at: new Date(scheduleData.updated_at),
             };
         }
         catch (error) {
@@ -83,7 +87,7 @@ exports.firestoreService = {
     },
     async getPersonalScheduleById(id) {
         try {
-            const doc = await firebase_1.db.collection('personal_schedules').doc(id).get();
+            const doc = await firebase_1.db.collection('PersonalSchedule').doc(id).get();
             if (!doc.exists)
                 return null;
             return {
@@ -102,7 +106,7 @@ exports.firestoreService = {
                 ...data,
                 updated_at: new Date().toISOString()
             };
-            await firebase_1.db.collection('personal_schedules').doc(id).update(updateData);
+            await firebase_1.db.collection('PersonalSchedule').doc(id).update(updateData);
             return await this.getPersonalScheduleById(id);
         }
         catch (error) {
@@ -112,7 +116,7 @@ exports.firestoreService = {
     },
     async deletePersonalSchedule(id) {
         try {
-            await firebase_1.db.collection('personal_schedules').doc(id).delete();
+            await firebase_1.db.collection('PersonalSchedule').doc(id).delete();
             return true;
         }
         catch (error) {
@@ -122,16 +126,20 @@ exports.firestoreService = {
     },
     async createDepartmentSchedule(data) {
         try {
-            const now = new Date().toISOString();
             const scheduleData = {
                 ...data,
-                created_at: now,
-                updated_at: now
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
-            const docRef = await firebase_1.db.collection('department_schedules').add(scheduleData);
+            const docRef = await firebase_1.db.collection('DepartmentSchedule').add(scheduleData);
             return {
                 id: docRef.id,
-                ...scheduleData
+                ...scheduleData,
+                date: new Date(scheduleData.date),
+                start_time: new Date(scheduleData.start_time),
+                end_time: new Date(scheduleData.end_time),
+                created_at: new Date(scheduleData.created_at),
+                updated_at: new Date(scheduleData.updated_at),
             };
         }
         catch (error) {
@@ -141,7 +149,7 @@ exports.firestoreService = {
     },
     async getDepartmentScheduleById(id) {
         try {
-            const doc = await firebase_1.db.collection('department_schedules').doc(id).get();
+            const doc = await firebase_1.db.collection('DepartmentSchedule').doc(id).get();
             if (!doc.exists)
                 return null;
             return {
@@ -160,7 +168,7 @@ exports.firestoreService = {
                 ...data,
                 updated_at: new Date().toISOString()
             };
-            await firebase_1.db.collection('department_schedules').doc(id).update(updateData);
+            await firebase_1.db.collection('DepartmentSchedule').doc(id).update(updateData);
             return await this.getDepartmentScheduleById(id);
         }
         catch (error) {
@@ -170,7 +178,7 @@ exports.firestoreService = {
     },
     async deleteDepartmentSchedule(id) {
         try {
-            await firebase_1.db.collection('department_schedules').doc(id).delete();
+            await firebase_1.db.collection('DepartmentSchedule').doc(id).delete();
             return true;
         }
         catch (error) {
@@ -180,16 +188,20 @@ exports.firestoreService = {
     },
     async createProjectSchedule(data) {
         try {
-            const now = new Date().toISOString();
             const scheduleData = {
                 ...data,
-                created_at: now,
-                updated_at: now
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
-            const docRef = await firebase_1.db.collection('project_schedules').add(scheduleData);
+            const docRef = await firebase_1.db.collection('ProjectSchedule').add(scheduleData);
             return {
                 id: docRef.id,
-                ...scheduleData
+                ...scheduleData,
+                date: new Date(scheduleData.date),
+                project_start_date: new Date(scheduleData.project_start_date),
+                project_end_date: new Date(scheduleData.project_end_date),
+                created_at: new Date(scheduleData.created_at),
+                updated_at: new Date(scheduleData.updated_at),
             };
         }
         catch (error) {
@@ -199,7 +211,7 @@ exports.firestoreService = {
     },
     async getProjectScheduleById(id) {
         try {
-            const doc = await firebase_1.db.collection('project_schedules').doc(id).get();
+            const doc = await firebase_1.db.collection('ProjectSchedule').doc(id).get();
             if (!doc.exists)
                 return null;
             return {
@@ -218,7 +230,7 @@ exports.firestoreService = {
                 ...data,
                 updated_at: new Date().toISOString()
             };
-            await firebase_1.db.collection('project_schedules').doc(id).update(updateData);
+            await firebase_1.db.collection('ProjectSchedule').doc(id).update(updateData);
             return await this.getProjectScheduleById(id);
         }
         catch (error) {
@@ -228,7 +240,7 @@ exports.firestoreService = {
     },
     async deleteProjectSchedule(id) {
         try {
-            await firebase_1.db.collection('project_schedules').doc(id).delete();
+            await firebase_1.db.collection('ProjectSchedule').doc(id).delete();
             return true;
         }
         catch (error) {
@@ -238,7 +250,7 @@ exports.firestoreService = {
     },
     async getCompanySchedules() {
         try {
-            const snapshot = await firebase_1.db.collection('company_schedules').get();
+            const snapshot = await firebase_1.db.collection('CompanySchedule').get();
             return snapshot.docs.map(doc => ({
                 schedule_id: doc.id,
                 ...doc.data()
