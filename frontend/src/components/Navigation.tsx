@@ -13,7 +13,8 @@ import {
   PlusIcon,
   CalendarDaysIcon,
   ExclamationTriangleIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 
 const mainNavigation = [
@@ -26,8 +27,9 @@ const mainNavigation = [
 ];
 
 const bottomNavigation = [
+  { name: '인재 관리', href: '/talent-management', icon: UserGroupIcon },
   { name: '대시보드', href: '/dashboard', icon: ChartBarIcon },
-  { name: '프로젝트', href: '/projects', icon: UserGroupIcon },
+  { name: '프로젝트', href: '/projects', icon: FolderIcon },
 ];
 
 // Google 로그인 컴포넌트
