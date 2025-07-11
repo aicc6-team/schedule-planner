@@ -5,7 +5,7 @@ const firebase_1 = require("../config/firebase");
 exports.firestoreService = {
     async getPersonalSchedules() {
         try {
-            const snapshot = await firebase_1.db.collection('personal_schedules').get();
+            const snapshot = await firebase_1.db.collection('PersonalSchedule').get();
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -18,7 +18,7 @@ exports.firestoreService = {
     },
     async getDepartmentSchedules() {
         try {
-            const snapshot = await firebase_1.db.collection('department_schedules').get();
+            const snapshot = await firebase_1.db.collection('DepartmentSchedule').get();
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -31,7 +31,7 @@ exports.firestoreService = {
     },
     async getProjectSchedules() {
         try {
-            const snapshot = await firebase_1.db.collection('project_schedules').get();
+            const snapshot = await firebase_1.db.collection('ProjectSchedule').get();
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
