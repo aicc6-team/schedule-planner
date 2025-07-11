@@ -16,20 +16,20 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
 
-// DepartmentScheduleAnalysis 스키마에 맞는 인터페이스 (camelCase 적용)
+// DepartmentScheduleAnalysis 스키마에 맞는 인터페이스
 interface DepartmentScheduleAnalysis {
-  departmentName: string;           // 부서명
-  date: string;                     // 분석 날짜
-  averageDelayPerMember: Record<string, number>; // 팀원별 평균 응답 및 지연 시간
-  scheduleTypeRatio: Record<string, number>;     // 일정 유형별 비율
-  bottleneckTimeSlots: Record<string, Record<string, number>>; // 시간대별 병목 현상 건수
-  collaborationNetwork: Record<string, string[]>; // 협업 네트워크 참여 횟수
-  workloadByMemberAndType: Record<string, Record<string, number>>; // 팀원별 업무 유형별 투입 시간
-  executionTimeStats: Record<string, { min: number; max: number; median: number }>; // 업무 수행시간 통계
-  qualityStats: Record<string, { avg: number; min: number; max: number }>; // 업무 품질 통계
-  monthlyScheduleTrends: Record<string, number>; // 월별 일정 건수 추이
-  issueOccurrenceRate: Record<string, Record<string, number>>; // 태그별, 팀별 지연 건수
-  totalSchedules?: number; // 총 일정 건수
+  department_name: string;           // 부서명
+  date: string;                      // 분석 날짜
+  average_delay_per_member: Record<string, number>; // 팀원별 평균 응답 및 지연 시간
+  schedule_type_ratio: Record<string, number>;      // 일정 유형별 비율
+  bottleneck_time_slots: Record<string, Record<string, number>>; // 시간대별 병목 현상 건수
+  collaboration_network: Record<string, string[]>;  // 협업 네트워크 참여 횟수
+  workload_by_member_and_type: Record<string, Record<string, number>>; // 팀원별 업무 유형별 투입 시간
+  execution_time_stats: Record<string, { min: number; max: number; median: number }>; // 업무 수행시간 통계
+  quality_stats: Record<string, { avg: number; min: number; max: number }>; // 업무 품질 통계
+  monthly_schedule_trends: Record<string, number>;  // 월별 일정 건수 추이
+  issue_occurrence_rate: Record<string, Record<string, number>>; // 태그별, 팀별 지연 건수
+  total_schedules?: number; // 총 일정 건수
 }
 
 export default function DepartmentAnalytics() {
@@ -141,12 +141,12 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.averageDelayPerMember) {
+    if (!firstData || !firstData.average_delay_per_member) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.averageDelayPerMember);
-    const data = Object.values(firstData.averageDelayPerMember);
+    const labels = Object.keys(firstData.average_delay_per_member);
+    const data = Object.values(firstData.average_delay_per_member);
 
     return {
       labels,
@@ -167,12 +167,12 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.scheduleTypeRatio) {
+    if (!firstData || !firstData.schedule_type_ratio) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.scheduleTypeRatio);
-    const data = Object.values(firstData.scheduleTypeRatio);
+    const labels = Object.keys(firstData.schedule_type_ratio);
+    const data = Object.values(firstData.schedule_type_ratio);
 
     return {
       labels,
@@ -193,7 +193,7 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.bottleneckTimeSlots) {
+    if (!firstData || !firstData.bottleneck_time_slots) {
       return [];
     }
 
@@ -202,7 +202,7 @@ export default function DepartmentAnalytics() {
     
     // 2차원 배열로 변환 (시간대 행, 요일 열)
     return timeBlocks.map(tb => 
-      days.map(d => firstData.bottleneckTimeSlots[tb]?.[d] || 0)
+      days.map(d => firstData.bottleneck_time_slots[tb]?.[d] || 0)
     );
   }, [departmentAnalysis]);
 
@@ -213,14 +213,14 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.collaborationNetwork) {
+    if (!firstData || !firstData.collaboration_network) {
       return { nodes: [], links: [] };
     }
 
     const nodes = new Set<string>();
     const edges: { from: string; to: string }[] = [];
 
-    Object.entries(firstData.collaborationNetwork).forEach(([member, collaborators]) => {
+    Object.entries(firstData.collaboration_network).forEach(([member, collaborators]) => {
       nodes.add(member);
       
       // collaborators가 배열인지 확인하고 안전하게 처리
@@ -259,21 +259,21 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.workloadByMemberAndType) {
+    if (!firstData || !firstData.workload_by_member_and_type) {
       return { labels: [], datasets: [] };
     }
 
-    const members = Object.keys(firstData.workloadByMemberAndType);
+    const members = Object.keys(firstData.workload_by_member_and_type);
     const allTypes = Array.from(
       new Set(
-        Object.values(firstData.workloadByMemberAndType)
+        Object.values(firstData.workload_by_member_and_type)
           .flatMap(memberData => Object.keys(memberData))
       )
     );
 
     const datasets = allTypes.map((type, idx) => ({
       label: type,
-      data: members.map(member => firstData.workloadByMemberAndType[member]?.[type] || 0),
+      data: members.map(member => firstData.workload_by_member_and_type[member]?.[type] || 0),
       backgroundColor: ['#60a5fa', '#f59e0b', '#10b981', '#ef4444'][idx % 4],
       stack: 'total'
     }));
@@ -288,17 +288,17 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.executionTimeStats) {
+    if (!firstData || !firstData.execution_time_stats) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.executionTimeStats);
-    const minData = labels.map(name => firstData.executionTimeStats[name]?.min || 0);
+    const labels = Object.keys(firstData.execution_time_stats);
+    const minData = labels.map(name => firstData.execution_time_stats[name]?.min || 0);
     const avgData = labels.map(name => {
-      const stats = firstData.executionTimeStats[name];
+      const stats = firstData.execution_time_stats[name];
       return stats ? (stats.min + stats.max) / 2 : 0; // 중앙값 대신 평균 사용
     });
-    const maxData = labels.map(name => firstData.executionTimeStats[name]?.max || 0);
+    const maxData = labels.map(name => firstData.execution_time_stats[name]?.max || 0);
 
     return {
       labels,
@@ -329,16 +329,16 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.qualityStats) {
+    if (!firstData || !firstData.quality_stats) {
       return { datasets: [] };
     }
 
-    const members = Object.keys(firstData.qualityStats);
+    const members = Object.keys(firstData.quality_stats);
     const data = members.map(member => {
-      const stats = firstData.qualityStats[member];
+      const stats = firstData.quality_stats[member];
       return {
         x: stats?.avg || 0, // 평균 품질
-        y: firstData.executionTimeStats?.[member]?.median || 0, // 중앙값 수행시간
+        y: firstData.execution_time_stats?.[member]?.median || 0, // 중앙값 수행시간
       };
     });
 
@@ -360,12 +360,12 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.monthlyScheduleTrends) {
+    if (!firstData || !firstData.monthly_schedule_trends) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.monthlyScheduleTrends).sort();
-    const data = labels.map(month => firstData.monthlyScheduleTrends[month] || 0);
+    const labels = Object.keys(firstData.monthly_schedule_trends).sort();
+    const data = labels.map(month => firstData.monthly_schedule_trends[month] || 0);
 
     return {
       labels,
@@ -389,21 +389,21 @@ export default function DepartmentAnalytics() {
     }
 
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.issueOccurrenceRate) {
+    if (!firstData || !firstData.issue_occurrence_rate) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.issueOccurrenceRate);
+    const labels = Object.keys(firstData.issue_occurrence_rate);
     const allTags = Array.from(
       new Set(
-        Object.values(firstData.issueOccurrenceRate)
+        Object.values(firstData.issue_occurrence_rate)
           .flatMap(tagData => Object.keys(tagData))
       )
     );
 
     const datasets = allTags.map((tag, i) => ({
       label: tag,
-      data: labels.map(label => firstData.issueOccurrenceRate[label]?.[tag] || 0),
+      data: labels.map(label => firstData.issue_occurrence_rate[label]?.[tag] || 0),
       backgroundColor: ['#2563eb', '#f59e0b', '#10b981', '#6d28d9'][i % 4],
     }));
 
@@ -422,41 +422,54 @@ export default function DepartmentAnalytics() {
                 <>
                   분석 기간: {dayjs(departmentAnalysis[0].date).format('YYYY-MM-DD')} ~ {dayjs(departmentAnalysis[departmentAnalysis.length - 1].date).format('YYYY-MM-DD')}
                   <span className="mx-2">•</span>
-                  총 {departmentAnalysis.reduce((sum, item) => sum + (item.totalSchedules ?? 0), 0)}개 일정
+                  총 {departmentAnalysis.reduce((sum, item) => sum + (item.total_schedules ?? 0), 0)}개 일정
                   <span className="mx-2">•</span>
-                  평균 지연시간: {departmentAnalysis.length > 0 && departmentAnalysis[0].averageDelayPerMember ?
-                    (Object.values(departmentAnalysis[0].averageDelayPerMember).reduce((sum, v) => sum + v, 0) / Object.keys(departmentAnalysis[0].averageDelayPerMember).length).toFixed(1)
-                    : 0}분
+                  평균 지연시간: {
+                    departmentAnalysis.length > 0 && departmentAnalysis[0].average_delay_per_member
+                      ? (() => {
+                          const values = Object.values(departmentAnalysis[0].average_delay_per_member)
+                            .map(v => typeof v === "number" && !isNaN(v) ? v : 0);
+                          const count = values.length;
+                          if (count === 0) return 0;
+                          const sum = values.reduce((sum, v) => sum + v, 0);
+                          return (sum / count).toFixed(1);
+                        })()
+                      : 0
+                  }분
                 </>
               )}
             </p>
           </div>
-          <button
-            onClick={generateReport}
-            disabled={isGeneratingReport || departmentAnalysis.length === 0}
-            className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
-              isGeneratingReport || departmentAnalysis.length === 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
-            }`}
-          >
-            {isGeneratingReport ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>레포트 생성 중...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>레포트 다운로드</span>
-              </>
-            )}
-          </button>
+          {(!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) ? (
+            <div className="text-gray-400 text-sm">데이터를 불러오는 중입니다...</div>
+          ) : (
+            <button
+              onClick={generateReport}
+              disabled={isGeneratingReport}
+              className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
+                isGeneratingReport
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
+              }`}
+            >
+              {isGeneratingReport ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>레포트 생성 중...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>레포트 다운로드</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
       {/* 3x3 그리드: 9개 부서 일정 분석 차트 */}

@@ -24,11 +24,11 @@ export const getAnalyticsController = async (
     }
     
     const analytics = await getAnalytics({
-      projectId: projectId ? String(projectId) : undefined,
-      metricName: metricName ? String(metricName) : undefined,
+      project_id: projectId ? String(projectId) : undefined,
+      metric_name: metricName ? String(metricName) : undefined,
       period: period ? (period as 'daily' | 'weekly' | 'monthly' | 'current') : undefined,
-      startDate: startDateObj,
-      endDate: endDateObj
+      start_date: startDateObj,
+      end_date: endDateObj
     });
     
     res.json({

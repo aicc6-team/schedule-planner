@@ -18,22 +18,22 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
 
-// ProjectScheduleAnalysis 스키마에 맞는 인터페이스 (camelCase 적용)
+// ProjectScheduleAnalysis 스키마에 맞는 인터페이스
 interface ProjectScheduleAnalysis {
-  projectId: string;                           // 프로젝트 ID
+  project_id: string;                           // 프로젝트 ID
   date: string | { toDate: () => Date };        // 분석 날짜
-  taskList: string[];                          // 작업 리스트
-  startDates: Record<string, string | { toDate: () => Date }>;          // 시작일 리스트
+  task_list: string[];                          // 작업 리스트
+  start_dates: Record<string, string | { toDate: () => Date }>;          // 시작일 리스트
   durations: Record<string, number>;            // 단계별 기간
   dependencies: Record<string, string[]>;       // 작업 간 종속 관계
-  plannedCompletionDates: Record<string, string | { toDate: () => Date }>; // 계획 완료일 리스트
-  actualCompletionDates: Record<string, string | { toDate: () => Date }>;  // 실제 완료일 리스트
-  simulationCompletionDates: Array<string | { toDate: () => Date }>;        // 완료일 시뮬레이션
+  planned_completion_dates: Record<string, string | { toDate: () => Date }>; // 계획 완료일 리스트
+  actual_completion_dates: Record<string, string | { toDate: () => Date }>;  // 실제 완료일 리스트
+  simulation_completion_dates: Array<string | { toDate: () => Date }>;        // 완료일 시뮬레이션
   progress: Record<string, number>;             // 단계별 진행률
-  delayTimes: Record<string, number>;          // 단계별 지연 시간
+  delay_times: Record<string, number>;          // 단계별 지연 시간
   intervals: Record<string, number>;            // 단계 간 간격
-  cumulativeBudget: Record<string, number>;    // 예산 누적 소모
-  stageStatus: Record<string, string>;         // 단계별 상태 (완료, 진행, 지연)
+  cumulative_budget: Record<string, number>;    // 예산 누적 소모
+  stage_status: Record<string, string>;         // 단계별 상태 (완료, 진행, 지연)
 }
 
 // 날짜 변환 함수
@@ -157,15 +157,15 @@ export default function ProjectAnalytics() {
 
   //1. 간트차트 데이터 생성
   const ganttData = useMemo(() => {
-    if (!firstData || !firstData.taskList || !firstData.startDates || !firstData.durations) {
+    if (!firstData || !firstData.task_list || !firstData.start_dates || !firstData.durations) {
       return ganttProjects[0];
     }
 
-    const tasks = firstData.taskList.map((task, index) => {
-      const startDate = firstData.startDates[task];
+    const tasks = firstData.task_list.map((task, index) => {
+      const startDate = firstData.start_dates[task];
       const duration = firstData.durations[task] || 1;
       const start = startDate
-        ? dayjs(toDayjsInput(startDate)).diff(dayjs(toDayjsInput(firstData.startDates[firstData.taskList[0]])), 'day')
+        ? dayjs(toDayjsInput(startDate)).diff(dayjs(toDayjsInput(firstData.start_dates[firstData.task_list[0]])), 'day')
         : index;
       const end = start + duration;
       
@@ -180,8 +180,8 @@ export default function ProjectAnalytics() {
     const totalDays = Math.max(...tasks.map(t => t.end));
 
     return {
-      id: firstData.projectId,
-      name: `프로젝트 ${firstData.projectId}`,
+      id: firstData.project_id,
+      name: `프로젝트 ${firstData.project_id}`,
       tasks,
       totalDays,
     };
@@ -216,23 +216,23 @@ export default function ProjectAnalytics() {
 
   //3. 단계별 지연 시간 (워터폴 차트)
   const delayData = useMemo(() => {
-    if (!firstData || !firstData.delayTimes) {
+    if (!firstData || !firstData.delay_times) {
       return { labels: [], data: [] };
     }
 
-    const labels = Object.keys(firstData.delayTimes);
-    const data = Object.values(firstData.delayTimes);
+    const labels = Object.keys(firstData.delay_times);
+    const data = Object.values(firstData.delay_times);
 
     return { labels, data };
   }, [firstData]);
 
   //4. 시뮬레이션 완료일 분포 (히스토그램)
   const simulationData = useMemo(() => {
-    if (!firstData || !firstData.simulationCompletionDates) {
+    if (!firstData || !firstData.simulation_completion_dates) {
       return { labels: [], data: [] };
     }
 
-    const dates = firstData.simulationCompletionDates;
+    const dates = firstData.simulation_completion_dates;
     const dateCount: Record<string, number> = {};
     
     dates.forEach(dateStr => {
@@ -260,12 +260,12 @@ export default function ProjectAnalytics() {
 
   //6. 단계별 상태 분포 (파이차트)
   const statusData = useMemo(() => {
-    if (!firstData || !firstData.stageStatus) {
+    if (!firstData || !firstData.stage_status) {
       return { labels: [], data: [] };
     }
 
     const statusCounts: Record<string, number> = {};
-    Object.values(firstData.stageStatus).forEach(status => {
+    Object.values(firstData.stage_status).forEach(status => {
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
 
@@ -301,33 +301,33 @@ export default function ProjectAnalytics() {
 
   //8. 예산 누적 소모 (면적차트)
   const budgetData = useMemo(() => {
-    if (!firstData || !firstData.cumulativeBudget) {
+    if (!firstData || !firstData.cumulative_budget) {
       return { labels: [], data: [] };
     }
 
-    const labels = Object.keys(firstData.cumulativeBudget).sort();
-    const data = labels.map(task => firstData.cumulativeBudget[task]);
+    const labels = Object.keys(firstData.cumulative_budget).sort();
+    const data = labels.map(task => firstData.cumulative_budget[task]);
 
     return { labels, data };
   }, [firstData]);
 
   //9. 계획 vs 실제 완료일 비교 (막대그래프)
   const completionComparison = useMemo(() => {
-    if (!firstData || !firstData.plannedCompletionDates || !firstData.actualCompletionDates) {
+    if (!firstData || !firstData.planned_completion_dates || !firstData.actual_completion_dates) {
       return { labels: [], planned: [], actual: [] };
     }
 
-    const tasks = Object.keys(firstData.plannedCompletionDates);
+    const tasks = Object.keys(firstData.planned_completion_dates);
     const planned = tasks.map(task => {
-      const date = firstData.plannedCompletionDates[task];
-      const base = firstData.startDates[task] || firstData.date;
+      const date = firstData.planned_completion_dates[task];
+      const base = firstData.start_dates[task] || firstData.date;
       return date
         ? dayjs(toDayjsInput(date)).diff(dayjs(toDayjsInput(base)), 'day')
         : 0;
     });
     const actual = tasks.map(task => {
-      const date = firstData.actualCompletionDates[task];
-      const base = firstData.startDates[task] || firstData.date;
+      const date = firstData.actual_completion_dates[task];
+      const base = firstData.start_dates[task] || firstData.date;
       return date
         ? dayjs(toDayjsInput(date)).diff(dayjs(toDayjsInput(base)), 'day')
         : 0;
@@ -398,39 +398,43 @@ export default function ProjectAnalytics() {
                   분석 기간: {getDateString(projectAnalysis[0]?.date)}
                   ~ {getDateString(projectAnalysis[projectAnalysis.length - 1]?.date)}
                   <span className="mx-2">•</span>
-                  프로젝트ID: {projectAnalysis[0]?.projectId}
+                  프로젝트ID: {projectAnalysis[0]?.project_id}
                   <span className="mx-2">•</span>
-                  작업 수: {projectAnalysis[0]?.taskList?.length ?? 0}
+                  작업 수: {projectAnalysis[0]?.task_list?.length ?? 0}
                 </>
               )}
             </p>
           </div>
-          <button
-            onClick={generateReport}
-            disabled={isGeneratingReport || projectAnalysis.length === 0}
-            className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
-              isGeneratingReport || projectAnalysis.length === 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
-            }`}
-          >
-            {isGeneratingReport ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>레포트 생성 중...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>레포트 다운로드</span>
-              </>
-            )}
-          </button>
+          {(!Array.isArray(projectAnalysis) || projectAnalysis.length === 0) ? (
+            <div className="text-gray-400 text-sm">데이터를 불러오는 중입니다...</div>
+          ) : (
+            <button
+              onClick={generateReport}
+              disabled={isGeneratingReport}
+              className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
+                isGeneratingReport
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
+              }`}
+            >
+              {isGeneratingReport ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>레포트 생성 중...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>레포트 다운로드</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
       {/* 3x3 그리드: 9개 프로젝트 일정 분석 차트 */}

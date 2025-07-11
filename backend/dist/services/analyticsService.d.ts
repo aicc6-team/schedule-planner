@@ -1,31 +1,31 @@
 export interface AnalyticsQuery {
     id?: string | undefined;
-    projectId?: string | undefined;
-    metricName?: string | undefined;
+    project_id?: string | undefined;
+    metric_name?: string | undefined;
     period?: 'daily' | 'weekly' | 'monthly' | 'current' | undefined;
-    startDate?: Date | undefined;
-    endDate?: Date | undefined;
+    start_date?: Date | undefined;
+    end_date?: Date | undefined;
 }
 export interface PersonalScheduleAnalysis {
     date: string;
-    totalSchedules: number;
-    completedSchedules: number;
-    startTimeDistribution: Record<string, number>;
-    endTimeDistribution: Record<string, number>;
-    completionRateByTag: Record<string, {
-        completionRate: number;
-        avgDuration: number;
+    total_schedules: number;
+    completed_schedules: number;
+    start_time_distribution: Record<string, number>;
+    end_time_distribution: Record<string, number>;
+    completion_rate_by_tag: Record<string, {
+        completion_rate: number;
+        avg_duration: number;
     }>;
-    durationDistribution: Record<string, number>;
-    taskCountByEmotion: Record<string, number>;
-    taskCountByStatus: Record<string, number>;
-    scheduleCountByTimeSlot: Record<string, number>;
-    cumulativeCompletions: Record<string, number>;
+    duration_distribution: Record<string, number>;
+    task_count_by_emotion: Record<string, number>;
+    task_count_by_status: Record<string, number>;
+    schedule_count_by_time_slot: Record<string, number>;
+    cumulative_completions: Record<string, number>;
 }
 export interface Analytics {
     id: string;
-    projectId: string | null;
-    metricName: string;
+    project_id: string | null;
+    metric_name: string;
     value: number;
     unit: string;
     period: 'daily' | 'weekly' | 'monthly' | 'current';

@@ -69,10 +69,8 @@ ${JSON.stringify(stats, null, 2)}
 (모두 자연스러운 한국어로!)`;
     const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        messages: [
-            { role: 'system', content: '너는 일정 데이터를 분석하는 전문 어시스턴트야.' },
-            { role: 'user', content: prompt }
-        ]
+        messages: [{ role: 'system', content: '너는 일정 데이터를 분석하는 전문 어시스턴트야.' },
+            { role: 'user', content: prompt }]
     });
     const text = response.choices[0]?.message?.content ?? '';
     const parts = text.split(/\n[2-3]\./);
@@ -81,8 +79,8 @@ ${JSON.stringify(stats, null, 2)}
     return { summary, advice };
 }
 function makeStatsForPrompt(scheduleData) {
-    const totalSchedules = scheduleData.reduce((sum, item) => sum + item.totalSchedules, 0);
-    const completedSchedules = scheduleData.reduce((sum, item) => sum + item.completedSchedules, 0);
+    const totalSchedules = scheduleData.reduce((sum, item) => sum + item.total_schedules, 0);
+    const completedSchedules = scheduleData.reduce((sum, item) => sum + item.completed_schedules, 0);
     return {
         totalSchedules,
         completedSchedules,
@@ -151,41 +149,25 @@ function generatePDFBuffer(summary, advice, statsTable, scheduleData, periodLabe
         doc.moveDown(0.7);
         doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#E5E7EB').lineWidth(1.2).stroke();
         doc.moveDown(1.2);
-        doc.font('Bold').fontSize(13).fillColor('#22223B');
-        doc.text('1. 요약');
-        doc.moveDown(0.5);
-        const summaryRows = [
-            ['총 일정', `${statsTable?.totalSchedules ?? 0}건`],
-            ['완료 일정', `${statsTable?.completedSchedules ?? 0}건`],
-            ['완료율', `${typeof statsTable?.completionRate === 'number' ? statsTable.completionRate.toFixed(1) : '0.0'}%`],
-            ['일평균 일정', `${typeof statsTable?.averageDailySchedules === 'number' ? statsTable.averageDailySchedules.toFixed(1) : '0.0'}건`],
-            ['참석자', statsTable?.totalAttendees ?? '-'],
-            ['주최 기관', statsTable?.totalOrganizers ?? '-'],
-        ];
-        summaryRows.forEach(([label, value]) => {
-            doc.font('Bold').fontSize(11).fillColor('#22223B').text(label, { continued: true, width: 100 });
-            doc.font('Regular').fontSize(11).fillColor('#22223B').text(' : ', { continued: true });
-            doc.font('Regular').fontSize(11).fillColor('#1D4ED8').text(value);
-        });
-        doc.moveDown(1);
+        console.log('statsTable --------------------', statsTable);
         if (summary) {
-            doc.font('Bold').fontSize(13).fillColor('#22223B').text('2. 분석 요약');
+            doc.font('Bold').fontSize(13).fillColor('#22223B').text('1. 분석 요약');
             doc.moveDown(0.3);
             doc.font('Regular').fontSize(11).fillColor('#22223B').text(summary);
             doc.moveDown(1);
         }
         if (advice) {
-            doc.font('Bold').fontSize(13).fillColor('#22223B').text('3. 개선 조언');
+            doc.font('Bold').fontSize(13).fillColor('#22223B').text('2. 개선 조언');
             doc.moveDown(0.3);
             doc.font('Regular').fontSize(11).fillColor('#22223B').text(advice);
             doc.moveDown(1);
         }
         if (scheduleData && scheduleData.length > 0) {
-            doc.font('Bold').fontSize(13).fillColor('#22223B').text('4. 상세 일정');
+            doc.font('Bold').fontSize(13).fillColor('#22223B').text('3. 상세 일정');
             doc.moveDown(0.3);
             doc.font('Regular').fontSize(10).fillColor('#22223B');
             scheduleData.forEach((item, idx) => {
-                doc.text(`${item.date}: 총 ${item.totalSchedules}, 완료 ${item.completedSchedules}`);
+                doc.text(`${item.date}: 총 ${item.total_schedules}, 완료 ${item.completed_schedules}`);
                 if (idx < scheduleData.length - 1)
                     doc.moveDown(0.2);
             });

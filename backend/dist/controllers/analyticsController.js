@@ -18,11 +18,11 @@ const getAnalyticsController = async (req, res, next) => {
                 endDateObj = dateObj;
         }
         const analytics = await (0, analyticsService_1.getAnalytics)({
-            projectId: projectId ? String(projectId) : undefined,
-            metricName: metricName ? String(metricName) : undefined,
+            project_id: projectId ? String(projectId) : undefined,
+            metric_name: metricName ? String(metricName) : undefined,
             period: period ? period : undefined,
-            startDate: startDateObj,
-            endDate: endDateObj
+            start_date: startDateObj,
+            end_date: endDateObj
         });
         res.json({
             success: true,

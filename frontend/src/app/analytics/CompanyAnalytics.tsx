@@ -18,20 +18,20 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
 
-// CompanyScheduleAnalysis 스키마에 맞는 인터페이스 (camelCase 적용)
+// CompanyScheduleAnalysis 스키마에 맞는 인터페이스
 interface CompanyScheduleAnalysis {
-  scheduleId: string;                                     // 회사 일정 고유 아이디
-  analysisStartDate: string | { toDate: () => Date };     // 분석 기간 시작일
-  analysisEndDate: string | { toDate: () => Date };       // 분석 기간 종료일
-  totalSchedules: number;                                 // 총 일정 건수
-  scheduleDurationDistribution: Record<string, number>;   // 일정 기간별 분포
-  timeSlotDistribution: Record<string, number>;           // 시간대별 분포
-  attendeeParticipationCounts: Record<string, number>;    // 참석자별 참여 횟수
-  organizerScheduleCounts: Record<string, number>;        // 주최 기관별 일정 수
-  supportingOrganizationCollaborations: Record<string, string[]>; // 협조 기관별 협력 횟수
-  monthlyScheduleCounts: Record<string, number>;          // 월별 일정 건수 추이
-  scheduleCategoryRatio: Record<string, number>;          // 일정 카테고리별 비율
-  updatedAt: string | { toDate: () => Date };             // 갱신 일시
+  schedule_id: string;                                    // 회사 일정 고유 아이디
+  analysis_start_date: string | { toDate: () => Date };   // 분석 기간 시작일
+  analysis_end_date: string | { toDate: () => Date };     // 분석 기간 종료일
+  total_schedules: number;                               // 총 일정 건수
+  schedule_duration_distribution: Record<string, number>; // 일정 기간별 분포
+  time_slot_distribution: Record<string, number>;        // 시간대별 분포
+  attendee_participation_counts: Record<string, number>; // 참석자별 참여 횟수
+  organizer_schedule_counts: Record<string, number>;     // 주최 기관별 일정 수
+  supporting_organization_collaborations: Record<string, string[]>; // 협조 기관별 협력 횟수
+  monthly_schedule_counts: Record<string, number>;       // 월별 일정 건수 추이
+  schedule_category_ratio: Record<string, number>;       // 일정 카테고리별 비율
+  updated_at: string | { toDate: () => Date };           // 갱신 일시
 }
 
 // 날짜 변환 함수
@@ -112,12 +112,12 @@ export default function CompanyAnalytics() {
 
   //1. 일정 기간별 분포 (파이차트)
   const durationDistribution = useMemo(() => {
-    if (!firstData || !firstData.scheduleDurationDistribution) {
+    if (!firstData || !firstData.schedule_duration_distribution) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.scheduleDurationDistribution);
-    const data = Object.values(firstData.scheduleDurationDistribution);
+    const labels = Object.keys(firstData.schedule_duration_distribution);
+    const data = Object.values(firstData.schedule_duration_distribution);
 
     return {
       labels,
@@ -133,12 +133,12 @@ export default function CompanyAnalytics() {
 
   //2. 시간대별 분포 (막대그래프)
   const timeSlotDistribution = useMemo(() => {
-    if (!firstData || !firstData.timeSlotDistribution) {
+    if (!firstData || !firstData.time_slot_distribution) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.timeSlotDistribution);
-    const data = Object.values(firstData.timeSlotDistribution);
+    const labels = Object.keys(firstData.time_slot_distribution);
+    const data = Object.values(firstData.time_slot_distribution);
 
     return {
       labels,
@@ -154,12 +154,12 @@ export default function CompanyAnalytics() {
 
   //3. 참석자별 참여 횟수 (막대그래프)
   const attendeeParticipation = useMemo(() => {
-    if (!firstData || !firstData.attendeeParticipationCounts) {
+    if (!firstData || !firstData.attendee_participation_counts) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.attendeeParticipationCounts);
-    const data = Object.values(firstData.attendeeParticipationCounts);
+    const labels = Object.keys(firstData.attendee_participation_counts);
+    const data = Object.values(firstData.attendee_participation_counts);
 
     return {
       labels,
@@ -175,14 +175,14 @@ export default function CompanyAnalytics() {
 
   //4. 협조 기관 네트워크 그래프
   const collaborationNetwork = useMemo(() => {
-    if (!firstData || !firstData.supportingOrganizationCollaborations) {
+    if (!firstData || !firstData.supporting_organization_collaborations) {
       return { nodes: [], links: [] };
     }
 
     const nodes = new Set<string>();
     const edges: { from: string; to: string }[] = [];
 
-    Object.entries(firstData.supportingOrganizationCollaborations).forEach(([organization, collaborators]) => {
+    Object.entries(firstData.supporting_organization_collaborations).forEach(([organization, collaborators]) => {
       nodes.add(organization);
       
       // collaborators가 배열인지 확인하고 안전하게 처리
@@ -198,8 +198,8 @@ export default function CompanyAnalytics() {
         nodes.add(collaborators);
         edges.push({ from: organization, to: collaborators });
       } else if (typeof collaborators === 'object' && collaborators !== null) {
-        // collaborators가 객체인 경우 (값들을 배열로 처리)
-        Object.values(collaborators).forEach(collaborator => {
+        // collaborators가 객체인 경우
+        Object.keys(collaborators).forEach(collaborator => {
           if (typeof collaborator === 'string') {
             nodes.add(collaborator);
             edges.push({ from: organization, to: collaborator });
@@ -208,28 +208,28 @@ export default function CompanyAnalytics() {
       }
     });
 
-    const nodeArray = Array.from(nodes).map(id => ({ id, name: id }));
-    const linkArray = edges.map(edge => ({ source: edge.from, target: edge.to }));
-
-    return { nodes: nodeArray, links: linkArray };
+    return {
+      nodes: Array.from(nodes).map(id => ({ id })),
+      links: edges.map(e => ({ source: e.from, target: e.to })),
+    };
   }, [firstData]);
 
   //5. 주최 기관별 일정 수 (막대그래프)
-  const organizerSchedules = useMemo(() => {
-    if (!firstData || !firstData.organizerScheduleCounts) {
+  const organizerScheduleCounts = useMemo(() => {
+    if (!firstData || !firstData.organizer_schedule_counts) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.organizerScheduleCounts);
-    const data = Object.values(firstData.organizerScheduleCounts);
+    const labels = Object.keys(firstData.organizer_schedule_counts);
+    const data = Object.values(firstData.organizer_schedule_counts);
 
     return {
       labels,
       datasets: [
         {
-          label: '주최 일정 수',
+          label: '일정 수',
           data,
-          backgroundColor: '#8b5cf6',
+          backgroundColor: '#f59e0b',
         },
       ],
     };
@@ -237,12 +237,12 @@ export default function CompanyAnalytics() {
 
   //6. 일정 카테고리별 비율 (도넛차트)
   const categoryRatio = useMemo(() => {
-    if (!firstData || !firstData.scheduleCategoryRatio) {
+    if (!firstData || !firstData.schedule_category_ratio) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.scheduleCategoryRatio);
-    const data = Object.values(firstData.scheduleCategoryRatio);
+    const labels = Object.keys(firstData.schedule_category_ratio);
+    const data = Object.values(firstData.schedule_category_ratio);
 
     return {
       labels,
@@ -250,20 +250,20 @@ export default function CompanyAnalytics() {
         {
           label: '카테고리별 비율',
           data,
-          backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4'],
+          backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'],
         },
       ],
     };
   }, [firstData]);
 
-  //7. 월별 일정 건수 추이 (선그래프)
-  const monthlyTrends = useMemo(() => {
-    if (!firstData || !firstData.monthlyScheduleCounts) {
+  //7. 월별 일정 건수 추이 (라인차트)
+  const monthlyScheduleCounts = useMemo(() => {
+    if (!firstData || !firstData.monthly_schedule_counts) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = Object.keys(firstData.monthlyScheduleCounts);
-    const data = Object.values(firstData.monthlyScheduleCounts);
+    const labels = Object.keys(firstData.monthly_schedule_counts).sort();
+    const data = labels.map(month => firstData.monthly_schedule_counts[month] || 0);
 
     return {
       labels,
@@ -271,8 +271,12 @@ export default function CompanyAnalytics() {
         {
           label: '월별 일정 건수',
           data,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: '#6366f1',
+          backgroundColor: '#6366f133',
+          borderWidth: 3,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#6366f1',
+          pointRadius: 5,
           fill: true,
           tension: 0.4,
         },
@@ -280,27 +284,32 @@ export default function CompanyAnalytics() {
     };
   }, [firstData]);
 
-  //8. 일정 기간 vs 참여자 수 (산점도)
+  //8. 일정 기간 vs 참여자 수 산점도
   const durationVsParticipants = useMemo(() => {
-    if (!firstData || !firstData.scheduleDurationDistribution || !firstData.attendeeParticipationCounts) {
+    if (!firstData || !firstData.schedule_duration_distribution || !firstData.attendee_participation_counts) {
       return { datasets: [] };
     }
 
-    // 임시 데이터 생성 (실제로는 더 복잡한 로직이 필요)
-    const scatterData = Object.keys(firstData.scheduleDurationDistribution).map((duration, index) => ({
-      x: firstData.scheduleDurationDistribution[duration],
-      y: Object.values(firstData.attendeeParticipationCounts)[index] || 0,
-      label: duration,
-    }));
+    const durationKeys = Object.keys(firstData.schedule_duration_distribution);
+    const attendeeKeys = Object.keys(firstData.attendee_participation_counts);
+    
+    // 두 데이터를 매칭하여 산점도 데이터 생성
+    const data = durationKeys.map(duration => {
+      const durationValue = firstData.schedule_duration_distribution[duration];
+      const attendeeValue = firstData.attendee_participation_counts[duration] || 0;
+      return {
+        x: durationValue,
+        y: attendeeValue,
+      };
+    });
 
     return {
       datasets: [
         {
-          label: '일정 기간 vs 참여자 수',
-          data: scatterData,
-          backgroundColor: '#ef4444',
+          label: '기간 vs 참여자',
+          data,
+          backgroundColor: '#3b82f6',
           pointRadius: 6,
-          pointHoverRadius: 8,
         },
       ],
     };
@@ -317,14 +326,14 @@ export default function CompanyAnalytics() {
       };
     }
 
-    const totalAttendees = Object.values(firstData.attendeeParticipationCounts || {}).reduce((sum, count) => sum + count, 0);
-    const totalOrganizers = Object.keys(firstData.organizerScheduleCounts || {}).length;
-    const start = getDateString(firstData.analysisStartDate);
-    const end = getDateString(firstData.analysisEndDate);
+    const totalAttendees = Object.values(firstData.attendee_participation_counts || {}).reduce((sum, count) => sum + count, 0);
+    const totalOrganizers = Object.keys(firstData.organizer_schedule_counts || {}).length;
+    const start = getDateString(firstData.analysis_start_date);
+    const end = getDateString(firstData.analysis_end_date);
     const analysisPeriod = `${start} ~ ${end}`;
 
     return {
-      totalSchedules: firstData.totalSchedules || 0,
+      totalSchedules: firstData.total_schedules || 0,
       totalAttendees,
       totalOrganizers,
       analysisPeriod,
@@ -351,8 +360,8 @@ export default function CompanyAnalytics() {
           analyticsData: companyAnalysis,
           reportType: 'company',
           dateRange: {
-            start: companyAnalysis[0]?.analysisStartDate || dayjs().format('YYYY-MM-DD'),
-            end: companyAnalysis[0]?.analysisEndDate || dayjs().format('YYYY-MM-DD')
+            start: companyAnalysis[0]?.analysis_start_date || dayjs().format('YYYY-MM-DD'),
+            end: companyAnalysis[0]?.analysis_end_date || dayjs().format('YYYY-MM-DD')
           },
           chartImages,
           chartDescriptions,
@@ -390,44 +399,48 @@ export default function CompanyAnalytics() {
             <p className="text-gray-600 text-sm">
               {companyAnalysis.length > 0 && (
                 <>
-                  분석 기간: {getDateString(companyAnalysis[0]?.analysisStartDate)}
-                  ~ {getDateString(companyAnalysis[0]?.analysisEndDate)}
+                  분석 기간: {getDateString(companyAnalysis[0]?.analysis_start_date)}
+                  ~ {getDateString(companyAnalysis[0]?.analysis_end_date)}
                   <span className="mx-2">•</span>
-                  총 {companyAnalysis[0]?.totalSchedules ?? 0}개 일정
+                  총 {companyAnalysis[0]?.total_schedules ?? 0}개 일정
                   <span className="mx-2">•</span>
-                  참석자 수: {Object.keys(companyAnalysis[0]?.attendeeParticipationCounts || {}).length}
+                  참석자 수: {Object.keys(companyAnalysis[0]?.attendee_participation_counts || {}).length}
                   <span className="mx-2">•</span>
-                  주최 기관 수: {Object.keys(companyAnalysis[0]?.organizerScheduleCounts || {}).length}
+                  주최 기관 수: {Object.keys(companyAnalysis[0]?.organizer_schedule_counts || {}).length}
                 </>
               )}
             </p>
           </div>
-          <button
-            onClick={generateReport}
-            disabled={isGeneratingReport || companyAnalysis.length === 0}
-            className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
-              isGeneratingReport || companyAnalysis.length === 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
-            }`}
-          >
-            {isGeneratingReport ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>레포트 생성 중...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>레포트 다운로드</span>
-              </>
-            )}
-          </button>
+          {(!Array.isArray(companyAnalysis) || companyAnalysis.length === 0) ? (
+            <div className="text-gray-400 text-sm">데이터를 불러오는 중입니다...</div>
+          ) : (
+            <button
+              onClick={generateReport}
+              disabled={isGeneratingReport}
+              className={`px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 flex items-center space-x-2 ${
+                isGeneratingReport
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg'
+              }`}
+            >
+              {isGeneratingReport ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>레포트 생성 중...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>레포트 다운로드</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
       {/* 3x3 그리드: 9개 회사 일정 분석 차트 */}
@@ -493,14 +506,14 @@ export default function CompanyAnalytics() {
           <div className="w-full flex-1 flex items-center justify-center" style={{height:250}}>
             <ForceGraph2D
               graphData={collaborationNetwork}
-              nodeLabel={(node: any) => node.name}
+              nodeLabel={(node: any) => node.id}
               nodeAutoColorBy="group"
               linkDirectionalParticles={2}
               linkDirectionalParticleWidth={2}
               width={250}
               height={250}
               nodeCanvasObject={(node: any, ctx, globalScale) => {
-                const label = node.name;
+                const label = node.id;
                 const fontSize = 12 / globalScale;
                 ctx.font = `${fontSize}px Sans-Serif`;
                 ctx.textAlign = 'center';
@@ -518,8 +531,8 @@ export default function CompanyAnalytics() {
           <div className="flex-1 flex items-center">
             <Bar
               data={{
-                ...organizerSchedules,
-                datasets: organizerSchedules.datasets.map(ds => ({
+                ...organizerScheduleCounts,
+                datasets: organizerScheduleCounts.datasets.map(ds => ({
                   ...ds,
                   barThickness: 26,
                   maxBarThickness: 36,
@@ -546,12 +559,12 @@ export default function CompanyAnalytics() {
           </div>
         </div>
 
-        {/* 7. 월별 일정 건수 추이 (선그래프) */}
+        {/* 7. 월별 일정 건수 추이 (라인차트) */}
         <div ref={chartRefs[6]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">월별 일정 건수 추이</div>
           <div className="flex-1 flex items-center">
             <Line
-              data={monthlyTrends}
+              data={monthlyScheduleCounts}
               options={{
                 plugins: { legend: { display: false } },
                 scales: { y: { beginAtZero: true, title: { display: true, text: '일정 건수' } } },
@@ -560,9 +573,9 @@ export default function CompanyAnalytics() {
           </div>
         </div>
 
-        {/* 8. 일정 기간 vs 참여자 수 (산점도) */}
+        {/* 8. 일정 기간 vs 참여자 수 산점도 */}
         <div ref={chartRefs[7]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
-          <div className="font-semibold mb-3 text-[#22223b]">일정 기간 vs 참여자 수</div>
+          <div className="font-semibold mb-3 text-[#22223b]">기간 vs 참여자 수</div>
           <div className="flex-1 flex items-center">
             <Scatter
               data={durationVsParticipants}

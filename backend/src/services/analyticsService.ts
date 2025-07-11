@@ -1,3 +1,4 @@
+
 import { getCollection } from '../config/firebase';
 import { db } from '../config/firebase';
 import { DocumentSnapshot } from 'firebase-admin/firestore';
@@ -7,32 +8,33 @@ import path from 'path';
 
 export interface AnalyticsQuery {
   id?: string | undefined;
-  projectId?: string | undefined;
-  metricName?: string | undefined;
+  project_id?: string | undefined;
+  metric_name?: string | undefined;
   period?: 'daily' | 'weekly' | 'monthly' | 'current' | undefined;
-  startDate?: Date | undefined;
-  endDate?: Date | undefined;
+  start_date?: Date | undefined;
+  end_date?: Date | undefined;
 }
 
-// PersonalScheduleAnalysis 인터페이스 정의 (기존 타입과 일치)
+// PersonalScheduleAnalysis 인터페이스 정의
 export interface PersonalScheduleAnalysis {
   date: string;
-  totalSchedules: number;
-  completedSchedules: number;
-  startTimeDistribution: Record<string, number>;
-  endTimeDistribution: Record<string, number>;
-  completionRateByTag: Record<string, { completionRate: number; avgDuration: number }>;
-  durationDistribution: Record<string, number>;
-  taskCountByEmotion: Record<string, number>;
-  taskCountByStatus: Record<string, number>;
-  scheduleCountByTimeSlot: Record<string, number>;
-  cumulativeCompletions: Record<string, number>;
+  total_schedules: number;
+  completed_schedules: number;
+  start_time_distribution: Record<string, number>;
+  end_time_distribution: Record<string, number>;
+  completion_rate_by_tag: Record<string, { completion_rate: number; avg_duration: number }>;
+  duration_distribution: Record<string, number>;
+  task_count_by_emotion: Record<string, number>;
+  task_count_by_status: Record<string, number>;
+  schedule_count_by_time_slot: Record<string, number>;
+  cumulative_completions: Record<string, number>;
 }
+
 
 export interface Analytics {
   id: string;
-  projectId: string | null;
-  metricName: string;
+  project_id: string | null;
+  metric_name: string;
   value: number;
   unit: string;
   period: 'daily' | 'weekly' | 'monthly' | 'current';
@@ -43,22 +45,29 @@ export interface Analytics {
 export const getAnalytics = async (query: AnalyticsQuery = {}): Promise<Analytics[]> => {
   try {
     let collectionRef: any = getCollection('personal_tasks');
-    
     if (query.id) {
       collectionRef = collectionRef.where('id', '==', query.id);
     }
-    // 추가 필터링 로직은 필요에 따라 구현
-    
+    // if (query.metric_name) {
+    //   collectionRef = collectionRef.where('metric_name', '==', query.metric_name);
+    // }
+    // if (query.period) {
+    //   collectionRef = collectionRef.where('period', '==', query.period);
+    // }
+    // if (query.start_date) {
+    //   collectionRef = collectionRef.where('date', '>=', query.start_date);
+    // }
+    // if (query.end_date) {
+    //   collectionRef = collectionRef.where('date', '<=', query.end_date);
+    // }
     const snapshot = await collectionRef.get();
     const analytics: Analytics[] = [];
-    
     snapshot.forEach((doc: any) => {
       analytics.push({
         id: doc.id,
         ...doc.data()
       } as Analytics);
     });
-    
     return analytics;
   } catch (error) {
     console.error('Analytics 데이터 조회 실패:', error);
@@ -89,6 +98,7 @@ export async function getRecentPersonalSchedule(): Promise<PersonalScheduleAnaly
 
 // LLM 요약/조언 (OpenAI 예시)
 export async function getKoreanAnalysis(summaryData: PersonalScheduleAnalysis[]): Promise<{ summary: string, advice: string }> {
+
   // OpenAI 객체 생성 (v4)
   const openai = new OpenAI({
     apiKey: process.env['OPENAI_API_KEY']!, // `.env.local`에서 가져와야 함
@@ -104,24 +114,20 @@ ${JSON.stringify(stats, null, 2)}
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
-    messages: [
-      { role: 'system', content: '너는 일정 데이터를 분석하는 전문 어시스턴트야.' },
-      { role: 'user', content: prompt }
-    ]
+    messages: [{ role: 'system', content: '너는 일정 데이터를 분석하는 전문 어시스턴트야.' },
+               { role: 'user', content: prompt }]
   });
-  
   const text = response.choices[0]?.message?.content ?? '';
   const parts = text.split(/\n[2-3]\./);
   const summary = parts[0] || '분석 데이터가 부족합니다.';
   const advice = parts[1] || '더 많은 데이터를 수집한 후 다시 분석해주세요.';
-  
   return { summary, advice };
 }
 
 // 통계 데이터 생성 함수
 export function makeStatsForPrompt(scheduleData: PersonalScheduleAnalysis[]) {
-  const totalSchedules = scheduleData.reduce((sum, item) => sum + item.totalSchedules, 0);
-  const completedSchedules = scheduleData.reduce((sum, item) => sum + item.completedSchedules, 0);
+  const totalSchedules = scheduleData.reduce((sum, item) => sum + item.total_schedules, 0);
+  const completedSchedules = scheduleData.reduce((sum, item) => sum + item.completed_schedules, 0);
   
   return {
     totalSchedules,
@@ -140,7 +146,7 @@ export function getPeriodLabel(months: number): string {
   return `${startDate.toISOString().split('T')[0]} ~ ${endDate.toISOString().split('T')[0]}`;
 }
 
-// 한국어 PDF 문서 정의 생성 함수
+// 한국어 PDF 문서 정의 생성 함수 (임시 구현)
 export function makeKoreanReportDoc(summary: string, advice: string, statsTable: any, periodLabel: string) {
   return {
     content: [
@@ -222,6 +228,7 @@ export function generatePDFBuffer(
     doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#E5E7EB').lineWidth(1.2).stroke();
     doc.moveDown(1.2);
 
+    /*
     // ======================= 1. 요약 =========================
     doc.font('Bold').fontSize(13).fillColor('#22223B');
     doc.text('1. 요약');
@@ -244,10 +251,12 @@ export function generatePDFBuffer(
     });
 
     doc.moveDown(1);
+    */
+   console.log('statsTable --------------------', statsTable);
 
     // ======================= 2. 분석 요약 =========================
     if (summary) {
-      doc.font('Bold').fontSize(13).fillColor('#22223B').text('2. 분석 요약');
+      doc.font('Bold').fontSize(13).fillColor('#22223B').text('1. 분석 요약');
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(11).fillColor('#22223B').text(summary);
       doc.moveDown(1);
@@ -255,7 +264,7 @@ export function generatePDFBuffer(
 
     // ======================= 3. 개선 조언 =========================
     if (advice) {
-      doc.font('Bold').fontSize(13).fillColor('#22223B').text('3. 개선 조언');
+      doc.font('Bold').fontSize(13).fillColor('#22223B').text('2. 개선 조언');
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(11).fillColor('#22223B').text(advice);
       doc.moveDown(1);
@@ -263,11 +272,11 @@ export function generatePDFBuffer(
 
     // ======================= 4. 상세 일정 =========================
     if (scheduleData && scheduleData.length > 0) {
-      doc.font('Bold').fontSize(13).fillColor('#22223B').text('4. 상세 일정');
+      doc.font('Bold').fontSize(13).fillColor('#22223B').text('3. 상세 일정');
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(10).fillColor('#22223B');
       scheduleData.forEach((item, idx) => {
-        doc.text(`${item.date}: 총 ${item.totalSchedules}, 완료 ${item.completedSchedules}`);
+        doc.text(`${item.date}: 총 ${item.total_schedules}, 완료 ${item.completed_schedules}`);
         if (idx < scheduleData.length - 1) doc.moveDown(0.2);
       });
       doc.moveDown(1);
