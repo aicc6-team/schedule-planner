@@ -9,7 +9,7 @@ interface Schedule {
   startTime: string;
   endTime: string;
   priority: 'high' | 'medium' | 'low';
-  type: 'personal' | 'department' | 'project';
+  type: 'personal' | 'department' | 'project' | 'company';
   assignee?: string;
   project?: string;
   adjusted?: boolean;
@@ -76,6 +76,15 @@ export default function EditScheduleForm({ schedule, onSubmit, onCancel }: EditS
         }
       };
       onSubmit(projectData);
+    } else if (schedule.type === 'company') {
+      const companyData = {
+        title: formData.title,
+        description: formData.description,
+        date: formData.date,
+        time: formData.time,
+        participants: ['회사원'] // 기본값
+      };
+      onSubmit(companyData);
     }
   };
 

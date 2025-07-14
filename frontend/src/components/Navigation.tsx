@@ -12,20 +12,24 @@ import {
   XMarkIcon,
   PlusIcon,
   CalendarDaysIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  DocumentTextIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 
 const mainNavigation = [
+  { name: '일정 입력', href: '/schedules/create', icon: PlusIcon },
   { name: '일정 관리', href: '/schedules', icon: CalendarIcon },
   { name: '일정 충돌', href: '/conflicts', icon: ExclamationTriangleIcon },
   { name: '캘린더', href: '/calendar', icon: CalendarDaysIcon },
-  { name: '일정 입력', href: '/schedules/create', icon: PlusIcon },
   { name: '분석', href: '/analytics', icon: ChartBarIcon },
+  { name: '레포트', href: '/reports', icon: DocumentTextIcon },
 ];
 
 const bottomNavigation = [
+  { name: '인재 관리', href: '/talent-management', icon: UserGroupIcon },
   { name: '대시보드', href: '/dashboard', icon: ChartBarIcon },
-  { name: '프로젝트', href: '/projects', icon: UserGroupIcon },
+  { name: '프로젝트', href: '/projects', icon: FolderIcon },
 ];
 
 // Google 로그인 컴포넌트

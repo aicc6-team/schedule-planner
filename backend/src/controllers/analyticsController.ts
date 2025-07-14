@@ -7,29 +7,34 @@ export const getAnalyticsController = async (
   next: NextFunction
 ) => {
   try {
-    const { project_id, metric_name, period, start_date, end_date } = req.query;
+    const { projectId, metricName, period, startDate, endDate } = req.query;
+    
     // 날짜 파싱
     let startDateObj: Date | undefined = undefined;
     let endDateObj: Date | undefined = undefined;
-    if (start_date) {
-      const d = new Date(start_date as string);
-      if (!isNaN(d.getTime())) startDateObj = d;
+    
+    if (startDate) {
+      const dateObj = new Date(startDate as string);
+      if (!isNaN(dateObj.getTime())) startDateObj = dateObj;
     }
-    if (end_date) {
-      const d = new Date(end_date as string);
-      if (!isNaN(d.getTime())) endDateObj = d;
+    
+    if (endDate) {
+      const dateObj = new Date(endDate as string);
+      if (!isNaN(dateObj.getTime())) endDateObj = dateObj;
     }
+    
     const analytics = await getAnalytics({
-      project_id: project_id ? String(project_id) : undefined,
-      metric_name: metric_name ? String(metric_name) : undefined,
+      project_id: projectId ? String(projectId) : undefined,
+      metric_name: metricName ? String(metricName) : undefined,
       period: period ? (period as 'daily' | 'weekly' | 'monthly' | 'current') : undefined,
       start_date: startDateObj,
       end_date: endDateObj
     });
+    
     res.json({
       success: true,
       data: analytics,
-      total: analytics.length
+      count: analytics.length
     });
   } catch (error) {
     next(error);

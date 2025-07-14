@@ -3,36 +3,36 @@ import { db } from '../config/firebase';
 // 타입 정의
 export interface PersonalSchedule {
   id: string; // 일정 고유 아이디
-  date: string; // 일정 날짜
+  date: Date; // 일정 날짜
   title: string; // 일정 제목
   description: string; // 일정 설명
-  start_time: string; // 일정 시작 시간
-  end_time: string; // 일정 종료 시간
+  start_time: Date; // 일정 시작 시간
+  end_time: Date; // 일정 종료 시간
   duration_minutes: number; // 업무 소요 시간 (분)
   status: string; // 일정 상태 (완료, 지연 등)
   tag: string; // 업무 태그
   emotion: string; // 감정 상태
-  created_at: string; // 생성 일시
-  updated_at: string; // 수정 일시
+  created_at: Date; // 생성 일시
+  updated_at: Date; // 수정 일시
 }
 
 export interface DepartmentSchedule {
   id: string; // 일정 고유 아이디
   department_name: string; // 부서명
   assignee: string; // 담당자명
-  date: string; // 일정 날짜
+  date: Date; // 일정 날짜
   title: string; // 일정 제목
   description: string; // 일정 설명
-  start_time: string; // 일정 시작 시간
-  end_time: string; // 일정 종료 시간
+  start_time: Date; // 일정 시작 시간
+  end_time: Date; // 일정 종료 시간
   delay_hours: number; // 응답 지연 시간 (시간 단위)
   schedule_type: string; // 일정 유형
   collaboration_pairs: any; // 협업 참여자 쌍 데이터
   duration_minutes: number; // 업무 소요 시간 (분)
   quality: number; // 업무 품질 점수
   status: string; // 일정 상태
-  created_at: string; // 생성 일시
-  updated_at: string; // 수정 일시
+  created_at: Date; // 생성 일시
+  updated_at: Date; // 수정 일시
 }
 
 export interface ProjectSchedule {
@@ -40,9 +40,9 @@ export interface ProjectSchedule {
   project_id: string; // 프로젝트 고유 아이디
   project_name: string; // 프로젝트명 (일정 제목)
   project_description: string; // 프로젝트 설명 (일정 설명)
-  project_start_date: string; // 프로젝트 시작일
-  project_end_date: string; // 프로젝트 종료일
-  date: string; // 분석 기준 날짜
+  project_start_date: Date; // 프로젝트 시작일
+  project_end_date: Date; // 프로젝트 종료일
+  date: Date; // 분석 기준 날짜
   task_list: any; // 작업 단계 리스트
   start_dates: any; // 작업별 시작일 리스트
   durations: any; // 작업별 기간(일 단위)
@@ -55,21 +55,21 @@ export interface ProjectSchedule {
   intervals: any; // 단계 간 간격
   budget: any; // 누적 예산 소모
   status: any; // 단계별 상태 (완료, 진행, 지연)
-  created_at: string; // 생성 일시
-  updated_at: string; // 수정 일시
+  created_at: Date; // 생성 일시
+  updated_at: Date; // 수정 일시
 }
 
 export interface CompanySchedule {
   schedule_id: string;
   title: string;
   description: string;
-  start_datetime: string;
-  end_datetime: string;
+  start_datetime: Date;
+  end_datetime: Date;
   organizer: string;
   supporting_organizations: any;
   attendees: any;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface ScheduleConflict {
@@ -80,13 +80,13 @@ export interface ScheduleConflict {
   conflict_schedule2_type: string;
   adjusted_schedule_id: string;
   adjusted_schedule_type: string;
-  adjusted_date: string;
-  created_at: string;
-  updated_at: string;
+  adjusted_date: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface PersonalScheduleAnalysis {
-  date: string;
+  date: Date; // 분석 기준 날짜
   total_schedules: number;
   completed_schedules: number;
   start_time_distribution: any;
@@ -101,7 +101,7 @@ export interface PersonalScheduleAnalysis {
 
 export interface DepartmentScheduleAnalysis {
   department_name: string;
-  date: string;
+  date: Date; // 분석 날짜
   average_delay_per_member: any;
   schedule_type_ratio: any;
   bottleneck_time_slots: any;
@@ -115,7 +115,7 @@ export interface DepartmentScheduleAnalysis {
 
 export interface ProjectScheduleAnalysis {
   project_id: string;
-  date: string;
+  date: Date; // 분석 날짜
   task_list: any;
   start_dates: any;
   durations: any;
@@ -132,8 +132,8 @@ export interface ProjectScheduleAnalysis {
 
 export interface CompanyScheduleAnalysis {
   schedule_id: string;
-  analysis_start_date: string;
-  analysis_end_date: string;
+  analysis_start_date: Date; // 분석 기간 시작일
+  analysis_end_date: Date; // 분석 기간 종료일
   total_schedules: number;
   schedule_duration_distribution: any;
   time_slot_distribution: any;
@@ -142,16 +142,16 @@ export interface CompanyScheduleAnalysis {
   supporting_organization_collaborations: any;
   monthly_schedule_counts: any;
   schedule_category_ratio: any;
-  updated_at: string;
+  updated_at: Date;
 }
 
 export interface ComprehensiveAnalysisReport {
   report_id: string;
   report_type: string;
   related_id: string;
-  created_at: string;
-  analysis_start_date: string;
-  analysis_end_date: string;
+  created_at: Date;
+  analysis_start_date: Date; // 분석 시작일
+  analysis_end_date: Date; // 분석 종료일
   summary: string;
   chart_data: any;
   raw_data: any;
@@ -161,11 +161,21 @@ export interface AIConflictScheduleAnalysis {
   request_id: string;
   conflict_id: string;
   user_id: string;
-  request_datetime: string;
+  request_datetime: Date;
   request_params: any;
   status: string;
-  completion_datetime: string;
+  completion_datetime: Date;
 }
+
+export interface User {
+  user_id: string; // 유저 고유 아이디 (문서 ID)
+  name: string; // 이름
+  department: string; // 부서
+  position: string; // 직책
+  role: string; // 직무
+}
+
+
 
 
 // Firestore 서비스
@@ -184,6 +194,7 @@ export const firestoreService = {
     }
   },
 
+
   // 부서 일정 컬렉션 조회
   async getDepartmentSchedules(): Promise<DepartmentSchedule[]> {
     try {
@@ -198,6 +209,7 @@ export const firestoreService = {
     }
   },
 
+
   // 프로젝트 일정 컬렉션 조회
   async getProjectSchedules(): Promise<ProjectSchedule[]> {
     try {
@@ -211,6 +223,7 @@ export const firestoreService = {
       throw new Error('프로젝트 일정을 조회하는 중 오류가 발생했습니다.');
     }
   },
+
 
   // 모든 일정 조회 (통합)
   async getAllSchedules(): Promise<{
@@ -227,6 +240,7 @@ export const firestoreService = {
         this.getCompanySchedules()
       ]);
 
+
       return {
         personal,
         department,
@@ -239,21 +253,27 @@ export const firestoreService = {
     }
   },
 
+
   // === 개인 일정 CRUD ===
   // 개인 일정 생성
   async createPersonalSchedule(data: Omit<PersonalSchedule, 'id' | 'created_at' | 'updated_at'>): Promise<PersonalSchedule> {
     try {
-      const now = new Date().toISOString();
       const scheduleData = {
         ...data,
-        created_at: now,
-        updated_at: now
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
+     
+      const docRef = await db.collection('PersonalSchedule').add(scheduleData);
       
-      const docRef = await db.collection('personal_schedules').add(scheduleData);
       return {
         id: docRef.id,
-        ...scheduleData
+        ...scheduleData,
+        date: new Date(scheduleData.date),
+        start_time: new Date(scheduleData.start_time),
+        end_time: new Date(scheduleData.end_time),
+        created_at: new Date(scheduleData.created_at),
+        updated_at: new Date(scheduleData.updated_at),
       };
     } catch (error) {
       console.error('개인 일정 생성 실패:', error);
@@ -261,12 +281,13 @@ export const firestoreService = {
     }
   },
 
+
   // 개인 일정 상세 조회
   async getPersonalScheduleById(id: string): Promise<PersonalSchedule | null> {
     try {
-      const doc = await db.collection('personal_schedules').doc(id).get();
+      const doc = await db.collection('PersonalSchedule').doc(id).get();
       if (!doc.exists) return null;
-      
+     
       return {
         id: doc.id,
         ...doc.data()
@@ -277,6 +298,7 @@ export const firestoreService = {
     }
   },
 
+
   // 개인 일정 수정
   async updatePersonalSchedule(id: string, data: Partial<PersonalSchedule>): Promise<PersonalSchedule | null> {
     try {
@@ -284,8 +306,8 @@ export const firestoreService = {
         ...data,
         updated_at: new Date().toISOString()
       };
-      
-      await db.collection('personal_schedules').doc(id).update(updateData);
+     
+      await db.collection('PersonalSchedule').doc(id).update(updateData);
       return await this.getPersonalScheduleById(id);
     } catch (error) {
       console.error('개인 일정 수정 실패:', error);
@@ -293,10 +315,11 @@ export const firestoreService = {
     }
   },
 
+
   // 개인 일정 삭제
   async deletePersonalSchedule(id: string): Promise<boolean> {
     try {
-      await db.collection('personal_schedules').doc(id).delete();
+      await db.collection('PersonalSchedule').doc(id).delete();
       return true;
     } catch (error) {
       console.error('개인 일정 삭제 실패:', error);
@@ -304,21 +327,27 @@ export const firestoreService = {
     }
   },
 
+
   // === 부서 일정 CRUD ===
   // 부서 일정 생성
   async createDepartmentSchedule(data: Omit<DepartmentSchedule, 'id' | 'created_at' | 'updated_at'>): Promise<DepartmentSchedule> {
     try {
-      const now = new Date().toISOString();
       const scheduleData = {
         ...data,
-        created_at: now,
-        updated_at: now
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
+     
+      const docRef = await db.collection('DepartmentSchedule').add(scheduleData);
       
-      const docRef = await db.collection('department_schedules').add(scheduleData);
       return {
         id: docRef.id,
-        ...scheduleData
+        ...scheduleData,
+        date: new Date(scheduleData.date),
+        start_time: new Date(scheduleData.start_time),
+        end_time: new Date(scheduleData.end_time),
+        created_at: new Date(scheduleData.created_at),
+        updated_at: new Date(scheduleData.updated_at),
       };
     } catch (error) {
       console.error('부서 일정 생성 실패:', error);
@@ -326,12 +355,13 @@ export const firestoreService = {
     }
   },
 
+
   // 부서 일정 상세 조회
   async getDepartmentScheduleById(id: string): Promise<DepartmentSchedule | null> {
     try {
-      const doc = await db.collection('department_schedules').doc(id).get();
+      const doc = await db.collection('DepartmentSchedule').doc(id).get();
       if (!doc.exists) return null;
-      
+     
       return {
         id: doc.id,
         ...doc.data()
@@ -342,6 +372,7 @@ export const firestoreService = {
     }
   },
 
+
   // 부서 일정 수정
   async updateDepartmentSchedule(id: string, data: Partial<DepartmentSchedule>): Promise<DepartmentSchedule | null> {
     try {
@@ -349,8 +380,8 @@ export const firestoreService = {
         ...data,
         updated_at: new Date().toISOString()
       };
-      
-      await db.collection('department_schedules').doc(id).update(updateData);
+     
+      await db.collection('DepartmentSchedule').doc(id).update(updateData);
       return await this.getDepartmentScheduleById(id);
     } catch (error) {
       console.error('부서 일정 수정 실패:', error);
@@ -358,10 +389,11 @@ export const firestoreService = {
     }
   },
 
+
   // 부서 일정 삭제
   async deleteDepartmentSchedule(id: string): Promise<boolean> {
     try {
-      await db.collection('department_schedules').doc(id).delete();
+      await db.collection('DepartmentSchedule').doc(id).delete();
       return true;
     } catch (error) {
       console.error('부서 일정 삭제 실패:', error);
@@ -369,21 +401,27 @@ export const firestoreService = {
     }
   },
 
+
   // === 프로젝트 일정 CRUD ===
   // 프로젝트 일정 생성
   async createProjectSchedule(data: Omit<ProjectSchedule, 'id' | 'created_at' | 'updated_at'>): Promise<ProjectSchedule> {
     try {
-      const now = new Date().toISOString();
       const scheduleData = {
         ...data,
-        created_at: now,
-        updated_at: now
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
+     
+      const docRef = await db.collection('ProjectSchedule').add(scheduleData);
       
-      const docRef = await db.collection('project_schedules').add(scheduleData);
       return {
         id: docRef.id,
-        ...scheduleData
+        ...scheduleData,
+        date: new Date(scheduleData.date),
+        project_start_date: new Date(scheduleData.project_start_date),
+        project_end_date: new Date(scheduleData.project_end_date),
+        created_at: new Date(scheduleData.created_at),
+        updated_at: new Date(scheduleData.updated_at),
       };
     } catch (error) {
       console.error('프로젝트 일정 생성 실패:', error);
@@ -391,12 +429,13 @@ export const firestoreService = {
     }
   },
 
+
   // 프로젝트 일정 상세 조회
   async getProjectScheduleById(id: string): Promise<ProjectSchedule | null> {
     try {
-      const doc = await db.collection('project_schedules').doc(id).get();
+      const doc = await db.collection('ProjectSchedule').doc(id).get();
       if (!doc.exists) return null;
-      
+     
       return {
         id: doc.id,
         ...doc.data()
@@ -407,6 +446,7 @@ export const firestoreService = {
     }
   },
 
+
   // 프로젝트 일정 수정
   async updateProjectSchedule(id: string, data: Partial<ProjectSchedule>): Promise<ProjectSchedule | null> {
     try {
@@ -414,8 +454,8 @@ export const firestoreService = {
         ...data,
         updated_at: new Date().toISOString()
       };
-      
-      await db.collection('project_schedules').doc(id).update(updateData);
+     
+      await db.collection('ProjectSchedule').doc(id).update(updateData);
       return await this.getProjectScheduleById(id);
     } catch (error) {
       console.error('프로젝트 일정 수정 실패:', error);
@@ -423,10 +463,11 @@ export const firestoreService = {
     }
   },
 
+
   // 프로젝트 일정 삭제
   async deleteProjectSchedule(id: string): Promise<boolean> {
     try {
-      await db.collection('project_schedules').doc(id).delete();
+      await db.collection('ProjectSchedule').doc(id).delete();
       return true;
     } catch (error) {
       console.error('프로젝트 일정 삭제 실패:', error);
@@ -434,10 +475,11 @@ export const firestoreService = {
     }
   },
 
+
   // === 회사 일정 CRUD ===
   async getCompanySchedules(): Promise<CompanySchedule[]> {
     try {
-      const snapshot = await db.collection('company_schedules').get();
+      const snapshot = await db.collection('CompanySchedule').get();
       return snapshot.docs.map(doc => ({
         schedule_id: doc.id,
         ...doc.data()
@@ -464,6 +506,7 @@ export const firestoreService = {
     return false;
   },
 
+
   // === 일정 충돌 CRUD ===
   async getScheduleConflicts(): Promise<ScheduleConflict[]> {
     // TODO: 구현
@@ -486,6 +529,7 @@ export const firestoreService = {
     return false;
   },
 
+
   // === 분석 데이터 CRUD ===
   // 개인
   async getPersonalScheduleAnalysis(_date: string): Promise<PersonalScheduleAnalysis | null> {
@@ -501,6 +545,7 @@ export const firestoreService = {
     return null;
   },
 
+
   // 부서
   async getDepartmentScheduleAnalysis(_departmentName: string, _date: string): Promise<DepartmentScheduleAnalysis | null> {
     // TODO: 구현
@@ -514,6 +559,7 @@ export const firestoreService = {
     // TODO: 구현
     return null;
   },
+
 
   // 프로젝트
   async getProjectScheduleAnalysis(_projectId: string, _date: string): Promise<ProjectScheduleAnalysis | null> {
@@ -529,6 +575,7 @@ export const firestoreService = {
     return null;
   },
 
+
   // 회사
   async getCompanyScheduleAnalysis(_scheduleId: string): Promise<CompanyScheduleAnalysis | null> {
     // TODO: 구현
@@ -542,6 +589,7 @@ export const firestoreService = {
     // TODO: 구현
     return null;
   },
+
 
   // 종합분석보고서
   async getComprehensiveAnalysisReports(): Promise<ComprehensiveAnalysisReport[]> {
@@ -557,6 +605,7 @@ export const firestoreService = {
     return null;
   },
 
+
   // AI 충돌일정분석 요청
   async getAIConflictScheduleAnalysisRequests(): Promise<AIConflictScheduleAnalysis[]> {
     // TODO: 구현
@@ -570,4 +619,4 @@ export const firestoreService = {
     // TODO: 구현
     return null;
   }
-}; 
+};
