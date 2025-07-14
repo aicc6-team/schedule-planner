@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
-import { CalendarIcon, ExclamationTriangleIcon, ArrowRightIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ExclamationTriangleIcon, ArrowRightIcon, PencilSquareIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -18,6 +18,7 @@ import {
   useDraggable,
   useDroppable,
 } from '@dnd-kit/core';
+import { analyzeScheduleConflicts, testOpenAIConnection } from '@/app/ai-structure/actions';
 
 // API 호출 함수들
 const API_BASE_URL = 'http://localhost:3001';
@@ -415,6 +416,13 @@ export default function ConflictsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // AI 분석 상태
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [parsedAnalysisData, setParsedAnalysisData] = useState<any>(null);
+  const [isApplyingAdjustment, setIsApplyingAdjustment] = useState(false);
+  
   // Drag & Drop 상태
   const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -572,6 +580,140 @@ export default function ConflictsPage() {
     router.push(`/schedules/create?mode=edit&id=${schedule.id}&type=${schedule.type}`);
   };
 
+  // AI 분석 함수
+  const handleAIAnalysis = async () => {
+    if (conflictingSchedules.length === 0) {
+      setAiAnalysis('충돌하는 일정이 없어 분석이 필요하지 않습니다.');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAiError(null);
+    
+    try {
+      // 선택된 충돌 그룹만 분석 대상으로 전달
+      const result = await analyzeScheduleConflicts(conflictingSchedules, allSchedules, selectedGroupIndex);
+      if (result.success && result.content) {
+        setAiAnalysis(result.content);
+        setParsedAnalysisData(result.data); // 분석 결과 데이터 저장
+      } else {
+        setAiError(result.error || 'AI 분석에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('AI 분석 실패:', error);
+      setAiError(error instanceof Error ? error.message : 'AI 분석에 실패했습니다.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // AI 연결 테스트 함수
+  const handleAITest = async () => {
+    setIsAnalyzing(true);
+    setAiError(null);
+    
+    try {
+      const result = await testOpenAIConnection();
+      if (result.success && result.content) {
+        setAiAnalysis(`✅ AI 연결 테스트 성공!\n\n${result.content}`);
+      } else {
+        setAiError(result.error || 'AI 연결 테스트에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('AI 테스트 실패:', error);
+      setAiError(error instanceof Error ? error.message : 'AI 연결 테스트에 실패했습니다.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 조정안 적용 함수
+  const handleApplyAdjustment = async (adjustmentIndex: number) => {
+    if (!parsedAnalysisData?.조정안?.[adjustmentIndex]) {
+      alert('적용할 조정안을 찾을 수 없습니다.');
+      return;
+    }
+
+    const adjustment = parsedAnalysisData.조정안[adjustmentIndex];
+    setIsApplyingAdjustment(true);
+
+    try {
+      // 조정안 타입에 따른 처리
+      if (adjustment.제안_유형?.includes('시간 변경')) {
+        await applyTimeAdjustment(adjustment);
+      } else if (adjustment.제안_유형?.includes('담당자 조정')) {
+        await applyAssigneeAdjustment(adjustment);
+      } else if (adjustment.제안_유형?.includes('일정 분할')) {
+        await applySplitAdjustment(adjustment);
+      } else {
+        alert('지원하지 않는 조정 유형입니다.');
+        return;
+      }
+
+      // 일정 목록 새로고침
+      const updatedSchedules = await fetchAllSchedules();
+      const transformedSchedules = transformAllSchedules(updatedSchedules);
+      setAllSchedules(transformedSchedules);
+      
+      // AI 분석 결과 초기화
+      setAiAnalysis('');
+      setParsedAnalysisData(null);
+      
+      alert('조정안이 성공적으로 적용되었습니다!');
+      
+    } catch (error) {
+      console.error('조정안 적용 실패:', error);
+      alert('조정안 적용에 실패했습니다: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+    } finally {
+      setIsApplyingAdjustment(false);
+    }
+  };
+
+  // 시간 변경 조정안 적용
+  const applyTimeAdjustment = async (adjustment: any) => {
+    const targetSchedule = allSchedules.find(s => 
+      s.id === adjustment.대상_일정 || s.title === adjustment.대상_일정
+    );
+    
+    if (!targetSchedule) {
+      throw new Error('대상 일정을 찾을 수 없습니다.');
+    }
+
+    // 새로운 시간 추출 (예: "14:00" 또는 "오후 2시")
+    const newTimeMatch = adjustment.구체적_조정?.match(/(\d{1,2}):(\d{2})/);
+    if (!newTimeMatch) {
+      throw new Error('새로운 시간을 파싱할 수 없습니다.');
+    }
+
+    const newHour = newTimeMatch[1];
+    const newMinute = newTimeMatch[2];
+    const newTime = `${newHour.padStart(2, '0')}:${newMinute}`;
+    const newDate = new Date(targetSchedule.startTime).toISOString().slice(0, 10);
+
+    // 타입별로 다른 API 호출
+    if (targetSchedule.type === 'personal') {
+      await updatePersonalScheduleTime(targetSchedule.id, newDate, newTime);
+    } else if (targetSchedule.type === 'department') {
+      await updateDepartmentScheduleTime(targetSchedule.id, newDate, newTime);
+    } else if (targetSchedule.type === 'project') {
+      await updateProjectScheduleTime(targetSchedule.id, newDate, newTime);
+    }
+  };
+
+  // 담당자 조정안 적용 (현재는 기본 구현)
+  const applyAssigneeAdjustment = async (adjustment: any) => {
+    // TODO: 담당자 변경 API 구현 필요
+    console.log('담당자 조정:', adjustment);
+    throw new Error('담당자 조정 기능은 아직 구현되지 않았습니다.');
+  };
+
+  // 일정 분할 조정안 적용 (현재는 기본 구현)
+  const applySplitAdjustment = async (adjustment: any) => {
+    // TODO: 일정 분할 API 구현 필요
+    console.log('일정 분할:', adjustment);
+    throw new Error('일정 분할 기능은 아직 구현되지 않았습니다.');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -601,7 +743,7 @@ export default function ConflictsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* 상단 좌측: 충돌 일정 리스트 */}
-              <div className="card min-h-[200px] flex flex-col">
+              <div className="card min-h-[200px] flex flex-col h-[360px] pt-4 pr-4 pl-4 pb-2">
                 <div className="flex items-center gap-2 mb-4">
                   <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
                   <span className="text-lg font-semibold text-secondary-800">충돌 일정</span>
@@ -668,36 +810,164 @@ export default function ConflictsPage() {
                 )}
               </div>
               {/* 상단 우측: AI 분석 결과 메시지 */}
-              <div className="card min-h-[200px] flex flex-col justify-start items-start text-left">
-                <div className="flex items-center gap-2 mb-4">
-                  <CalendarIcon className="h-5 w-5 text-primary-500" />
-                  <span className="text-lg font-semibold text-secondary-800">AI 자동 분석 결과</span>
-                </div>
-                <div className="flex-1 flex flex-col justify-center items-center w-full">
-                  <div className="text-secondary-700 text-center w-full">
-                    {loading ? (
-                      '일정을 분석하는 중...'
-                    ) : error ? (
-                      '일정 분석에 실패했습니다.'
-                    ) : (
-                      <>
-                        총 <span className="font-bold text-primary-600">{conflictingSchedules.length}건</span>의 일정 충돌이 발견되었습니다.<br />
-                        {conflictingSchedules.length > 0 ? (
-                          <>
-                            <strong>🎯 Drag & Drop으로 일정 시간을 쉽게 변경하세요!</strong><br />
-                            아래 시간표에서 일정을 드래그하여 다른 시간대로 이동할 수 있습니다.<br />
-                            더블클릭하면 상세 수정 페이지로 이동합니다.
-                          </>
-                        ) : (
-                          <>
-                            현재 2주간 일정에서 충돌이 발견되지 않았습니다.<br />
-                            모든 일정이 원활하게 배치되어 있어 추가 조정이 필요하지 않습니다.<br />
-                            새로운 일정을 추가하실 때는 기존 일정과의 충돌을 자동으로 검사합니다.
-                          </>
-                        )}
-                      </>
-                    )}
+              <div className="card flex flex-col h-[360px] pt-4 pr-4 pl-4 pb-2">
+                <div className="flex items-center justify-between w-full mb-2">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5 text-primary-500" />
+                    <span className="text-lg font-semibold text-secondary-800">AI 자동 분석 결과</span>
                   </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAITest}
+                      disabled={isAnalyzing}
+                      className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                    >
+                      {isAnalyzing ? '테스트 중...' : '연결 테스트'}
+                    </button>
+                    <button
+                      onClick={handleAIAnalysis}
+                      disabled={isAnalyzing || conflictingSchedules.length === 0}
+                      className="px-3 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <SparklesIcon className="h-3 w-3" />
+                      {isAnalyzing ? '분석 중...' : 'AI 분석'}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0 flex flex-col">
+                  {isAnalyzing ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-2"></div>
+                        <div className="text-secondary-600">AI가 일정을 분석하고 있습니다...</div>
+                      </div>
+                    </div>
+                  ) : aiError ? (
+                    <div className="text-red-500 text-sm p-3 bg-red-50 rounded border border-red-200">
+                      <strong>오류:</strong> {aiError}
+                    </div>
+                  ) : aiAnalysis ? (
+                    <div className="flex-1 min-h-0 overflow-y-auto bg-blue-50 rounded border border-blue-200 p-3 text-secondary-700 text-sm whitespace-pre-line">
+                      {parsedAnalysisData ? (
+                        <div className="space-y-6">
+                          {/* 충돌 분석 요약 */}
+                          {parsedAnalysisData.분석_요약 && (
+                            <section className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                              <div className="font-bold text-yellow-700 text-lg flex items-center gap-2">
+                                <span role="img" aria-label="분석">🧐</span> 충돌 분석 요약
+                              </div>
+                              <ul className="mt-2 text-sm text-gray-800">
+                                <li>충돌 유형: <b>{parsedAnalysisData.분석_요약.충돌_유형?.join(', ')}</b></li>
+                                <li>영향도: <b>{parsedAnalysisData.분석_요약.영향도}</b></li>
+                                <li>긴급도: <b>{parsedAnalysisData.분석_요약.긴급도}</b></li>
+                              </ul>
+                            </section>
+                          )}
+                          {/* 실무적 조정안 */}
+                          {parsedAnalysisData.조정안 && parsedAnalysisData.조정안.length > 0 && (
+                            <section className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                              <div className="font-bold text-blue-700 text-lg flex items-center gap-2">
+                                <span role="img" aria-label="조정안">💡</span> 실무적 조정안
+                              </div>
+                              {parsedAnalysisData.조정안.map((adj: any, i: number) => (
+                                <div key={i} className="mt-3 p-3 rounded bg-white border border-blue-100">
+                                  <div className="font-semibold text-blue-900">조정안 {i+1}: {adj.제안_유형}</div>
+                                  <div className="text-sm text-gray-700 mt-1">
+                                    <b>대상:</b> {adj.대상_일정}<br/>
+                                    <b>조정 내용:</b> {adj.구체적_조정}<br/>
+                                    {adj.조정_사유 && (<><b>사유:</b> {adj.조정_사유}<br/></>)}
+                                    {adj.기대_효과 && (<><b>기대 효과:</b> {adj.기대_효과}<br/></>)}
+                                    <b>적용 난이도:</b> {adj.적용_난이도}
+                                  </div>
+                                </div>
+                              ))}
+                            </section>
+                          )}
+                          {/* 추가 최적화 전략 */}
+                          {parsedAnalysisData.추가_전략 && (
+                            <section className="p-4 rounded-lg bg-green-50 border border-green-200">
+                              <div className="font-bold text-green-700 text-lg flex items-center gap-2">
+                                <span role="img" aria-label="전략">🚀</span> 추가 최적화 전략
+                              </div>
+                              <ul className="mt-2 text-sm text-gray-800 list-disc pl-5">
+                                {parsedAnalysisData.추가_전략.일정_구성_개선 && <li>{parsedAnalysisData.추가_전략.일정_구성_개선}</li>}
+                                {parsedAnalysisData.추가_전략.업무_프로세스_최적화 && <li>{parsedAnalysisData.추가_전략.업무_프로세스_최적화}</li>}
+                                {parsedAnalysisData.추가_전략.예방_조치 && <li>{parsedAnalysisData.추가_전략.예방_조치}</li>}
+                              </ul>
+                            </section>
+                          )}
+                          {/* 우선순위별 권장사항 */}
+                          {parsedAnalysisData.우선순위_권장사항 && (
+                            <section className="p-4 rounded-lg bg-purple-50 border border-purple-200">
+                              <div className="font-bold text-purple-700 text-lg flex items-center gap-2">
+                                <span role="img" aria-label="우선순위">📋</span> 우선순위별 권장사항
+                              </div>
+                              <ul className="mt-2 text-sm text-gray-800 list-disc pl-5">
+                                {parsedAnalysisData.우선순위_권장사항.즉시_적용?.length > 0 && <li>즉시 적용: <b>{parsedAnalysisData.우선순위_권장사항.즉시_적용.join(', ')}</b></li>}
+                                {parsedAnalysisData.우선순위_권장사항.단계적_적용?.length > 0 && <li>단계적 적용: <b>{parsedAnalysisData.우선순위_권장사항.단계적_적용.join(', ')}</b></li>}
+                                {parsedAnalysisData.우선순위_권장사항.장기_검토?.length > 0 && <li>장기 검토: <b>{parsedAnalysisData.우선순위_권장사항.장기_검토.join(', ')}</b></li>}
+                              </ul>
+                            </section>
+                          )}
+                        </div>
+                      ) : (
+                        aiAnalysis && typeof aiAnalysis === 'string' ? aiAnalysis : ''
+                      )}
+                      {parsedAnalysisData?.조정안 && parsedAnalysisData.조정안.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-blue-300">
+                          <h4 className="font-semibold text-blue-800 mb-3">💡 조정안 적용</h4>
+                          <div className="space-y-2">
+                            {parsedAnalysisData.조정안.map((adjustment: any, index: number) => (
+                              <div key={index} className="bg-white rounded p-3 border border-blue-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-blue-900">
+                                    조정안 {index + 1}: {adjustment.제안_유형}
+                                  </span>
+                                  <button
+                                    onClick={() => handleApplyAdjustment(index)}
+                                    disabled={isApplyingAdjustment}
+                                    className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isApplyingAdjustment ? '적용 중...' : '제안 반영'}
+                                  </button>
+                                </div>
+                                <div className="text-xs text-gray-600 space-y-1">
+                                  <div><strong>대상:</strong> {adjustment.대상_일정}</div>
+                                  <div><strong>조정 내용:</strong> {adjustment.구체적_조정}</div>
+                                  <div><strong>적용 난이도:</strong> {adjustment.적용_난이도}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-secondary-700 text-center w-full">
+                      {loading ? (
+                        '일정을 분석하는 중...'
+                      ) : error ? (
+                        '일정 분석에 실패했습니다.'
+                      ) : (
+                        <>
+                          총 <span className="font-bold text-primary-600">{conflictingSchedules.length}건</span>의 일정 충돌이 발견되었습니다.<br />
+                          {conflictingSchedules.length > 0 ? (
+                            <>
+                              <strong>🎯 AI 분석 버튼을 클릭하여 자동 분석을 시작하세요!</strong><br />
+                              AI가 충돌하는 일정을 분석하고 최적의 해결책을 제시합니다.<br />
+                              또는 Drag & Drop으로 수동으로 일정을 조정할 수 있습니다.
+                            </>
+                          ) : (
+                            <>
+                              현재 2주간 일정에서 충돌이 발견되지 않았습니다.<br />
+                              모든 일정이 원활하게 배치되어 있어 추가 조정이 필요하지 않습니다.<br />
+                              새로운 일정을 추가하실 때는 기존 일정과의 충돌을 자동으로 검사합니다.
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
