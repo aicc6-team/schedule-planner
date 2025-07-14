@@ -1,10 +1,13 @@
 import app from './app';
 import 'dotenv/config';
+import path from 'path';
+import express from 'express';
 
 const PORT = process.env['PORT'] || 3001;
 
 const startServer = async () => {
   try {
+    app.use('/kms', express.static(path.join(__dirname, '../../kms')));
     app.listen(PORT, () => {
       console.log('🚀 서버가 시작되었습니다!');
       console.log(`📍 서버 주소: http://localhost:${PORT}`);
