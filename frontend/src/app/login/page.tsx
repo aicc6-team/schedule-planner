@@ -41,7 +41,7 @@ function LoginForm() {
     setError(null);
     try {
       // 실제 백엔드 라우터 경로로 요청
-      const response = await fetch('http://localhost:3001/api/auth/google/login', {
+      const response = await fetch('http://localhost:3001/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: email, password }),
@@ -65,7 +65,7 @@ function LoginForm() {
     setIsLoading(true);
     try {
       // 백엔드에서 Google OAuth URL 가져오기
-      const response = await fetch('/api/auth/google');
+      const response = await fetch('http://localhost:3001/api/auth/google');
       const data = await response.json();
       
       if (data.success) {
@@ -73,11 +73,11 @@ function LoginForm() {
         window.location.href = data.data.authUrl;
       } else {
         console.error('Google OAuth URL 생성 실패:', data.error);
-        alert('Google 로그인 중 오류가 발생했습니다.');
+        setError('Google 로그인 중 오류가 발생했습니다.');
       }
     } catch (error) {
       console.error('Google 로그인 오류:', error);
-      alert('Google 로그인 중 오류가 발생했습니다.');
+      setError('Google 로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

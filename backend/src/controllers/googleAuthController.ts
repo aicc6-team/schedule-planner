@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import googleAuthService from '../services/googleAuthService';
 import googleCalendarService from '../services/googleCalendarService';
+import jwtService from '../services/jwtService';
+import { firestoreService } from '../services/firestoreService';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -10,12 +12,42 @@ export interface AuthenticatedRequest extends Request {
 
 class GoogleAuthController {
   /**
+   * 환경변수 확인 (디버깅용)
+   * GET /api/auth/google/debug
+   */
+  async debugConfig(_req: Request, res: Response) {
+    try {
+      const config = {
+        clientId: process.env['GOOGLE_CLIENT_ID'] ? '✅ 설정됨' : '❌ 미설정',
+        clientSecret: process.env['GOOGLE_CLIENT_SECRET'] ? '✅ 설정됨' : '❌ 미설정',
+        redirectUri: process.env['GOOGLE_REDIRECT_URI'] || '❌ 미설정',
+        jwtSecret: process.env['JWT_SECRET'] ? '✅ 설정됨' : '❌ 미설정'
+      };
+
+      return res.status(200).json({
+        success: true,
+        data: config,
+        message: '환경변수 설정 상태'
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: '환경변수 확인 실패'
+      });
+    }
+  }
+
+  /**
    * Google OAuth 로그인 URL 생성
    * GET /api/auth/google
    */
   async getAuthUrl(_req: Request, res: Response) {
     try {
+      console.log('🚀 Google OAuth URL 생성 요청 받음');
+      
       const authUrl = googleAuthService.generateAuthUrl();
+      
+      console.log('✅ Google OAuth URL 생성 성공');
       
       return res.status(200).json({
         success: true,
@@ -25,7 +57,7 @@ class GoogleAuthController {
         message: 'Google OAuth URL이 생성되었습니다.'
       });
     } catch (error) {
-      console.error('OAuth URL 생성 실패:', error);
+      console.error('❌ OAuth URL 생성 실패:', error);
       return res.status(500).json({
         success: false,
         error: 'OAuth URL 생성에 실패했습니다.',
@@ -40,33 +72,61 @@ class GoogleAuthController {
    */
   async handleCallback(req: Request, res: Response) {
     try {
+      console.log('🔄 Google OAuth 콜백 처리 시작');
+      console.log('📝 요청 쿼리:', req.query);
+      
       const { code } = req.query;
       
       if (!code || typeof code !== 'string') {
+        console.log('❌ 인증 코드 없음');
         return res.status(400).json({
           success: false,
           error: '인증 코드가 제공되지 않았습니다.'
         });
       }
 
+      console.log('✅ 인증 코드 수신:', code.substring(0, 20) + '...');
+
       // 인증 코드로 토큰 교환
       const tokens = await googleAuthService.exchangeCodeForTokens(code);
       
-      return res.status(200).json({
-        success: true,
-        data: {
-          tokens: tokens
-        },
-        message: 'Google OAuth 인증이 완료되었습니다.'
+      // Google 사용자 정보 가져오기
+      const userInfo = await googleAuthService.getUserInfo(tokens.access_token);
+      
+      // 사용자 정보를 Firestore에 저장하거나 업데이트
+      const userData = {
+        email: userInfo.email,
+        name: userInfo.name,
+        picture: userInfo.picture,
+        googleTokens: tokens,
+        lastLogin: new Date(),
+        createdAt: new Date()
+      };
+
+      const userId = await firestoreService.createOrUpdateUser(userData);
+      
+      // JWT 토큰 생성
+      const jwtToken = jwtService.generateToken({
+        id: userId,
+        email: userInfo.email,
+        name: userInfo.name
       });
+
+      const refreshToken = jwtService.generateRefreshToken(userId);
+      
+      // 프론트엔드로 리디렉션 (토큰 포함)
+      const redirectUrl = `${process.env['FRONTEND_URL'] || 'http://localhost:3000'}/dashboard?tokens=${encodeURIComponent(JSON.stringify({
+        accessToken: jwtToken,
+        refreshToken: refreshToken,
+        googleTokens: tokens
+      }))}`;
+      
+      return res.redirect(redirectUrl);
       
     } catch (error) {
       console.error('OAuth 콜백 처리 실패:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'OAuth 인증 처리에 실패했습니다.',
-        message: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
-      });
+      const errorUrl = `${process.env['FRONTEND_URL'] || 'http://localhost:3000'}/login?error=oauth_error`;
+      return res.redirect(errorUrl);
     }
   }
 

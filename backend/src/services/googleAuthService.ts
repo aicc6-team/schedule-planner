@@ -13,10 +13,24 @@ class GoogleAuthService {
   private oauth2Client;
 
   constructor() {
+    const clientId = process.env['GOOGLE_CLIENT_ID'];
+    const clientSecret = process.env['GOOGLE_CLIENT_SECRET'];
+    const redirectUri = process.env['GOOGLE_REDIRECT_URI'];
+
+    // 환경변수 디버깅 로그
+    console.log('🔧 Google OAuth 환경변수 확인:');
+    console.log('  - GOOGLE_CLIENT_ID:', clientId ? '✅ 설정됨' : '❌ 미설정');
+    console.log('  - GOOGLE_CLIENT_SECRET:', clientSecret ? '✅ 설정됨' : '❌ 미설정');
+    console.log('  - GOOGLE_REDIRECT_URI:', redirectUri || '❌ 미설정');
+
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error('Google OAuth 환경변수가 올바르게 설정되지 않았습니다.');
+    }
+
     this.oauth2Client = new google.auth.OAuth2(
-      process.env['GOOGLE_CLIENT_ID'],
-      process.env['GOOGLE_CLIENT_SECRET'],
-      process.env['GOOGLE_REDIRECT_URI']
+      clientId,
+      clientSecret,
+      redirectUri
     );
   }
 
@@ -36,6 +50,9 @@ class GoogleAuthService {
       scope: scopes,
       prompt: 'consent' // 항상 refresh token을 받기 위해
     });
+
+    // 생성된 URL 디버깅 로그
+    console.log('🔗 생성된 Google OAuth URL:', authUrl);
 
     return authUrl;
   }
@@ -125,6 +142,35 @@ class GoogleAuthService {
     } catch (error) {
       console.error('토큰 검증 실패:', error);
       return false;
+    }
+  }
+
+  /**
+   * Google 사용자 정보 가져오기
+   */
+  async getUserInfo(accessToken: string): Promise<{
+    id: string;
+    email: string;
+    name: string;
+    picture: string;
+  }> {
+    try {
+      this.oauth2Client.setCredentials({
+        access_token: accessToken
+      });
+
+      const oauth2 = google.oauth2({ version: 'v2', auth: this.oauth2Client });
+      const userInfo = await oauth2.userinfo.get();
+
+      return {
+        id: userInfo.data.id || '',
+        email: userInfo.data.email || '',
+        name: userInfo.data.name || '',
+        picture: userInfo.data.picture || ''
+      };
+    } catch (error) {
+      console.error('사용자 정보 조회 실패:', error);
+      throw new Error('Google 사용자 정보를 가져오는데 실패했습니다.');
     }
   }
 }

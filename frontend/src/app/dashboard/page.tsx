@@ -85,10 +85,16 @@ function DashboardContent() {
     if (tokensParam) {
       try {
         const tokens = JSON.parse(decodeURIComponent(tokensParam));
-        setGoogleTokens(tokens);
-
-        // localStorage에 저장 (로그인 유지)
-        localStorage.setItem('google_tokens', JSON.stringify(tokens));
+        
+        // JWT 토큰 저장
+        if (tokens.accessToken) {
+          localStorage.setItem('token', tokens.accessToken);
+        }
+        if (tokens.refreshToken) {
+          localStorage.setItem('refreshToken', tokens.refreshToken);
+        }
+        
+        setGoogleTokens(tokens.googleTokens);
 
         // URL에서 토큰 제거 (보안상)
         const newUrl = window.location.pathname;

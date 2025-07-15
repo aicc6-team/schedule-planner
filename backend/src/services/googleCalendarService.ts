@@ -20,6 +20,7 @@ export interface CalendarEvent {
     email: string;
     displayName?: string | undefined;
   }> | undefined;
+  organizer?: { email: string } | undefined;
 }
 
 export interface CalendarListOptions {
@@ -69,7 +70,7 @@ class GoogleCalendarService {
 
       const events = response.data.items || [];
       
-      return events.map(event => ({
+      return events.map((event: calendar_v3.Schema$Event) => ({
         id: event.id || '',
         summary: event.summary || '제목 없음',
         description: event.description || undefined,
@@ -84,9 +85,9 @@ class GoogleCalendarService {
           date: event.end?.date || undefined,
           timeZone: event.end?.timeZone || undefined
         },
-        attendees: event.attendees?.map((attendee: any) => ({
+        attendees: event.attendees?.map((attendee: calendar_v3.Schema$EventAttendee) => ({
           email: attendee.email || '',
-          displayName: attendee.displayName
+          displayName: attendee.displayName ?? undefined
         }))
       }));
 
@@ -135,9 +136,9 @@ class GoogleCalendarService {
           date: createdEvent.end?.date || undefined,
           timeZone: createdEvent.end?.timeZone || undefined
         },
-        attendees: createdEvent.attendees?.map((attendee: any) => ({
+        attendees: createdEvent.attendees?.map((attendee: calendar_v3.Schema$EventAttendee) => ({
           email: attendee.email || '',
-          displayName: attendee.displayName
+          displayName: attendee.displayName ?? undefined
         }))
       };
 
@@ -186,9 +187,9 @@ class GoogleCalendarService {
           date: updatedEvent.end?.date || undefined,
           timeZone: updatedEvent.end?.timeZone || undefined
         },
-        attendees: updatedEvent.attendees?.map((attendee: any) => ({
+        attendees: updatedEvent.attendees?.map((attendee: calendar_v3.Schema$EventAttendee) => ({
           email: attendee.email || '',
-          displayName: attendee.displayName
+          displayName: attendee.displayName ?? undefined
         }))
       };
 
@@ -225,12 +226,12 @@ class GoogleCalendarService {
 
       const response = await this.calendar.calendarList.list();
       
-      return response.data.items?.map(calendar => ({
-        id: calendar.id,
-        summary: calendar.summary,
-        description: calendar.description,
-        primary: calendar.primary,
-        accessRole: calendar.accessRole
+      return response.data.items?.map((calendar: calendar_v3.Schema$CalendarListEntry) => ({
+        id: calendar.id ?? undefined,
+        summary: calendar.summary ?? undefined,
+        description: calendar.description ?? undefined,
+        primary: calendar.primary ?? undefined,
+        accessRole: calendar.accessRole ?? undefined
       })) || [];
 
     } catch (error) {

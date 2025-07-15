@@ -175,8 +175,14 @@ export interface User {
   role: string; // 직무
 }
 
-
-
+export interface GoogleUser {
+  email: string;
+  name: string;
+  picture: string;
+  googleTokens: any;
+  lastLogin: Date;
+  createdAt: Date;
+}
 
 // Firestore 서비스
 export const firestoreService = {
@@ -184,7 +190,7 @@ export const firestoreService = {
   async getPersonalSchedules(): Promise<PersonalSchedule[]> {
     try {
       const snapshot = await db.collection('PersonalSchedule').get();
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as PersonalSchedule));
@@ -199,7 +205,7 @@ export const firestoreService = {
   async getDepartmentSchedules(): Promise<DepartmentSchedule[]> {
     try {
       const snapshot = await db.collection('DepartmentSchedule').get();
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as DepartmentSchedule));
@@ -214,13 +220,28 @@ export const firestoreService = {
   async getProjectSchedules(): Promise<ProjectSchedule[]> {
     try {
       const snapshot = await db.collection('ProjectSchedule').get();
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as ProjectSchedule));
     } catch (error) {
       console.error('프로젝트 일정 조회 실패:', error);
       throw new Error('프로젝트 일정을 조회하는 중 오류가 발생했습니다.');
+    }
+  },
+
+
+  // 회사 일정 컬렉션 조회
+  async getCompanySchedules(): Promise<CompanySchedule[]> {
+    try {
+      const snapshot = await db.collection('CompanySchedule').get();
+      return snapshot.docs.map((doc: any) => ({
+        schedule_id: doc.id,
+        ...doc.data()
+      } as CompanySchedule));
+    } catch (error) {
+      console.error('회사 일정 조회 실패:', error);
+      throw new Error('회사 일정을 조회하는 중 오류가 발생했습니다.');
     }
   },
 
@@ -477,18 +498,6 @@ export const firestoreService = {
 
 
   // === 회사 일정 CRUD ===
-  async getCompanySchedules(): Promise<CompanySchedule[]> {
-    try {
-      const snapshot = await db.collection('CompanySchedule').get();
-      return snapshot.docs.map(doc => ({
-        schedule_id: doc.id,
-        ...doc.data()
-      } as CompanySchedule));
-    } catch (error) {
-      console.error('회사 일정 조회 실패:', error);
-      throw new Error('회사 일정을 조회하는 중 오류가 발생했습니다.');
-    }
-  },
   async createCompanySchedule(_data: Omit<CompanySchedule, 'schedule_id' | 'created_at' | 'updated_at'>): Promise<CompanySchedule> {
     // TODO: 구현
     return {} as CompanySchedule;
@@ -608,15 +617,103 @@ export const firestoreService = {
 
   // AI 충돌일정분석 요청
   async getAIConflictScheduleAnalysisRequests(): Promise<AIConflictScheduleAnalysis[]> {
-    // TODO: 구현
-    return [];
+    try {
+      const snapshot = await db.collection('AIConflictScheduleAnalysis').get();
+      return snapshot.docs.map(doc => ({
+        request_id: doc.id,
+        ...doc.data()
+      } as AIConflictScheduleAnalysis));
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 조회 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 조회하는 중 오류가 발생했습니다.');
+    }
   },
-  async createAIConflictScheduleAnalysisRequest(_data: Omit<AIConflictScheduleAnalysis, 'request_id'>): Promise<AIConflictScheduleAnalysis> {
-    // TODO: 구현
-    return {} as AIConflictScheduleAnalysis;
+  async createAIConflictScheduleAnalysisRequest(data: Omit<AIConflictScheduleAnalysis, 'request_id'>): Promise<AIConflictScheduleAnalysis> {
+    try {
+      const analysisData = {
+        ...data,
+        request_datetime: new Date().toISOString(),
+        completion_datetime: new Date().toISOString()
+      };
+     
+      const docRef = await db.collection('AIConflictScheduleAnalysis').add(analysisData);
+      
+      return {
+        request_id: docRef.id,
+        ...analysisData,
+        request_datetime: new Date(analysisData.request_datetime),
+        completion_datetime: new Date(analysisData.completion_datetime)
+      };
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 생성 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 생성하는 중 오류가 발생했습니다.');
+    }
   },
-  async getAIConflictScheduleAnalysisRequestById(_id: string): Promise<AIConflictScheduleAnalysis | null> {
-    // TODO: 구현
-    return null;
+  async getAIConflictScheduleAnalysisRequestById(id: string): Promise<AIConflictScheduleAnalysis | null> {
+    try {
+      const doc = await db.collection('AIConflictScheduleAnalysis').doc(id).get();
+      if (!doc.exists) return null;
+      
+      return {
+        request_id: doc.id,
+        ...doc.data()
+      } as AIConflictScheduleAnalysis;
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 상세 조회 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 조회하는 중 오류가 발생했습니다.');
+    }
+  },
+
+  // === 사용자 관리 ===
+  // 사용자 ID로 조회
+  async getUserById(userId: string): Promise<GoogleUser | null> {
+    try {
+      const doc = await db.collection('Users').doc(userId).get();
+      if (!doc.exists) return null;
+      
+      return {
+        ...doc.data()
+      } as GoogleUser;
+    } catch (error) {
+      console.error('사용자 조회 실패:', error);
+      throw new Error('사용자를 조회하는 중 오류가 발생했습니다.');
+    }
+  },
+
+  // 사용자 생성 또는 업데이트
+  async createOrUpdateUser(userData: Omit<GoogleUser, 'createdAt'>): Promise<string> {
+    try {
+      // 이메일로 기존 사용자 검색
+      const usersRef = db.collection('Users');
+      const query = usersRef.where('email', '==', userData.email);
+      const snapshot = await query.get();
+      
+      let userId: string;
+      
+      if (snapshot.empty) {
+        // 새 사용자 생성
+        const docRef = await usersRef.add({
+          ...userData,
+          createdAt: new Date()
+        });
+        userId = docRef.id;
+      } else {
+        // 기존 사용자 업데이트
+        const doc = snapshot.docs[0];
+        if (!doc) {
+          throw new Error('사용자 문서를 찾을 수 없습니다.');
+        }
+        userId = doc.id;
+        await doc.ref.update({
+          ...userData,
+          lastLogin: new Date()
+        });
+      }
+      
+      return userId;
+    } catch (error) {
+      console.error('사용자 생성/업데이트 실패:', error);
+      throw new Error('사용자 정보를 저장하는 중 오류가 발생했습니다.');
+    }
   }
 };
