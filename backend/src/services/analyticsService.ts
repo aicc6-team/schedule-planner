@@ -1,4 +1,3 @@
-
 import { getCollection } from '../config/firebase';
 import { db } from '../config/firebase';
 import { DocumentSnapshot } from 'firebase-admin/firestore';
@@ -348,4 +347,27 @@ export function generatePDFBuffer(
 
     doc.end();
   });
+}
+
+export async function getReportsByPeriodAndType(from: string, to: string, type: string): Promise<any[]> {
+  try {
+    const fromDate = new Date(from);
+    fromDate.setHours(0, 0, 0, 0);
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999); // to 날짜의 끝까지 포함
+    const query = db.collection('ComprehensiveAnalysisReport')
+      .where('reportType', '==', type)
+      .where('createdAt', '>=', fromDate)
+      .where('createdAt', '<=', toDate);
+    const snapshot = await query.get();
+
+    console.log('snapshot --------------------', snapshot.docs);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
 } 
