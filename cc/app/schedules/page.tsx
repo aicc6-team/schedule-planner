@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import ScheduleCard from '@/components/ScheduleCard';
 import { 
@@ -55,7 +55,6 @@ interface ProjectSchedule {
   project_description: string;
   project_start_date: string;
   project_end_date: string;
-  endDate?: string;
   status: string;
   [key: string]: any;
 }
@@ -123,61 +122,52 @@ const transformDepartmentSchedule = (schedule: DepartmentSchedule): Schedule => 
 };
 
 const transformProjectSchedule = (schedule: ProjectSchedule): Schedule => {
-  // 날짜 변환 및 상태 처리 통합
+  // 실제 Firestore 데이터 구조에 맞게 매핑
   let endTime: Date;
   let startTime: Date;
-
-  // endDate를 우선적으로 사용하고, 없으면 project_end_date 사용
+  
+  // endDate 필드 사용 (실제 데이터에는 endDate가 있음)
   if (schedule.endDate) {
     endTime = new Date(schedule.endDate);
-    // 유효하지 않은 날짜인지 확인
-    if (isNaN(endTime.getTime())) {
-      console.warn('유효하지 않은 endDate:', schedule.endDate);
-      endTime = new Date();
-    }
+    console.log('프로젝트 endDate 변환:', schedule.endDate, '→', endTime);
   } else if (schedule.project_end_date) {
     endTime = new Date(schedule.project_end_date);
-    // 유효하지 않은 날짜인지 확인
-    if (isNaN(endTime.getTime())) {
-      console.warn('유효하지 않은 project_end_date:', schedule.project_end_date);
-      endTime = new Date();
-    }
   } else {
     endTime = new Date();
   }
+  
+  // 종료일을 포함한 기간으로 표시하기 위해 종료일의 마지막 시간(23:59:59)으로 설정
   endTime.setHours(23, 59, 59, 999);
-
-  // 시작일 설정: project_start_date가 있으면 사용, 없으면 종료일과 동일하게 설정
+  
+  // startDate가 없으므로 endDate에서 1일을 빼서 시작일로 설정
   if (schedule.project_start_date) {
     startTime = new Date(schedule.project_start_date);
-    // 유효하지 않은 날짜인지 확인
-    if (isNaN(startTime.getTime())) {
-      console.warn('유효하지 않은 project_start_date:', schedule.project_start_date);
-      startTime = new Date(endTime);
-      startTime.setHours(0, 0, 0, 0);
-    } else {
-      startTime.setHours(0, 0, 0, 0); // 시작일은 해당 날짜의 시작 시간으로 설정
-    }
   } else {
-    // 시작일이 없으면 종료일과 동일한 날짜로 설정 (하루 일정)
-    startTime = new Date(endTime);
-    startTime.setHours(0, 0, 0, 0);
+    startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 1일 전
   }
+  
+  if (isNaN(startTime.getTime())) startTime = new Date();
+  if (isNaN(endTime.getTime())) endTime = new Date();
+  
 
-  // 상태 처리 통합
+  
+  // 프로젝트 일정의 status 처리 개선
   let status: 'completed' | 'pending' | 'overdue' = 'pending';
   if (typeof schedule.status === 'string') {
     status = schedule.status === '완료' ? 'completed' : 'pending';
   } else if (schedule.status && typeof schedule.status === 'object') {
-    const statusValues = Object.values(schedule.status as any);
-    const allCompleted = statusValues.every((s: any) => s === '완료' || s === 'completed');
+    // status가 객체인 경우, 전체 프로젝트 완료 여부를 판단
+    const statusValues = Object.values(schedule.status);
+    const allCompleted = statusValues.every(s => s === '완료' || s === 'completed');
     status = allCompleted ? 'completed' : 'pending';
   }
+  
+  // 진행 일정 탭에서는 종료일이 미래인 프로젝트는 "진행 중"으로 표시
   const currentTime = new Date();
-  if (endTime >= currentTime && status !== 'completed') {
-    status = 'pending';
+  if (endTime >= currentTime) {
+    status = 'pending'; // 진행 중으로 표시
   }
-
+  
   return {
     id: schedule.id,
     title: schedule.projectName || schedule.project_name || '제목 없음',
@@ -249,9 +239,17 @@ export default function SchedulesPage() {
         setLoading(true);
         setError(null);
         const allSchedules = await fetchAllSchedules();
-        // 필요시 디버깅 로그만 남기고, 불필요한 중복 로깅은 제거
-        // console.log('API 응답 전체:', allSchedules);
-        setSchedules(transformAllSchedules(allSchedules));
+        
+        // 디버깅을 위한 로그 추가
+        console.log('API 응답 전체:', allSchedules);
+        console.log('프로젝트 일정 원본:', allSchedules.project);
+        console.log('프로젝트 일정 개수:', allSchedules.project?.length || 0);
+        
+        const transformedSchedules = transformAllSchedules(allSchedules);
+        console.log('변환된 전체 일정:', transformedSchedules);
+        console.log('변환된 프로젝트 일정:', transformedSchedules.filter(s => s.type === 'project'));
+        
+        setSchedules(transformedSchedules);
       } catch (error) {
         console.error('일정 로드 실패:', error);
         setError(error instanceof Error ? error.message : '일정을 불러오는데 실패했습니다.');
@@ -276,8 +274,8 @@ export default function SchedulesPage() {
     const originalStatus = scheduleToComplete.status;
     
     // Optimistic UI update
-    setSchedules((prevSchedules: Schedule[]) =>
-      prevSchedules.map((s: Schedule) =>
+    setSchedules(prevSchedules =>
+      prevSchedules.map(s =>
         s.id === scheduleToComplete.id ? { ...s, status: 'completed' } : s
       )
     );
@@ -315,8 +313,8 @@ export default function SchedulesPage() {
       console.error('Failed to complete schedule:', error);
       setError(error instanceof Error ? error.message : '일정 완료에 실패했습니다. 다시 시도해주세요.');
       // Rollback on error
-      setSchedules((prevSchedules: Schedule[]) =>
-        prevSchedules.map((s: Schedule) =>
+      setSchedules(prevSchedules =>
+        prevSchedules.map(s =>
           s.id === scheduleToComplete.id ? { ...s, status: originalStatus } : s
         )
       );
@@ -324,24 +322,25 @@ export default function SchedulesPage() {
   };
 
   const handlePageChange = (area: string, newPage: number) => {
-    setCurrentPages((prev: Record<string, number>) => ({ ...prev, [area]: newPage }));
+    setCurrentPages(prev => ({ ...prev, [area]: newPage }));
   };
 
   const now = new Date();
 
-  const ongoingSchedules = schedules.filter((schedule: Schedule) => {
+  const ongoingSchedules = schedules.filter(schedule => {
     const endTime = new Date(schedule.endTime);
-    // 완료가 아니고, 종료일이 미래인 일정만 진행중으로 간주
-    return endTime >= now && schedule.status !== 'completed';
+    // 모든 일정은 종료일이 미래이면 진행 중으로 간주
+    return endTime >= now;
   });
 
-  const pastSchedules = schedules.filter((schedule: Schedule) => {
+  const pastSchedules = schedules.filter(schedule => {
     const endTime = new Date(schedule.endTime);
-    const isOverdue = endTime < now && schedule.status === 'pending';
-    return schedule.status === 'completed' || isOverdue;
-  }).sort((a: Schedule, b: Schedule) => {
+    // 종료일이 지난 일정들
+    return endTime < now;
+  }).sort((a, b) => {
+    // 미완료(pending) 일정이 먼저, 완료(completed) 일정이 뒤에 오도록
     if (a.status === 'pending' && b.status !== 'pending') return -1;
-    if (a.status !== 'pending' && b.status === 'pending') return 1;
+    if (a.status !== 'pending' && b.status === 'completed') return 1;
     // 같은 상태라면 시작 시간 오름차순
     return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
   });
@@ -396,12 +395,6 @@ export default function SchedulesPage() {
     } finally {
       setDeleteTarget(null);
     }
-  };
-
-  const renderSchedules = (schedulesToRender: Schedule[]) => {
-    return schedulesToRender.map((s: Schedule) => (
-      <ScheduleCard key={s.id} schedule={s} onEdit={handleEditSchedule} onDelete={handleDeleteSchedule} onComplete={handleCompleteSchedule} />
-    ));
   };
 
   return (

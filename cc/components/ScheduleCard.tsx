@@ -101,9 +101,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ schedule, onEdit, onDelete,
           <h3 className={`font-bold text-sm ${status === 'completed' ? 'line-through text-gray-500' : 'text-gray-800'}`}>
             {title}
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {type === 'project' ? formatDate(endTime) : formatDate(startTime)}
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5">{formatDate(startTime)}</p>
         </div>
 
         {/* 액션 버튼들을 가로로 배치 */}
