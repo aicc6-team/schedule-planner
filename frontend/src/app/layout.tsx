@@ -17,10 +17,6 @@ export default function RootLayout({
       <head>
         {/* Pretendard CDN */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" />
-        {/* FullCalendar CSS CDN */}
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.11/index.global.min.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.11/index.global.min.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.11/index.global.min.css" />
       </head>
       <body className="font-sans">
         <div className="min-h-screen bg-secondary-50">

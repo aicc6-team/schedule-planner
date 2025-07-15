@@ -178,7 +178,7 @@ export default function Navigation() {
 
       {/* 데스크톱 사이드바 */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white">
+        <div className="flex flex-col flex-grow bg-white border-r border-secondary-200">
           <div className="flex h-16 items-center px-6 border-b border-secondary-200">
             <Link href="/" className="text-xl font-bold text-primary-600 hover:underline cursor-pointer">
               내 일정을 부탁해

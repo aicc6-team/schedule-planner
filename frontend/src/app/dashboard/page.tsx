@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation';
 import ScheduleCard from '@/components/ScheduleCard';
 import ProjectCard from '@/components/ProjectCard';
 import StatsCard from '@/components/StatsCard';
+import GoogleCalendarEvents from '@/components/GoogleCalendarEvents';
 import { 
   CalendarIcon, 
   UserGroupIcon, 

@@ -184,16 +184,13 @@ export interface GoogleUser {
   createdAt: Date;
 }
 
-
-
-
 // Firestore 서비스
 export const firestoreService = {
   // 개인 일정 컬렉션 조회
   async getPersonalSchedules(): Promise<PersonalSchedule[]> {
     try {
       const snapshot = await db.collection('PersonalSchedule').get();
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as PersonalSchedule));
@@ -208,7 +205,7 @@ export const firestoreService = {
   async getDepartmentSchedules(): Promise<DepartmentSchedule[]> {
     try {
       const snapshot = await db.collection('DepartmentSchedule').get();
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as DepartmentSchedule));
@@ -223,7 +220,7 @@ export const firestoreService = {
   async getProjectSchedules(): Promise<ProjectSchedule[]> {
     try {
       const snapshot = await db.collection('ProjectSchedule').get();
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as ProjectSchedule));
@@ -238,7 +235,7 @@ export const firestoreService = {
   async getCompanySchedules(): Promise<CompanySchedule[]> {
     try {
       const snapshot = await db.collection('CompanySchedule').get();
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         schedule_id: doc.id,
         ...doc.data()
       } as CompanySchedule));
