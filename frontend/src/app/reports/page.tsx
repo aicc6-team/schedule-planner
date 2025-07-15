@@ -7,22 +7,42 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 // 타입 정의
+type StatsTable = {
+  [key: string]: number | string;
+};
+
 interface ReportItem {
   id: string | number;
-  type: string;
+  reportType: 'personal' | 'department' | 'company' | 'project' | string;
   title: string;
   period: string;
+  periodLabel: string;
   summary: string;
   pdfUrl: string;
-  createdAt?: any;
+  createdAt: string | { seconds: number; nanoseconds?: number };
+  scheduleData: any[];
+  statsTable: StatsTable;
+  averageDailySchedules: number;
+  completedSchedules: number;
+  completionRate: number;
+  totalSchedules: number;
+  userId?: string;
 }
 
 const typeOptions = [
+  { value: 'all', label: '전체' },
   { value: 'personal', label: '개인' },
   { value: 'department', label: '부서' },
   { value: 'company', label: '회사' },
   { value: 'project', label: '프로젝트' },
 ];
+
+const reportTypeLabel: { [key: string]: string } = {
+  personal: '개인 일정 분석 리포트',
+  department: '부서 일정 분석 리포트',
+  company: '회사 일정 분석 리포트',
+  project: '프로젝트 일정 분석 리포트',
+};
 
 function formatDate(createdAt: any) {
   if (!createdAt) return '';
@@ -37,9 +57,17 @@ function formatDate(createdAt: any) {
   return '';
 }
 
+// 날짜를 로컬 기준 YYYY-MM-DD로 변환하는 함수
+function formatDateToLocalYYYYMMDD(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(new Date().setDate(1)), new Date()]);
-  const [selectedType, setSelectedType] = useState('personal');
+  const [selectedType, setSelectedType] = useState('all');
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -49,11 +77,19 @@ export default function ReportsPage() {
       setLoading(true);
       try {
         const [from, to] = dateRange;
-        const params = new URLSearchParams();
-        if (from) params.append('from', from.toISOString().slice(0, 10));
-        if (to) params.append('to', to.toISOString().slice(0, 10));
-        params.append('type', selectedType);
-        const res = await fetch(`http://localhost:3001/api/analytics/reports?${params.toString()}`);
+        const body: any = {};
+        if (from) body.from = formatDateToLocalYYYYMMDD(from);
+        if (to) body.to = formatDateToLocalYYYYMMDD(to);
+        if (selectedType !== 'all') {
+          body.type = selectedType;
+        }
+        const res = await fetch('http://localhost:3001/api/analytics/reports', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
         if (!res.ok) throw new Error('Failed to fetch reports');
         const data = await res.json();
         setReports(data.reports || []);
@@ -68,7 +104,6 @@ export default function ReportsPage() {
 
   // PDF 다운로드
   const handleDownload = async (pdfUrl: string) => {
-
     try {
       const res = await fetch('http://localhost:3001' + pdfUrl);
       if (!res.ok) throw new Error('PDF 다운로드 실패');
@@ -134,8 +169,8 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-secondary-900 mb-1">{report.title}>>{report.pdfUrl}</div>
-                  <div className="text-xs text-gray-500 mb-1">기간: {formatDate(report.createdAt)}</div>
+                  <div className="font-bold text-secondary-900 mb-1">{reportTypeLabel[report.reportType] || '일정 분석 리포트'}</div>
+                  <div className="text-xs text-gray-500 mb-1">{report.periodLabel}</div>
                   <div className="text-sm text-gray-700 whitespace-pre-line">
                     요약: {report.summary}
                   </div>

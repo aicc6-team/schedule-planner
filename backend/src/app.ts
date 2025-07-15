@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import 'dotenv/config';
 
 // 라우터 import
@@ -47,6 +48,8 @@ app.use(requestLogger);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/auth/google', googleAuthRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+app.use('/kms', express.static(path.join(__dirname, '../kms')));
 
 /*
 === 구현된 일정 관리 API 엔드포인트 목록 ===

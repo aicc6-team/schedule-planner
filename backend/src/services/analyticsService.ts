@@ -195,6 +195,7 @@ export function generatePDFBuffer(
   chartImages?: string[],
   chartDescriptions?: string[]
 ): Promise<Buffer> {
+  console.log('PDF 생성용 statsTable:', statsTable);
   return new Promise((resolve) => {
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
@@ -251,7 +252,6 @@ export function generatePDFBuffer(
 
     doc.moveDown(1);
     */
-   console.log('statsTable --------------------', statsTable);
 
     // ======================= 2. 분석 요약 =========================
     if (summary) {
@@ -361,7 +361,6 @@ export async function getReportsByPeriodAndType(from: string, to: string, type: 
       .where('createdAt', '<=', toDate);
     const snapshot = await query.get();
 
-    console.log('snapshot --------------------', snapshot.docs);
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
