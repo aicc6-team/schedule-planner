@@ -608,15 +608,50 @@ export const firestoreService = {
 
   // AI 충돌일정분석 요청
   async getAIConflictScheduleAnalysisRequests(): Promise<AIConflictScheduleAnalysis[]> {
-    // TODO: 구현
-    return [];
+    try {
+      const snapshot = await db.collection('AIConflictScheduleAnalysis').get();
+      return snapshot.docs.map(doc => ({
+        request_id: doc.id,
+        ...doc.data()
+      } as AIConflictScheduleAnalysis));
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 조회 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 조회하는 중 오류가 발생했습니다.');
+    }
   },
-  async createAIConflictScheduleAnalysisRequest(_data: Omit<AIConflictScheduleAnalysis, 'request_id'>): Promise<AIConflictScheduleAnalysis> {
-    // TODO: 구현
-    return {} as AIConflictScheduleAnalysis;
+  async createAIConflictScheduleAnalysisRequest(data: Omit<AIConflictScheduleAnalysis, 'request_id'>): Promise<AIConflictScheduleAnalysis> {
+    try {
+      const analysisData = {
+        ...data,
+        request_datetime: new Date().toISOString(),
+        completion_datetime: new Date().toISOString()
+      };
+     
+      const docRef = await db.collection('AIConflictScheduleAnalysis').add(analysisData);
+      
+      return {
+        request_id: docRef.id,
+        ...analysisData,
+        request_datetime: new Date(analysisData.request_datetime),
+        completion_datetime: new Date(analysisData.completion_datetime)
+      };
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 생성 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 생성하는 중 오류가 발생했습니다.');
+    }
   },
-  async getAIConflictScheduleAnalysisRequestById(_id: string): Promise<AIConflictScheduleAnalysis | null> {
-    // TODO: 구현
-    return null;
+  async getAIConflictScheduleAnalysisRequestById(id: string): Promise<AIConflictScheduleAnalysis | null> {
+    try {
+      const doc = await db.collection('AIConflictScheduleAnalysis').doc(id).get();
+      if (!doc.exists) return null;
+     
+      return {
+        request_id: doc.id,
+        ...doc.data()
+      } as AIConflictScheduleAnalysis;
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 상세 조회 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 조회하는 중 오류가 발생했습니다.');
+    }
   }
 };
