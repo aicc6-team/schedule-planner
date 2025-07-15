@@ -347,13 +347,23 @@ router.get('/projectCosts', async (_req, res) => {
 });
 
 // GET /api/analytics/reports - ReportsAnalysis 컬렉션의 모든 데이터 가져오기
-router.get('/reports', async (req, res) => {
+router.post('/reports', async (req, res) => {
   try {
-    const { from, to, type } = req.query;
-    if (!from || !to || !type) {
-      return res.status(400).json({ error: 'from, to, type are required' });
+    const { from, to, type } = req.body;
+    if (!from || !to) {
+      return res.status(400).json({ error: 'from, to are required' });
     }
-    const reports = await getReportsByPeriodAndType(from as string, to as string, type as string);
+    let reports: any[] = [];
+    if (!type || type === 'all') {
+      // 모든 타입을 병합해서 반환
+      const types = ['personal', 'department', 'company', 'project'];
+      for (const t of types) {
+        const r = await getReportsByPeriodAndType(from as string, to as string, t);
+        reports = reports.concat(r);
+      }
+    } else {
+      reports = await getReportsByPeriodAndType(from as string, to as string, type as string);
+    }
     return res.json({ reports });
   } catch (e) {
     return res.status(500).json({ error: 'Failed to fetch reports' });
