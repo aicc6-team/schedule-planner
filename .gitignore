@@ -7,3 +7,4 @@ backend/node_modules
 backend/.env
 backend/dist
 backend/Jwt.key
+backend/src/config/serviceAccountKey.json

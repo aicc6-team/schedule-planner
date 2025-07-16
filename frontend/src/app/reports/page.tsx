@@ -70,6 +70,7 @@ export default function ReportsPage() {
   const [selectedType, setSelectedType] = useState('all');
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // 레포트 목록 불러오기
   useEffect(() => {
@@ -104,6 +105,7 @@ export default function ReportsPage() {
 
   // PDF 다운로드
   const handleDownload = async (pdfUrl: string) => {
+    setDownloadingPdf(true);
     try {
       const res = await fetch('http://localhost:3001' + pdfUrl);
       if (!res.ok) throw new Error('PDF 다운로드 실패');
@@ -118,6 +120,8 @@ export default function ReportsPage() {
       document.body.removeChild(a);
     } catch (e) {
       alert('PDF 다운로드에 실패했습니다.');
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -176,8 +180,9 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 border border-primary-200 rounded-lg bg-primary-50 text-primary-700 font-semibold hover:bg-primary-100 transition ml-4"
+                  className="flex items-center gap-2 px-4 py-2 border border-primary-200 rounded-lg bg-primary-50 text-primary-700 font-semibold hover:bg-primary-100 transition ml-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => handleDownload(report.pdfUrl)}
+                  disabled={downloadingPdf}
                 >
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="#e0e7ff"/><path d="M8 11h8M8 15h4" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/></svg>
                   PDF
@@ -187,6 +192,16 @@ export default function ReportsPage() {
           </div>
         </div>
       </main>
+
+      {/* PDF 다운로드 로딩 모달 */}
+      {downloadingPdf && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 flex items-center gap-4 shadow-lg">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+            <span className="text-gray-700 font-medium">내보내기 진행 중...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
