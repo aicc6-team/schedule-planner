@@ -18,7 +18,7 @@ import {
   useDraggable,
   useDroppable,
 } from '@dnd-kit/core';
-import { analyzeScheduleConflicts } from '@/app/ai-structure/actions';
+import { analyzeScheduleConflicts, testOpenAIConnection } from '@/app/ai-structure/actions';
 
 // API 호출 함수들
 const API_BASE_URL = 'http://localhost:3001';
@@ -521,6 +521,9 @@ export default function ConflictsPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [parsedAnalysisData, setParsedAnalysisData] = useState<any>(null);
   const [isApplyingAdjustment, setIsApplyingAdjustment] = useState(false);
+  // 자동 분석 제어 상태
+  const [autoAnalyzed, setAutoAnalyzed] = useState(false);
+  const [lastAnalyzedGroup, setLastAnalyzedGroup] = useState<number | null>(null);
   
   // Drag & Drop 상태
   const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null);
@@ -598,6 +601,27 @@ export default function ConflictsPage() {
   const otherGroupsWithIndex = conflictGroups
     .map((group, idx) => ({ group, idx }))
     .filter(({ idx }) => idx !== selectedGroupIndex);
+
+  // 자동 AI 분석 실행 (페이지 진입 시 1회만)
+  useEffect(() => {
+    if (!loading && conflictingSchedules.length > 0 && !autoAnalyzed) {
+      setAutoAnalyzed(true);
+      handleAIAnalysis();
+    }
+  }, [loading, conflictingSchedules.length, autoAnalyzed]);
+
+  // 충돌 그룹 변경 시 자동 AI 분석 (중복 실행 방지)
+  useEffect(() => {
+    if (
+      !loading &&
+      conflictingSchedules.length > 0 &&
+      selectedGroupIndex !== lastAnalyzedGroup &&
+      !isAnalyzing
+    ) {
+      setLastAnalyzedGroup(selectedGroupIndex);
+      handleAIAnalysis();
+    }
+  }, [selectedGroupIndex, loading, conflictingSchedules.length, lastAnalyzedGroup, isAnalyzing]);
 
   // 시간표에서 일정의 위치를 계산하는 함수
   const getSchedulePosition = (schedule: Schedule, weekDates: Date[], weekIndex: number) => {
@@ -691,6 +715,96 @@ export default function ConflictsPage() {
     router.push(`/schedules/create?mode=edit&id=${schedule.id}&type=${schedule.type}`);
   };
 
+  // AI 분석 함수
+  const handleAIAnalysis = async () => {
+    if (conflictingSchedules.length === 0) {
+      setAiAnalysis('충돌하는 일정이 없어 분석이 필요하지 않습니다.');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAiError(null);
+    
+    try {
+      // 선택된 충돌 그룹만 분석 대상으로 전달
+      const result = await analyzeScheduleConflicts(conflictingSchedules, allSchedules, selectedGroupIndex);
+      if (result.success && result.content) {
+        setAiAnalysis(result.content);
+        setParsedAnalysisData(result.data); // 분석 결과 데이터 저장
+        
+        // AI 분석 데이터를 백엔드에 저장
+        await saveAIConflictAnalysis(result.data);
+      } else {
+        setAiError(result.error || 'AI 분석에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('AI 분석 실패:', error);
+      setAiError(error instanceof Error ? error.message : 'AI 분석에 실패했습니다.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // AI 충돌 분석 데이터 저장 함수
+  const saveAIConflictAnalysis = async (analysisData: any) => {
+    try {
+      const requestData = {
+        conflict_id: `conflict-group-${selectedGroupIndex}`, // 충돌 그룹 ID
+        user_id: 'user01', // 임시 사용자 ID (실제로는 로그인된 사용자 ID 사용)
+        request_params: {
+          conflictingSchedules: conflictingSchedules.map((s: Schedule) => ({
+            id: s.id,
+            title: s.title,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            type: s.type
+          })),
+          selectedGroupIndex,
+          analysisResult: analysisData,
+          timestamp: new Date().toISOString()
+        },
+        status: '완료'
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/ai-conflict-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        throw new Error('AI 충돌 분석 데이터 저장에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      console.log('✅ AI 충돌 분석 데이터 저장 완료:', result.data.request_id);
+      return result.data;
+    } catch (error) {
+      console.error('AI 충돌 분석 데이터 저장 실패:', error);
+      // 저장 실패해도 분석 결과는 계속 표시
+    }
+  };
+
+  // AI 연결 테스트 함수
+  const handleAITest = async () => {
+    setIsAnalyzing(true);
+    setAiError(null);
+    
+    try {
+      const result = await testOpenAIConnection();
+      if (result.success && result.content) {
+        setAiAnalysis(`✅ AI 연결 테스트 성공!\n\n${result.content}`);
+      } else {
+        setAiError(result.error || 'AI 연결 테스트에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('AI 테스트 실패:', error);
+      setAiError(error instanceof Error ? error.message : 'AI 연결 테스트에 실패했습니다.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   // 조정안 적용 함수
   const handleApplyAdjustment = async (adjustmentIndex: number) => {
     if (!parsedAnalysisData?.조정안?.[adjustmentIndex]) {
@@ -780,39 +894,11 @@ export default function ConflictsPage() {
     throw new Error('일정 분할 기능은 아직 구현되지 않았습니다.');
   };
 
-  // AI 분석 자동 실행 함수
-  const performAIAnalysis = async (groupIndex: number = 0) => {
-    if (conflictingSchedules.length === 0) {
-      setAiAnalysis('충돌하는 일정이 없어 분석이 필요하지 않습니다.');
-      return;
-    }
+  // AI 분석 자동 실행 함수 (제거 - handleAIAnalysis로 통합)
+  // const performAIAnalysis = async (groupIndex: number = 0) => { ... };
 
-    setIsAnalyzing(true);
-    setAiError(null);
-    
-    try {
-      // 선택된 충돌 그룹만 분석 대상으로 전달
-      const result = await analyzeScheduleConflicts(conflictingSchedules, allSchedules, groupIndex);
-      if (result.success && result.content) {
-        setAiAnalysis(result.content);
-        setParsedAnalysisData(result.data); // 분석 결과 데이터 저장
-      } else {
-        setAiError(result.error || 'AI 분석에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('AI 분석 실패:', error);
-      setAiError(error instanceof Error ? error.message : 'AI 분석에 실패했습니다.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  // 페이지 로드 시 자동 AI 분석 실행
-  useEffect(() => {
-    if (!loading && allSchedules.length > 0) {
-      performAIAnalysis(selectedGroupIndex);
-    }
-  }, [loading, allSchedules.length, selectedGroupIndex]);
+  // 페이지 로드 시 자동 AI 분석 실행 (제거 - 새로운 useEffect로 대체)
+  // useEffect(() => { ... }, [loading, allSchedules.length, selectedGroupIndex]);
 
   // 충돌 그룹 변경 시 자동 AI 분석 실행
   const handleGroupChange = (newIndex: number) => {
@@ -849,7 +935,7 @@ export default function ConflictsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* 상단 좌측: 충돌 일정 리스트 */}
-              <div className="card min-h-[200px] flex flex-col">
+              <div className="card min-h-[200px] flex flex-col h-[380px]">
                 <div className="flex items-center gap-2 mb-4">
                   <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
                   <span className="text-lg font-semibold text-secondary-800">충돌 일정</span>
@@ -916,11 +1002,28 @@ export default function ConflictsPage() {
                 )}
               </div>
               {/* 상단 우측: AI 분석 결과 메시지 */}
-              <div className="card flex flex-col h-[420px] pt-4 pr-4 pl-4 pb-2">
+              <div className="card flex flex-col h-[380px] pt-4 pr-4 pl-4 pb-2">
                 <div className="flex items-center justify-between w-full mb-2">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-5 w-5 text-primary-500" />
                     <span className="text-lg font-semibold text-secondary-800">AI 자동 분석 결과</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAITest}
+                      disabled={isAnalyzing}
+                      className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                    >
+                      {isAnalyzing ? '테스트 중...' : '연결 테스트'}
+                    </button>
+                    <button
+                      onClick={handleAIAnalysis}
+                      disabled={isAnalyzing || conflictingSchedules.length === 0}
+                      className="px-3 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <SparklesIcon className="h-3 w-3" />
+                      {isAnalyzing ? '분석 중...' : 'AI 분석'}
+                    </button>
                   </div>
                 </div>
                 <div className="flex-1 min-h-0 flex flex-col">
@@ -1042,9 +1145,10 @@ export default function ConflictsPage() {
                           총 <span className="font-bold text-primary-600">{conflictingSchedules.length}건</span>의 일정 충돌이 발견되었습니다.<br />
                           {conflictingSchedules.length > 0 ? (
                             <>
-                              <strong>🎯 AI가 자동으로 충돌하는 일정을 분석하고 있습니다!</strong><br />
-                              잠시만 기다려주세요. 최적의 해결책을 제시해드립니다.<br />
-                              또는 Drag & Drop으로 수동으로 일정을 조정할 수 있습니다.
+                              <strong>🤖 AI가 자동으로 충돌을 분석하고 있습니다...</strong><br />
+                              충돌하는 일정을 감지하면 즉시 AI 분석이 시작됩니다.<br />
+                              분석이 완료되면 최적의 해결책이 제시됩니다.<br />
+                              또는 수동으로 'AI 분석' 버튼을 클릭하여 재분석할 수 있습니다.
                             </>
                           ) : (
                             <>

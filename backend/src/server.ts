@@ -5,6 +5,7 @@ const PORT = process.env['PORT'] || 3001;
 
 const startServer = async () => {
   try {
+
     app.listen(PORT, () => {
       console.log('🚀 서버가 시작되었습니다!');
       console.log(`📍 서버 주소: http://localhost:${PORT}`);

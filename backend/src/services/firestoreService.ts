@@ -617,81 +617,103 @@ export const firestoreService = {
 
   // AI 충돌일정분석 요청
   async getAIConflictScheduleAnalysisRequests(): Promise<AIConflictScheduleAnalysis[]> {
-    // TODO: 구현
-    return [];
+    try {
+      const snapshot = await db.collection('AIConflictScheduleAnalysis').get();
+      return snapshot.docs.map(doc => ({
+        request_id: doc.id,
+        ...doc.data()
+      } as AIConflictScheduleAnalysis));
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 조회 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 조회하는 중 오류가 발생했습니다.');
+    }
   },
-  async createAIConflictScheduleAnalysisRequest(_data: Omit<AIConflictScheduleAnalysis, 'request_id'>): Promise<AIConflictScheduleAnalysis> {
-    // TODO: 구현
-    return {} as AIConflictScheduleAnalysis;
+  async createAIConflictScheduleAnalysisRequest(data: Omit<AIConflictScheduleAnalysis, 'request_id'>): Promise<AIConflictScheduleAnalysis> {
+    try {
+      const analysisData = {
+        ...data,
+        request_datetime: new Date().toISOString(),
+        completion_datetime: new Date().toISOString()
+      };
+     
+      const docRef = await db.collection('AIConflictScheduleAnalysis').add(analysisData);
+      
+      return {
+        request_id: docRef.id,
+        ...analysisData,
+        request_datetime: new Date(analysisData.request_datetime),
+        completion_datetime: new Date(analysisData.completion_datetime)
+      };
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 생성 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 생성하는 중 오류가 발생했습니다.');
+    }
   },
-  async getAIConflictScheduleAnalysisRequestById(_id: string): Promise<AIConflictScheduleAnalysis | null> {
-    // TODO: 구현
-    return null;
+  async getAIConflictScheduleAnalysisRequestById(id: string): Promise<AIConflictScheduleAnalysis | null> {
+    try {
+      const doc = await db.collection('AIConflictScheduleAnalysis').doc(id).get();
+      if (!doc.exists) return null;
+      
+      return {
+        request_id: doc.id,
+        ...doc.data()
+      } as AIConflictScheduleAnalysis;
+    } catch (error) {
+      console.error('AI 충돌 일정 분석 요청 상세 조회 실패:', error);
+      throw new Error('AI 충돌 일정 분석 요청을 조회하는 중 오류가 발생했습니다.');
+    }
   },
 
-  // Google OAuth 사용자 관리
-  async createOrUpdateUser(userData: GoogleUser): Promise<string> {
+  // === 사용자 관리 ===
+  // 사용자 ID로 조회
+  async getUserById(userId: string): Promise<GoogleUser | null> {
+    try {
+      const doc = await db.collection('Users').doc(userId).get();
+      if (!doc.exists) return null;
+      
+      return {
+        ...doc.data()
+      } as GoogleUser;
+    } catch (error) {
+      console.error('사용자 조회 실패:', error);
+      throw new Error('사용자를 조회하는 중 오류가 발생했습니다.');
+    }
+  },
+
+  // 사용자 생성 또는 업데이트
+  async createOrUpdateUser(userData: Omit<GoogleUser, 'createdAt'>): Promise<string> {
     try {
       // 이메일로 기존 사용자 검색
       const usersRef = db.collection('Users');
       const query = usersRef.where('email', '==', userData.email);
       const snapshot = await query.get();
-
-      if (!snapshot.empty) {
+      
+      let userId: string;
+      
+      if (snapshot.empty) {
+        // 새 사용자 생성
+        const docRef = await usersRef.add({
+          ...userData,
+          createdAt: new Date()
+        });
+        userId = docRef.id;
+      } else {
         // 기존 사용자 업데이트
         const doc = snapshot.docs[0];
-        if (doc) {
-          await doc.ref.update({
-            name: userData.name,
-            picture: userData.picture,
-            googleTokens: userData.googleTokens,
-            lastLogin: userData.lastLogin
-          });
-          return doc.id;
+        if (!doc) {
+          throw new Error('사용자 문서를 찾을 수 없습니다.');
         }
+        userId = doc.id;
+        await doc.ref.update({
+          ...userData,
+          lastLogin: new Date()
+        });
       }
       
-      // 새 사용자 생성
-      const docRef = await usersRef.add({
-        ...userData,
-        createdAt: userData.createdAt
-      });
-      return docRef.id;
+      return userId;
     } catch (error) {
       console.error('사용자 생성/업데이트 실패:', error);
       throw new Error('사용자 정보를 저장하는 중 오류가 발생했습니다.');
     }
-  },
-
-  async getUserById(userId: string): Promise<GoogleUser | null> {
-    try {
-      const doc = await db.collection('Users').doc(userId).get();
-      return doc.exists ? doc.data() as GoogleUser : null;
-    } catch (error) {
-      console.error('사용자 조회 실패:', error);
-      throw new Error('사용자 정보를 조회하는 중 오류가 발생했습니다.');
-    }
-  },
-
-  async getUserByEmail(email: string): Promise<GoogleUser | null> {
-    try {
-      const usersRef = db.collection('Users');
-      const query = usersRef.where('email', '==', email);
-      const snapshot = await query.get();
-      
-      if (!snapshot.empty) {
-        const doc = snapshot.docs[0];
-        if (doc) {
-          return { ...doc.data(), user_id: doc.id } as GoogleUser & { user_id: string };
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error('이메일로 사용자 조회 실패:', error);
-      throw new Error('사용자 정보를 조회하는 중 오류가 발생했습니다.');
-    }
   }
 };
-
-// Git 변경 테스트용 주석
-// ✅ 이 라인은 Git 커밋 테스트용입니다.

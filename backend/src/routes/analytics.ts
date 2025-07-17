@@ -7,9 +7,12 @@ import {
   makeStatsForPrompt, 
   getPeriodLabel, 
   // makeKoreanReportDoc, 
-  saveReportRecord,
-  generatePDFBuffer
+  // saveReportRecord,
+  generatePDFBuffer,
+  getReportsByPeriodAndType
 } from '../services/analyticsService';
+import fs from 'fs';
+import path from 'path';
 
 // DepartmentScheduleAnalysis 인터페이스 정의
 interface DepartmentScheduleAnalysis {
@@ -343,6 +346,30 @@ router.get('/projectCosts', async (_req, res) => {
   }
 });
 
+// GET /api/analytics/reports - ReportsAnalysis 컬렉션의 모든 데이터 가져오기
+router.post('/reports', async (req, res) => {
+  try {
+    const { from, to, type } = req.body;
+    if (!from || !to) {
+      return res.status(400).json({ error: 'from, to are required' });
+    }
+    let reports: any[] = [];
+    if (!type || type === 'all') {
+      // 모든 타입을 병합해서 반환
+      const types = ['personal', 'department', 'company', 'project'];
+      for (const t of types) {
+        const r = await getReportsByPeriodAndType(from as string, to as string, t);
+        reports = reports.concat(r);
+      }
+    } else {
+      reports = await getReportsByPeriodAndType(from as string, to as string, type as string);
+    }
+    return res.json({ reports });
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to fetch reports' });
+  }
+});
+
 // POST /api/analytics/generateReport - PDF 레포트 생성
 router.post('/generateReport', async (req, res) => {
   try {
@@ -369,12 +396,29 @@ router.post('/generateReport', async (req, res) => {
     // (5) 실제 PDF 생성
     const pdfBuffer = await generatePDFBuffer(summary, advice, statsTable, scheduleData, periodLabel, chartImages, chartDescriptions);
 
-    // (6) Firestore에 보고서 저장
-    await saveReportRecord(userId, summary, statsTable, scheduleData, periodLabel);
+    // (5-1) PDF 파일 저장
+    const fileName = `report-${Date.now()}.pdf`;
+    const uploadDir = path.join(__dirname, '../../kms');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, fileName);
+    fs.writeFileSync(filePath, pdfBuffer);
+
+    // (6) Firestore에 보고서 저장 (pdfUrl 추가)
+    const pdfUrl = `/kms/${fileName}`;
+    await db.collection('ComprehensiveAnalysisReport').add({
+      userId,
+      summary,
+      statsTable,
+      scheduleData,
+      periodLabel,
+      createdAt: new Date(),
+      reportType: 'personal',
+      pdfUrl,
+    });
 
     // (7) PDF 파일 다운로드 응답
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="personal-analytics-report-${new Date().toISOString().split('T')[0]}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.status(200).send(pdfBuffer);
   } catch (e) {
     console.error(e);

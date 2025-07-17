@@ -3,12 +3,15 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import 'dotenv/config';
 
 // 라우터 import
 import scheduleRoutes from './routes/schedules';
 import analyticsRoutes from './routes/analytics';
 import googleAuthRoutes from './routes/googleAuth';
+import authRoutes from './routes/auth';
+import aiConflictAnalysisRoutes from './routes/aiConflictAnalysis';
 import calendarRoutes from './routes/calendar';
 import utilsRoutes from './routes/utils';
 
@@ -48,9 +51,13 @@ app.use(requestLogger);
 // API 라우터 설정
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/auth/google', googleAuthRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai-conflict-analysis', aiConflictAnalysisRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/utils', utilsRoutes);
+
+app.use('/kms', express.static(path.join(__dirname, '../kms')));
 
 /*
 === 구현된 일정 관리 API 엔드포인트 목록 ===
