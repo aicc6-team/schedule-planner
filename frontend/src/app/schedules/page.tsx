@@ -192,18 +192,49 @@ const transformProjectSchedule = (schedule: ProjectSchedule): Schedule => {
   };
 };
 
-const transformCompanySchedule = (schedule: CompanySchedule): Schedule => ({
-  id: schedule.schedule_id,
-  title: schedule.title || '제목 없음',
-  description: schedule.description,
-  startTime: schedule.start_datetime,
-  endTime: schedule.end_datetime,
-  priority: 'high',
-  type: 'company',
-  assignee: schedule.organizer,
-  project: '전사 일정',
-  status: schedule.status === '완료' ? 'completed' : 'pending'
-});
+const transformCompanySchedule = (schedule: CompanySchedule): Schedule => {
+  // 개인 일정과 동일한 방식으로 재구축
+  let startTime, endTime;
+  
+  try {
+    // 백엔드에서 오는 데이터 구조에 맞게 처리
+    if (schedule.start_datetime && schedule.end_datetime) {
+      startTime = new Date(schedule.start_datetime);
+      endTime = new Date(schedule.end_datetime);
+      
+      // 날짜가 유효하지 않은 경우 기본값 설정
+      if (isNaN(startTime.getTime())) {
+        console.warn('Company schedule with invalid start_datetime:', schedule);
+        startTime = new Date();
+      }
+      if (isNaN(endTime.getTime())) {
+        console.warn('Company schedule with invalid end_datetime:', schedule);
+        endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1시간 후
+      }
+    } else {
+      console.warn('Company schedule with missing dates:', schedule);
+      startTime = new Date();
+      endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+    }
+  } catch (error) {
+    console.warn('Company schedule date conversion error:', error, schedule);
+    startTime = new Date();
+    endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+  }
+
+  return {
+    id: schedule.schedule_id,
+    title: schedule.title || '제목 없음',
+    description: schedule.description || '',
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    priority: 'high',
+    type: 'company',
+    assignee: schedule.organizer || '전사',
+    project: '전사 일정',
+    status: schedule.status === '완료' ? 'completed' : 'pending'
+  };
+};
 
 const transformAllSchedules = (allSchedules: {personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[], company: CompanySchedule[]}): Schedule[] => {
   const p = allSchedules.personal?.map(transformPersonalSchedule) || [];
@@ -211,7 +242,25 @@ const transformAllSchedules = (allSchedules: {personal: PersonalSchedule[], depa
   const r = allSchedules.project?.map(transformProjectSchedule) || [];
   const c = allSchedules.company?.map(transformCompanySchedule) || [];
   
-  return [...p, ...d, ...r, ...c].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  // 회사 일정 디버깅 - 다른 영역과 동일한 방식
+  console.log('원본 회사 일정 개수:', allSchedules.company?.length || 0);
+  console.log('변환된 회사 일정 개수:', c.length);
+  
+  if (c.length > 0) {
+    console.log('첫 번째 회사 일정 예시:', c[0]);
+  }
+  
+  const allTransformed = [...p, ...d, ...r, ...c].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  
+  console.log('전체 변환된 일정 개수:', allTransformed.length);
+  console.log('타입별 개수:', {
+    personal: p.length,
+    department: d.length,
+    project: r.length,
+    company: c.length
+  });
+  
+  return allTransformed;
 };
 
 const areaOrder = [
@@ -293,18 +342,10 @@ export default function SchedulesPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        // We need to send the full object, but transformed back to what the backend expects
-        // This is complex, so for now, we just send the status update
-        // The backend should handle partial updates gracefully even with PUT, hopefully.
-        // A better approach would be to have a proper PATCH endpoint.
-        // Given the constraints, let's try updating just the status.
-        // The most robust solution is to fetch the original object from DB and then update.
-        // Let's send the important fields we know.
         body: JSON.stringify({
            title: scheduleToComplete.title,
            description: scheduleToComplete.description,
            status: '완료',
-           // We might need to send back the original date/time fields
         }),
       });
 

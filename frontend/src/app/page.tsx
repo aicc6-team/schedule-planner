@@ -54,13 +54,13 @@ export default function LandingPage() {
               AI가 자동으로 최적화하고, 구글 캘린더와 완벽 연동.<br />
               복잡한 일정도 한눈에, 실시간 협업의 시작!
             </p>
-            <a href="/signup" className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-2xl text-xl shadow-xl transition transform hover:scale-105">무료로 시작하기</a>
-            <div className="mt-6 text-sm text-secondary-400">이미 계정이 있으신가요? <a href="/login" className="text-primary-600 hover:underline">로그인</a></div>
-          </div>
           {/* 실제 서비스 화면 미리보기 (스크린샷/애니메이션) */}
           <div className="relative z-10 flex flex-col items-center mt-12">
-            <img src="/hero-illustration.svg" alt="일정 관리 일러스트" className="w-80 md:w-[420px] mx-auto drop-shadow-xl rounded-2xl border-4 border-primary-100 animate-fade-in" />
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-72 h-6 bg-primary-200 blur-2xl opacity-30 rounded-full" />
+            <img src="/illustration_01.png" alt="관리 일러스트" className="w-80 md:w-[420px] mx-auto drop-shadow-xl rounded-2xl border-4 border-primary-100 animate-fade-in" />
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-72 h-6 bg-primary-200 blur-2xl opacity-30 rounded-full"/>
+          </div>
+            <a href="/signup" className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-2xl text-xl shadow-xl transition transform hover:scale-105 mt-16">무료로 시작하기</a>
+            <div className="mt-6 text-sm text-secondary-400">이미 계정이 있으신가요? <a href="/login" className="text-primary-600 hover:underline">로그인</a></div>
           </div>
         </section>
 
@@ -143,39 +143,59 @@ export default function LandingPage() {
         {/* Customer Logos/Testimonials Section */}
         <section id="customers" className={`w-full max-w-6xl mx-auto mt-[180px] px-4 ${slideUp}`}>
           <h3 className="text-2xl font-bold text-primary-700 mb-10 text-center">고객사 & 이용사례</h3>
-          <div className="flex flex-wrap justify-center items-center gap-10 mb-10 bg-gradient-to-r from-primary-100 to-blue-100 py-6 rounded-2xl shadow">
-            {[
-              { x: 0, y: 0 },    // NeoLogi
-              { x: 1, y: 0 },    // TaskBee
-              { x: 2, y: 0 },    // Cloudary
-              { x: 0, y: 1 },    // Metacore
-              { x: 1, y: 1 },    // Flexdo
-              { x: 2, y: 1 },    // Vantask
-            ].map((pos, i) => (
-              <div
-                key={i}
-                style={{
-                  width: '192px',
-                  height: '128px',
-                  overflow: 'hidden',
-                  display: 'inline-block',
-                  borderRadius: '12px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  background: '#fff'
-                }}
-              >
-                <img
-                  src="/Logo.png"
-                  alt={`협력사 로고${i + 1}`}
-                  style={{
-                    width: `${192 * 3}px`,
-                    height: `${128 * 2}px`,
-                    objectFit: 'none',
-                    objectPosition: `-${pos.x * 192}px -${pos.y * 128}px`
-                  }}
-                />
+          <div className="relative overflow-hidden bg-gradient-to-r from-primary-100 to-blue-100 rounded-2xl shadow">
+            {/* 무한 스크롤 컨테이너 */}
+            <div className="flex animate-scroll py-6">
+              {/* 첫 번째 로고 세트 */}
+              <div className="flex gap-16 items-center flex-shrink-0">
+                {[
+                  '/logo_01.png',
+                  '/logo_02.png',
+                  '/logo_03.png',
+                  '/logo_04.png',
+                  '/logo_05.png',
+                  '/logo_06.png',
+                  '/logo_01.png',
+                  '/logo_02.png',
+                  '/logo_03.png',
+                  '/logo_04.png',
+                  '/logo_05.png',
+                  '/logo_06.png',
+                  '/logo_01.png',
+                  '/logo_02.png',
+                  '/logo_03.png',
+                  '/logo_04.png',
+                  '/logo_05.png',
+                  '/logo_06.png',
+                ].map((logo, i) => (
+                  <div
+                    key={`logo-${i}`}
+                    style={{
+                      width: '192px',
+                      height: '128px',
+                      overflow: 'hidden',
+                      display: 'inline-block',
+                      borderRadius: '12px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      background: '#fff'
+                    }}
+                  >
+                    <img
+                      src={logo}
+                      alt={`협력사 로고${(i % 6) + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        padding: '16px'
+                      }}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+              {/* 마지막 여백 추가 */}
+              <div className="w-16 flex-shrink-0"></div>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* 문성훈 - 4.5점 */}
@@ -512,6 +532,13 @@ export default function LandingPage() {
         .animate-fade-in { animation: fade-in 1.2s ease; }
         @keyframes slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slide-up 1.2s cubic-bezier(0.4,0,0.2,1); }
+        @keyframes scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.33%); } /* 3세트만큼 이동 */
+        }
+        .animate-scroll {
+          animation: scroll 25s linear infinite; /*25한 바퀴 돌기 */
+        }
       `}</style>
     </>
   );
