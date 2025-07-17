@@ -18,7 +18,7 @@ import {
   useDraggable,
   useDroppable,
 } from '@dnd-kit/core';
-import { analyzeScheduleConflicts, testOpenAIConnection } from '@/app/ai-structure/actions';
+import { analyzeScheduleConflicts } from '@/app/ai-structure/actions';
 
 // API 호출 함수들
 const API_BASE_URL = 'http://localhost:3001';
@@ -63,6 +63,16 @@ const updateProjectScheduleTime = async (id: string, newDate: string, newTime: s
   return response.json();
 };
 
+const updateCompanyScheduleTime = async (id: string, newDate: string, newTime: string) => {
+  const response = await fetch(`${API_BASE_URL}/api/schedules/company/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ start_datetime: `${newDate}T${newTime}:00`, end_datetime: `${newDate}T${newTime}:00` })
+  });
+  if (!response.ok) throw new Error('회사 일정 업데이트 실패');
+  return response.json();
+};
+
 // 타입 정의
 interface Schedule {
   id: string;
@@ -71,29 +81,26 @@ interface Schedule {
   startTime: string;
   endTime: string;
   priority: 'high' | 'medium' | 'low';
-  type: 'personal' | 'department' | 'project';
+  type: 'personal' | 'department' | 'project' | 'company';
   status?: 'pending' | 'completed';
 }
 
 interface PersonalSchedule {
-  id?: string;
+  id: string;
   title: string;
   description: string;
   date: string;
   time: string;
   durationMinutes: number;
-  importance: string;
-  emotion: string;
-  status?: string;
+  status: string;
 }
 
 interface DepartmentSchedule {
-  id?: string;
+  id: string;
   title: string;
   objective: string;
   date: string;
   time: string;
-  participants: string[];
   status?: string;
 }
 
@@ -106,6 +113,25 @@ interface ProjectSchedule {
   time: string;
   roles: any;
   status?: string;
+}
+
+interface CompanySchedule {
+  schedule_id: string;
+  title: string;
+  description: string;
+  // Firestore에서 오는 다양한 형태의 날짜 필드 지원
+  start_datetime?: any; // Firestore timestamp 또는 Date 또는 string
+  end_datetime?: any;   // Firestore timestamp 또는 Date 또는 string
+  start_time?: any;     // 일부 데이터는 이 필드 사용
+  end_time?: any;       // 일부 데이터는 이 필드 사용
+  organizer: string;
+  supporting_organizations?: any;
+  attendees?: any;
+  created_at?: any;
+  updated_at?: any;
+  type?: string;
+  location?: string;
+  [key: string]: any;
 }
 
 // 데이터 변환 함수들
@@ -122,7 +148,7 @@ const transformPersonalSchedule = (personalSchedule: PersonalSchedule): Schedule
     description: personalSchedule.description,
     startTime: start.toISOString(),
     endTime: end.toISOString(),
-    priority: personalSchedule.importance === '높음' ? 'high' : personalSchedule.importance === '보통' ? 'medium' : 'low',
+    priority: personalSchedule.status === '완료' ? 'low' : personalSchedule.status === '보통' ? 'medium' : 'high',
     type: 'personal',
     status: personalSchedule.status as any || 'pending'
   };
@@ -166,11 +192,74 @@ const transformProjectSchedule = (projectSchedule: ProjectSchedule): Schedule | 
   };
 };
 
-const transformAllSchedules = (allSchedules: {personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[]}): Schedule[] => {
+const transformCompanySchedule = (companySchedule: CompanySchedule): Schedule | null => {
+  console.log('회사 일정 변환 시작:', companySchedule);
+  
+  let start: Date, end: Date;
+  
+  try {
+    // 시작 시간 처리 - start_datetime 또는 start_time 필드 사용
+    const startField = companySchedule.start_datetime || companySchedule.start_time;
+    const endField = companySchedule.end_datetime || companySchedule.end_time;
+    
+    if (!startField || !endField) {
+      console.warn('회사 일정에 필수 날짜 필드가 없습니다:', companySchedule);
+      return null;
+    }
+    
+    // Firestore timestamp 객체 처리
+    if (startField && typeof startField === 'object' && startField._seconds) {
+      start = new Date(startField._seconds * 1000 + (startField._nanoseconds || 0) / 1000000);
+    } else if (startField instanceof Date) {
+      start = startField;
+    } else if (typeof startField === 'string') {
+      start = new Date(startField);
+    } else {
+      console.warn('시작 시간 형식을 인식할 수 없습니다:', startField);
+      return null;
+    }
+    
+    if (endField && typeof endField === 'object' && endField._seconds) {
+      end = new Date(endField._seconds * 1000 + (endField._nanoseconds || 0) / 1000000);
+    } else if (endField instanceof Date) {
+      end = endField;
+    } else if (typeof endField === 'string') {
+      end = new Date(endField);
+    } else {
+      console.warn('종료 시간 형식을 인식할 수 없습니다:', endField);
+      return null;
+    }
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      console.warn('회사 일정 날짜 변환 실패:', { start: start.toString(), end: end.toString(), original: companySchedule });
+      return null;
+    }
+  } catch (error) {
+    console.error('회사 일정 날짜 변환 중 오류:', error, companySchedule);
+    return null;
+  }
+  
+  const transformed = {
+    id: companySchedule.schedule_id || '',
+    title: companySchedule.title || '제목 없음',
+    description: companySchedule.description || '',
+    startTime: start.toISOString(),
+    endTime: end.toISOString(),
+    priority: 'medium' as const,
+    type: 'company' as const,
+    status: 'pending' as any
+  };
+  
+  console.log('회사 일정 변환 완료:', transformed);
+  return transformed;
+};
+
+const transformAllSchedules = (allSchedules: {personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[], company: CompanySchedule[]}): Schedule[] => {
   const p = allSchedules.personal?.map(transformPersonalSchedule).filter(Boolean) as Schedule[] || [];
   const d = allSchedules.department?.map(transformDepartmentSchedule).filter(Boolean) as Schedule[] || [];
   const r = allSchedules.project?.map(transformProjectSchedule).filter(Boolean) as Schedule[] || [];
-  return [...p, ...d, ...r];
+  const c = allSchedules.company?.map(transformCompanySchedule).filter(Boolean) as Schedule[] || [];
+  return [...p, ...d, ...r, ...c];
 };
 
 // mock 충돌 일정 데이터
@@ -248,7 +337,8 @@ const getScheduleCardStyle = (schedule: Schedule, position: any) => {
   const typeColors = {
     personal: 'bg-blue-100 text-blue-800',
     department: 'bg-green-100 text-green-800', 
-    project: 'bg-orange-100 text-orange-800'
+    project: 'bg-orange-100 text-orange-800',
+    company: 'bg-purple-100 text-purple-800'
   };
   
   let conflictStyle = '';
@@ -267,6 +357,9 @@ interface DraggableScheduleCardProps {
 }
 
 function DraggableScheduleCard({ schedule, position, onEdit }: DraggableScheduleCardProps) {
+  // 회사 일정은 드래그 비활성화
+  const isDraggingDisabled = schedule.type === 'company';
+  
   const {
     attributes,
     listeners,
@@ -275,6 +368,7 @@ function DraggableScheduleCard({ schedule, position, onEdit }: DraggableSchedule
     isDragging,
   } = useDraggable({
     id: schedule.id,
+    disabled: isDraggingDisabled, // 회사 일정은 드래그 비활성화
     data: {
       type: 'schedule',
       schedule: schedule,
@@ -297,14 +391,19 @@ function DraggableScheduleCard({ schedule, position, onEdit }: DraggableSchedule
     <div
       ref={setNodeRef}
       style={{ ...style, ...(position?.style || {}) }}
-      {...listeners}
-      {...attributes}
-      className={`${getScheduleCardStyle(schedule, position)} cursor-move hover:shadow-lg transition-shadow`}
+      {...(isDraggingDisabled ? {} : listeners)} // 회사 일정은 리스너 비활성화
+      {...(isDraggingDisabled ? {} : attributes)} // 회사 일정은 속성 비활성화
+      className={`${getScheduleCardStyle(schedule, position)} 
+        ${isDraggingDisabled ? 'cursor-not-allowed opacity-75' : 'cursor-move hover:shadow-lg'} 
+        transition-shadow`}
       onDoubleClick={() => onEdit(schedule)}
-      title={`${schedule.title} (${schedule.type})\n${new Date(schedule.startTime).toLocaleString('ko-KR')} ~ ${new Date(schedule.endTime).toLocaleString('ko-KR')}\n${schedule.description || ''}`}
+      title={`${schedule.title} (${schedule.type}${isDraggingDisabled ? ' - 이동 불가' : ''})\n${new Date(schedule.startTime).toLocaleString('ko-KR')} ~ ${new Date(schedule.endTime).toLocaleString('ko-KR')}\n${schedule.description || ''}`}
     >
       <div className="text-center w-full pointer-events-none">
-        <div className="font-semibold text-[13px] truncate leading-tight">{schedule.title}</div>
+        <div className="font-semibold text-[13px] truncate leading-tight">
+          {schedule.title}
+          {isDraggingDisabled && <span className="ml-1 text-[10px]">🔒</span>}
+        </div>
         <div className="text-[11px] opacity-80 mt-0.5">
           {new Date(schedule.startTime).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
         </div>
@@ -444,7 +543,17 @@ export default function ConflictsPage() {
         setError(null);
         
         const updatedSchedules = await fetchAllSchedules();
+        console.log('일정 충돌 페이지 - 원본 데이터:', updatedSchedules);
+        
         const transformedSchedules = transformAllSchedules(updatedSchedules);
+        console.log('일정 충돌 페이지 - 변환된 데이터:', transformedSchedules);
+        console.log('타입별 개수:', {
+          personal: transformedSchedules.filter(s => s.type === 'personal').length,
+          department: transformedSchedules.filter(s => s.type === 'department').length,
+          project: transformedSchedules.filter(s => s.type === 'project').length,
+          company: transformedSchedules.filter(s => s.type === 'company').length
+        });
+        
         setAllSchedules(transformedSchedules);
       } catch (error) {
         console.error('일정 로드 실패:', error);
@@ -558,6 +667,8 @@ export default function ConflictsPage() {
         await updateDepartmentScheduleTime(schedule.id, newDate, newTime);
       } else if (schedule.type === 'project') {
         await updateProjectScheduleTime(schedule.id, newDate, newTime);
+      } else if (schedule.type === 'company') {
+        await updateCompanyScheduleTime(schedule.id, newDate, newTime);
       }
       
       // 일정 목록 새로고침
@@ -578,53 +689,6 @@ export default function ConflictsPage() {
   // 수정 페이지로 이동하는 함수
   const handleEditSchedule = (schedule: Schedule) => {
     router.push(`/schedules/create?mode=edit&id=${schedule.id}&type=${schedule.type}`);
-  };
-
-  // AI 분석 함수
-  const handleAIAnalysis = async () => {
-    if (conflictingSchedules.length === 0) {
-      setAiAnalysis('충돌하는 일정이 없어 분석이 필요하지 않습니다.');
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAiError(null);
-    
-    try {
-      // 선택된 충돌 그룹만 분석 대상으로 전달
-      const result = await analyzeScheduleConflicts(conflictingSchedules, allSchedules, selectedGroupIndex);
-      if (result.success && result.content) {
-        setAiAnalysis(result.content);
-        setParsedAnalysisData(result.data); // 분석 결과 데이터 저장
-      } else {
-        setAiError(result.error || 'AI 분석에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('AI 분석 실패:', error);
-      setAiError(error instanceof Error ? error.message : 'AI 분석에 실패했습니다.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  // AI 연결 테스트 함수
-  const handleAITest = async () => {
-    setIsAnalyzing(true);
-    setAiError(null);
-    
-    try {
-      const result = await testOpenAIConnection();
-      if (result.success && result.content) {
-        setAiAnalysis(`✅ AI 연결 테스트 성공!\n\n${result.content}`);
-      } else {
-        setAiError(result.error || 'AI 연결 테스트에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('AI 테스트 실패:', error);
-      setAiError(error instanceof Error ? error.message : 'AI 연결 테스트에 실패했습니다.');
-    } finally {
-      setIsAnalyzing(false);
-    }
   };
 
   // 조정안 적용 함수
@@ -697,6 +761,8 @@ export default function ConflictsPage() {
       await updateDepartmentScheduleTime(targetSchedule.id, newDate, newTime);
     } else if (targetSchedule.type === 'project') {
       await updateProjectScheduleTime(targetSchedule.id, newDate, newTime);
+    } else if (targetSchedule.type === 'company') {
+      await updateCompanyScheduleTime(targetSchedule.id, newDate, newTime);
     }
   };
 
@@ -712,6 +778,46 @@ export default function ConflictsPage() {
     // TODO: 일정 분할 API 구현 필요
     console.log('일정 분할:', adjustment);
     throw new Error('일정 분할 기능은 아직 구현되지 않았습니다.');
+  };
+
+  // AI 분석 자동 실행 함수
+  const performAIAnalysis = async (groupIndex: number = 0) => {
+    if (conflictingSchedules.length === 0) {
+      setAiAnalysis('충돌하는 일정이 없어 분석이 필요하지 않습니다.');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAiError(null);
+    
+    try {
+      // 선택된 충돌 그룹만 분석 대상으로 전달
+      const result = await analyzeScheduleConflicts(conflictingSchedules, allSchedules, groupIndex);
+      if (result.success && result.content) {
+        setAiAnalysis(result.content);
+        setParsedAnalysisData(result.data); // 분석 결과 데이터 저장
+      } else {
+        setAiError(result.error || 'AI 분석에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('AI 분석 실패:', error);
+      setAiError(error instanceof Error ? error.message : 'AI 분석에 실패했습니다.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 페이지 로드 시 자동 AI 분석 실행
+  useEffect(() => {
+    if (!loading && allSchedules.length > 0) {
+      performAIAnalysis(selectedGroupIndex);
+    }
+  }, [loading, allSchedules.length, selectedGroupIndex]);
+
+  // 충돌 그룹 변경 시 자동 AI 분석 실행
+  const handleGroupChange = (newIndex: number) => {
+    setSelectedGroupIndex(newIndex);
+    // selectedGroupIndex가 변경되면 위의 useEffect에서 자동으로 AI 분석이 실행됩니다
   };
 
   return (
@@ -786,7 +892,7 @@ export default function ConflictsPage() {
                           <div
                             key={idx}
                             className="min-w-[300px] max-w-[400px] p-1 rounded-lg border-2 border-red-200 bg-red-25 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-400 transition"
-                            onClick={() => setSelectedGroupIndex(idx)}
+                            onClick={() => handleGroupChange(idx)}
                           >
                             <div className="font-bold text-red-600 mb-1 text-[15px]">충돌 그룹 {idx + 1}</div>
                             <div className="flex gap-2">
@@ -810,28 +916,11 @@ export default function ConflictsPage() {
                 )}
               </div>
               {/* 상단 우측: AI 분석 결과 메시지 */}
-              <div className="card flex flex-col h-[360px] pt-4 pr-4 pl-4 pb-2">
+              <div className="card flex flex-col h-[420px] pt-4 pr-4 pl-4 pb-2">
                 <div className="flex items-center justify-between w-full mb-2">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-5 w-5 text-primary-500" />
                     <span className="text-lg font-semibold text-secondary-800">AI 자동 분석 결과</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAITest}
-                      disabled={isAnalyzing}
-                      className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-                    >
-                      {isAnalyzing ? '테스트 중...' : '연결 테스트'}
-                    </button>
-                    <button
-                      onClick={handleAIAnalysis}
-                      disabled={isAnalyzing || conflictingSchedules.length === 0}
-                      className="px-3 py-1 text-xs bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50 flex items-center gap-1"
-                    >
-                      <SparklesIcon className="h-3 w-3" />
-                      {isAnalyzing ? '분석 중...' : 'AI 분석'}
-                    </button>
                   </div>
                 </div>
                 <div className="flex-1 min-h-0 flex flex-col">
@@ -953,8 +1042,8 @@ export default function ConflictsPage() {
                           총 <span className="font-bold text-primary-600">{conflictingSchedules.length}건</span>의 일정 충돌이 발견되었습니다.<br />
                           {conflictingSchedules.length > 0 ? (
                             <>
-                              <strong>🎯 AI 분석 버튼을 클릭하여 자동 분석을 시작하세요!</strong><br />
-                              AI가 충돌하는 일정을 분석하고 최적의 해결책을 제시합니다.<br />
+                              <strong>🎯 AI가 자동으로 충돌하는 일정을 분석하고 있습니다!</strong><br />
+                              잠시만 기다려주세요. 최적의 해결책을 제시해드립니다.<br />
                               또는 Drag & Drop으로 수동으로 일정을 조정할 수 있습니다.
                             </>
                           ) : (

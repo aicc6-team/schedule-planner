@@ -78,7 +78,8 @@ export const scheduleController = {
           personal: allSchedules.personal.length,
           department: allSchedules.department.length,
           project: allSchedules.project.length,
-          total: allSchedules.personal.length + allSchedules.department.length + allSchedules.project.length
+          company: allSchedules.company.length,
+          total: allSchedules.personal.length + allSchedules.department.length + allSchedules.project.length + allSchedules.company.length
         }
       });
     } catch (error) {
