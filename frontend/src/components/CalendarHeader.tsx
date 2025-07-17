@@ -19,26 +19,19 @@ export default function CalendarHeader({
 }: CalendarHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-4 px-2">
-      <div className="flex items-center gap-2">
-        <button className="bg-primary-600 text-white rounded px-3 py-1 font-bold shadow hover:bg-primary-700 transition" onClick={onToday}>오늘</button>
-        <button className="rounded p-1 hover:bg-gray-100" onClick={onPrev}>&lt;</button>
-        <button className="rounded p-1 hover:bg-gray-100" onClick={onNext}>&gt;</button>
-        <span className="ml-4 text-xl font-bold text-gray-800">{currentDate}</span>
+      {/* 왼쪽: 캘린더 제목 + 오늘 버튼 */}
+      <div className="w-1/4 flex-shrink-0 flex flex-col justify-center pl-4">
+        <h3 className="text-2xl font-bold text-gray-900 leading-tight mb-2">캘린더</h3>
+        <button className="bg-primary-600 text-white rounded px-2 py-1 text-sm font-bold shadow hover:bg-primary-700 transition w-fit" onClick={onToday}>오늘</button>
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          className={`px-3 py-1 rounded ${currentView === 'dayGridMonth' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}
-          onClick={() => onViewChange('dayGridMonth')}
-        >월</button>
-        <button
-          className={`px-3 py-1 rounded ${currentView === 'timeGridWeek' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}
-          onClick={() => onViewChange('timeGridWeek')}
-        >주</button>
-        <button
-          className={`px-3 py-1 rounded ${currentView === 'timeGridDay' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}
-          onClick={() => onViewChange('timeGridDay')}
-        >일</button>
-        <button className="ml-4 bg-blue-600 text-white rounded px-4 py-1 font-bold shadow hover:bg-blue-700 transition">+ 만들기</button>
+      {/* 가운데: 년월 네비게이션만 */}
+      <div className="w-1/2 flex items-center justify-center gap-2">
+        <button className="rounded-full w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-all duration-200 shadow-sm" onClick={onPrev}>&lt;</button>
+        <span className="mx-2 text-2xl font-bold text-gray-800">{currentDate}</span>
+        <button className="rounded-full w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-all duration-200 shadow-sm" onClick={onNext}>&gt;</button>
+      </div>
+      {/* 오른쪽: 빈 공간 (필터/버튼은 캘린더 페이지에서 별도 처리) */}
+      <div className="w-1/4 flex items-center justify-end pr-4">
       </div>
     </div>
   );

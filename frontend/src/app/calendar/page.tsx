@@ -392,15 +392,18 @@ export default function CalendarPage() {
             maxHeight: `${200 + Math.max(5, monthMatrix.length / 7) * 140}px`
           }}
         >
-          {/* 상단 툴바 */}
-          <div className="w-full flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <button onClick={goToToday} className="bg-primary-600 text-white rounded px-3 py-1 font-bold shadow hover:bg-primary-700 transition">오늘</button>
-              <button onClick={goToPrevMonth} className="rounded p-1 hover:bg-gray-100">&lt;</button>
-              <button onClick={goToNextMonth} className="rounded p-1 hover:bg-gray-100">&gt;</button>
-              <span className="ml-4 text-xl font-bold text-gray-800">{currentYear}년 {currentMonth + 1}월</span>
-            </div>
-            <div className="flex items-center gap-2">
+          {/* 상단 CalendarHeader로 교체 */}
+          <div className="w-full mb-6">
+            <CalendarHeader
+              currentDate={`${currentYear}년 ${currentMonth + 1}월`}
+              onPrev={goToPrevMonth}
+              onNext={goToNextMonth}
+              onToday={goToToday}
+              onViewChange={() => {}}
+              currentView={''}
+            />
+            {/* 오른쪽 필터 및 +새일정 버튼 */}
+            <div className="flex items-center justify-end gap-2 mt-4">
               {(['personal','department','company','project'] as const).map(type => {
                 const colors = scheduleTypeColors[type];
                 return (

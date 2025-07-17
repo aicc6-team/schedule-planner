@@ -246,9 +246,9 @@ function renderCalendar(year: number, month: number) {
 // 일정 카드 스타일링 함수 (컴포넌트들보다 먼저 정의)
 const getScheduleCardStyle = (schedule: Schedule, position: any) => {
   const typeColors = {
-    personal: 'bg-blue-500 text-white',
-    department: 'bg-green-500 text-white', 
-    project: 'bg-orange-500 text-white'
+    personal: 'bg-blue-100 text-blue-800',
+    department: 'bg-green-100 text-green-800', 
+    project: 'bg-orange-100 text-orange-800'
   };
   
   let conflictStyle = '';
@@ -763,7 +763,7 @@ export default function ConflictsPage() {
                 ) : (
                   <>
                     {topGroup && (
-                      <div className="p-3 rounded-lg border-2 border-red-400 bg-red-50 mb-4">
+                      <div className="p-3 rounded-lg border-2 border-red-200 bg-red-25 mb-4">
                         <div className="font-bold text-red-600 mb-2">충돌 그룹 {selectedGroupIndex + 1}</div>
                         <div className="flex gap-2">
                           {topGroup.map(schedule => (
@@ -785,7 +785,7 @@ export default function ConflictsPage() {
                         {otherGroupsWithIndex.map(({ group, idx }) => (
                           <div
                             key={idx}
-                            className="min-w-[300px] max-w-[400px] p-1 rounded-lg border-2 border-red-400 bg-red-50 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-400 transition"
+                            className="min-w-[300px] max-w-[400px] p-1 rounded-lg border-2 border-red-200 bg-red-25 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-400 transition"
                             onClick={() => setSelectedGroupIndex(idx)}
                           >
                             <div className="font-bold text-red-600 mb-1 text-[15px]">충돌 그룹 {idx + 1}</div>
