@@ -104,6 +104,36 @@ router.get('/personalTasks', async (_req, res) => {
   }
 });
 
+
+// GET /api/analytics/personal - PersonalSchedule 컬렉션의 모든 데이터 가져오기
+router.get('/personal', async (_req, res) => {
+  try {
+    // 오늘과 3개월 전 날짜 계산
+    const today = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    
+    // 날짜를 YYYY-MM-DD 형식의 문자열로 변환
+    const startDate = threeMonthsAgo.toISOString().slice(0, 10);
+    const endDate = today.toISOString().slice(0, 10);
+
+    const snapshot = await db.collection('PersonalSchedule')
+      .where('date', '>=', startDate)
+      .where('date', '<=', endDate)
+      .get();
+
+    const tasks = snapshot.docs.map((doc: DocumentSnapshot) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching personal tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch personal tasks' });
+  }
+});
+
 // GET /api/analytics/departmentTasks - DepartmentScheduleAnalysis 컬렉션의 모든 데이터 가져오기
 router.get('/departmentTasks', async (req, res) => {
   try {

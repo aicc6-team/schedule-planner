@@ -25,21 +25,44 @@ interface PersonalScheduleAnalysis {
   cumulative_completions: Record<string, number>;
 }
 
+export interface PersonalSchedule {
+  id: string;              // 일정 고유 아이디 (pk)
+  date: string;            // 일정 날짜 (YYYY-MM-DD)
+  title: string;           // 일정 제목
+  description: string;     // 일정 설명
+  start_time: string;      // 일정 시작 시간 (ex: "2025-07-20T10:00:00Z" or "11:00")
+  end_time: string;        // 일정 종료 시간 (ex: "2025-07-20T15:00:00Z" or "15:00")
+  durationMinutes: number; // 업무 소요 시간 (분)
+  status: string;          // 일정 상태 (완료, 지연 등)
+  tag: string;             // 업무 태그
+  emotion: string;         // 감정 상태
+  created_at: string;      // 생성 일시 (ISO 8601 문자열)
+  updated_at: string;      // 수정 일시 (ISO 8601 문자열)
+  assignee?: string;       // 사용자 (필요시)
+  durationHours?: number;  // 업무 소요 시간 (시, 선택적)
+  hour?: number;           // 시작 시간의 시(hour) 값 (선택적)
+  importance?: string;     // 중요도 (선택적)
+  projectId?: string;      // 프로젝트 ID (선택적)
+  time?: string;           // 시작 시각(문자열, 예: "11:00", 선택적)
+}
+
 const chartDescriptions = [
   '일별 이행률: 각 날짜별로 전체 일정 중 완료된 일정의 비율을 보여줍니다.',
   '요일×시간대 히트맵: 요일과 시간대별로 일정 완료율의 분포를 시각화합니다.',
   '태그별 완료율: 일정에 부여된 태그별로 완료율을 비교합니다.',
   '소요시간 분포: 일정별 소요시간의 분포를 보여줍니다.',
-  '감정 상태별 업무 수: 감정 상태(예: 긍정, 부정)별로 업무 건수를 집계합니다.',
-  '상태별 업무 수: 일정의 상태(예: 완료, 진행중 등)별로 업무 건수를 집계합니다.',
-  '시간대별 일정 건수: 시간대별로 생성된 일정의 건수를 보여줍니다.',
+  '소요시간 vs 감정 산점도: 감정 상태(예: 긍정, 부정)별로 업무 건수를 집계합니다.',
+  '태그별 시간 분포 비교: 일정의 상태(예: 완료, 진행중 등)별로 업무 건수를 집계합니다.',
+  '상태 파이차트: 시간대별로 생성된 일정의 건수를 보여줍니다.',
   '누적 완료 추이: 일정 완료 건수의 누적 변화를 시계열로 보여줍니다.',
   '시작/종료 시간 분포: 일정의 시작/종료 시간이 어떻게 분포되어 있는지 비교합니다.',
   '태그별 평균 소요시간: 태그별로 평균 소요시간을 비교합니다.'
 ];
 
 export default function PersonalAnalytics() {
+  
   const [analyticsData, setAnalyticsData] = useState<PersonalScheduleAnalysis[]>([]);
+  const [personalData, setPersonalData] = useState<PersonalSchedule[]>([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // 차트 ref 배열 (컴포넌트 함수 내부로 이동)
@@ -51,17 +74,25 @@ export default function PersonalAnalytics() {
     []
   );
 
+  // 시간대와 요일 정의 (컴포넌트 레벨에서 선언)
+  const timeSlots = [
+    { label: '09:00-11:00', start: 9, end: 11 },
+    { label: '11:00-13:00', start: 11, end: 13 },
+    { label: '13:00-15:00', start: 13, end: 15 },
+    { label: '15:00-17:00', start: 15, end: 17 },
+    { label: '17:00-19:00', start: 17, end: 19 }
+  ];
+  const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+
   useEffect(() => {
 
     fetch('http://localhost:3001/api/analytics/personalTasks')
       .then(res => res.json())
       .then((data: PersonalScheduleAnalysis[]) => {
 
-        console.log('패치받은 데이터', data);
         // 데이터가 배열인지 확인하고 설정
         const analyticsArray = Array.isArray(data) ? data : [];
         setAnalyticsData(analyticsArray);
-
 
         setTimeout(() => {
           console.log('setAnalyticsData 직후 상태:', analyticsData);
@@ -71,7 +102,23 @@ export default function PersonalAnalytics() {
       .catch(console.error);
   }, []);
 
-  console.log('generateReport에서 analyticsData:', analyticsData);
+  useEffect(() => {
+    fetch('http://localhost:3001/api/analytics/personal')
+      .then(res => res.json())
+      .then((data: PersonalSchedule[]) => {
+
+        // 데이터가 배열인지 확인하고 설정
+        const personalArray = Array.isArray(data) ? data : [];
+
+        setPersonalData(personalArray);
+
+        setTimeout(() => {
+          console.log('setPersonalData 직후 상태:', personalData);
+        }, 100); // 상태 동기화 확인
+
+      })
+      .catch(console.error);
+  }, []);
 
   // 레포트 생성 함수
   const generateReport = async () => {
@@ -97,9 +144,6 @@ export default function PersonalAnalytics() {
         current: ref.current
       }));
 
-
-      console.log('chartInfo --------------------', analyticsData);
-      
       const response = await fetch('http://localhost:3001/api/analytics/generateReport', {
         method: 'POST',
         headers: {
@@ -157,20 +201,40 @@ export default function PersonalAnalytics() {
 
   // Chart 2: 요일×시간대 히트맵 (시간대별 일정 건수 기반)
   const timeHeatmap = useMemo(() => {
-    if (!Array.isArray(analyticsData) || analyticsData.length === 0) {
-      return [];
+    
+    if (!Array.isArray(personalData) || personalData.length === 0) {
+      return Array.from({ length: 5 }, () => Array(7).fill(0));
     }
-    
-    const timeSlots = ['09:00-11:00', '11:00-13:00', '13:00-15:00', '15:00-17:00', '17:00-19:00'];
-    const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-    
-    // 각 요일별로 시간대별 일정 건수 계산
-    const heatmapData = timeSlots.map(() => 
-      weekdays.map(() => Math.floor(Math.random() * 20) + 10) // 임시 데이터
+  
+    // 집계용 배열
+    const total = Array.from({ length: 5 }, () => Array(7).fill(0));
+    const completed = Array.from({ length: 5 }, () => Array(7).fill(0));
+  
+    personalData.forEach(item => {
+      // item.date(YYYY-MM-DD), item.hour(숫자), item.status(문자열)
+      if (!item.date || typeof item.hour !== 'number') return;
+  
+      const dateObj = new Date(item.date);
+      if (isNaN(dateObj.getTime())) return;
+      // 요일 인덱스: 월(0)~일(6)
+      const jsDay = dateObj.getDay();
+      const dayIdx = jsDay === 0 ? 6 : jsDay - 1;
+  
+      timeSlots.forEach((tb, ti) => {
+        if (item.hour !== undefined && item.hour >= tb.start && item.hour < tb.end) {
+          total[ti][dayIdx]++;
+          if (item.status === "완료" || item.status === "completed") completed[ti][dayIdx]++;
+        }
+      });
+    });
+  
+    // 완료율(%) 반환
+    const heatmapData = total.map((row, ti) =>
+      row.map((cnt, wi) => cnt > 0 ? Math.round((completed[ti][wi] / cnt) * 100) : 0)
     );
-    
+  
     return heatmapData;
-  }, [analyticsData]);
+  }, [personalData, timeSlots]);
 
   // Chart 3: 태그별 완료율
   const tagStats = useMemo(() => {
@@ -187,80 +251,105 @@ export default function PersonalAnalytics() {
 
   // Chart 4: 소요시간 분포
   const durationHistogram = useMemo(() => {
-    if (!Array.isArray(analyticsData) || analyticsData.length === 0) return { labels: [], data: [] };
-    
-    const firstData = analyticsData[0];
-    if (!firstData || !firstData.duration_distribution) return { labels: [], data: [] };
-    
-    const labels = Object.keys(firstData.duration_distribution);
-    const data = Object.values(firstData.duration_distribution);
-    
-    return { labels, data };
-  }, [analyticsData]);
+    if (!Array.isArray(personalData) || personalData.length === 0) {
+      return { labels: [], data: [] };
+    }
+  
+    // 히스토그램 구간 정의 (단위: 분)
+    const bins = [
+      { label: "0~30", min: 0, max: 30 },
+      { label: "31~60", min: 31, max: 60 },
+      { label: "61~90", min: 61, max: 90 },
+      { label: "91~120", min: 91, max: 120 },
+      { label: "121+", min: 121, max: Infinity }
+    ];
+  
+    const binCounts = bins.map(() => 0);
+  
+    personalData.forEach(item => {
+      const mins = item.durationMinutes;
+      if (typeof mins !== 'number') return;
+      const idx = bins.findIndex(bin => mins >= bin.min && mins <= bin.max);
+      if (idx >= 0) binCounts[idx]++;
+    });
+  
+    return {
+      labels: bins.map(bin => bin.label),
+      data: binCounts
+    };
+  }, [personalData]);
 
-  // Chart 5: 감정 상태별 업무 수
+  // Chart 5: 소요시간 vs 감정 산점도
+  const emotionMap: { [key: string]: number } = {
+    'happy': 2,
+    'normal': 1,
+    'sad': 0,
+    'angry': 0
+  };
+
+  // 역매핑용 배열 [0]=부정, 1=보통, 2=긍정
+  const emotionLabels = ['부정', '보통', '긍정'];
+
   const emotionStats = useMemo(() => {
+    if (!Array.isArray(personalData) || personalData.length === 0) return [];
+    return personalData
+      .filter(item => typeof item.durationMinutes === 'number' && typeof item.emotion === 'string')
+      .map(item => ({
+        x: item.durationMinutes,
+        y: emotionMap[item.emotion] ?? null
+      }))
+      .filter(point => point.y !== null);
+  }, [personalData]);
+  
+
+  // Chart 6: 태그별 시간 분포 비교
+  const avgDurationByTag = useMemo(() => {
     if (!Array.isArray(analyticsData) || analyticsData.length === 0) return { labels: [], data: [] };
-    
+  
     const firstData = analyticsData[0];
-    if (!firstData || !firstData.task_count_by_emotion) return { labels: [], data: [] };
-    
-    const labels = Object.keys(firstData.task_count_by_emotion);
-    const data = Object.values(firstData.task_count_by_emotion);
-    
+    if (!firstData || !firstData.completion_rate_by_tag) return { labels: [], data: [] };
+  
+    const labels = Object.keys(firstData.completion_rate_by_tag);
+    const data = labels.map(tag =>
+      firstData.completion_rate_by_tag[tag]?.avg_duration ?? 0
+    );
+  
     return { labels, data };
   }, [analyticsData]);
 
-  // Chart 6: 상태별 업무 수
-  const statusStats = useMemo(() => {
-    if (!Array.isArray(analyticsData) || analyticsData.length === 0) return { labels: [], data: [] };
-    
-    const firstData = analyticsData[0];
-    if (!firstData || !firstData.task_count_by_status) return { labels: [], data: [] };
-    
-    const labels = Object.keys(firstData.task_count_by_status);
-    const data = Object.values(firstData.task_count_by_status);
-    
+  // Chart 7: 상태 파이차트
+  const statusPie = useMemo(() => {
+    if (!Array.isArray(personalData) || personalData.length === 0) return { labels: [], data: [] };
+  
+    // 상태별 집계
+    const statusCount: Record<string, number> = {};
+    personalData.forEach(item => {
+      if (item.status) {
+        statusCount[item.status] = (statusCount[item.status] || 0) + 1;
+      }
+    });
+  
+    const labels = Object.keys(statusCount);
+    const data = labels.map(label => statusCount[label]);
+  
     return { labels, data };
-  }, [analyticsData]);
+  }, [personalData]);
 
-  // Chart 7: 시간대별 일정 건수
-  const timeSlotStats = useMemo(() => {
-    if (!Array.isArray(analyticsData) || analyticsData.length === 0) return { labels: [], data: [] };
-    
-    const firstData = analyticsData[0];
-    if (!firstData || !firstData.schedule_count_by_time_slot) return { labels: [], data: [] };
-    
-    const labels = Object.keys(firstData.schedule_count_by_time_slot);
-    const data = Object.values(firstData.schedule_count_by_time_slot);
-    
-    return { labels, data };
-  }, [analyticsData]);
-
-  // Chart 8: 누적 완료 추이
+  // Chart 8: 누적 완료 영역 차트
   const cumulativeCompletion = useMemo(() => {
     if (!Array.isArray(analyticsData) || analyticsData.length === 0) {
       return { labels: [], datasets: [] };
     }
+    // 날짜 기준으로 오름차순 정렬
+    const sortedData = [...analyticsData].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
     
-    const sortedData = [...analyticsData].sort((a, b) => {
-      const dateA = dayjs(a.date);
-      const dateB = dayjs(b.date);
-      if (!dateA.isValid() || !dateB.isValid()) return 0;
-      return dateA.unix() - dateB.unix();
-    });
+    const labels = sortedData.map(item => item.date);
     
-    const labels = sortedData.map(item => {
-      const date = dayjs(item.date);
-      return date.isValid() ? date.format('M/D') : 'Invalid Date';
-    });
-    const data = sortedData.map(item => {
-      const cumulativeData = item.cumulative_completions;
-      return cumulativeData && Object.keys(cumulativeData).length > 0 
-        ? cumulativeData[Object.keys(cumulativeData)[0]] || 0 
-        : 0;
-    });
-    
+    const data = sortedData.map(item =>
+      item.cumulative_completions?.[item.date] ?? 0
+    );
     return {
       labels,
       datasets: [
@@ -268,13 +357,15 @@ export default function PersonalAnalytics() {
           label: '누적 완료건수',
           data,
           fill: true,
-          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          backgroundColor: 'rgba(59, 130, 246, 0.18)',
           borderColor: '#3b82f6',
-          tension: 0.4,
-        },
-      ],
+          tension: 0.3,
+          pointRadius: 2
+        }
+      ]
     };
   }, [analyticsData]);
+  
 
   // Chart 9: 시작/종료 시간 분포 비교
   const timeDistributionComparison = useMemo(() => {
@@ -307,7 +398,7 @@ export default function PersonalAnalytics() {
   }, [analyticsData]);
 
   // Chart 10: 태그별 평균 소요시간
-  const avgDurationByTag = useMemo(() => {
+  const avgDurationByTag2 = useMemo(() => {
     if (!Array.isArray(analyticsData) || analyticsData.length === 0) return { labels: [], data: [] };
     
     const firstData = analyticsData[0];
@@ -318,10 +409,6 @@ export default function PersonalAnalytics() {
     
     return { labels, data };
   }, [analyticsData]);
-  
-
-  console.log('렌더 중 analyticsData:', analyticsData);
-
 
   return (
     <>
@@ -407,47 +494,177 @@ export default function PersonalAnalytics() {
         </div>
 
         {/* 2. 요일×시간대 히트맵 (커스텀) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">요일×시간대 완료율</div>
           {/* 히트맵: 커스텀 렌더링 */}
-          <div className="flex">
-            <div className="flex flex-col justify-center mr-2">
-              {['09-11','11-13','13-15','15-17','17-19'].map((block) => (
-                <div key={block} className="h-9 flex items-center justify-end text-[#7b8794] text-sm" style={{height:36}}>{block}</div>
-              ))}
-            </div>
-            <div className="flex flex-col">
-              {timeHeatmap.map((row,i) => (
-                <div key={i} className="flex mb-1 last:mb-0">
-                  {row.map((val,j) => {
-                    let color = 'bg-blue-50';
-                    if(val>=80) color='bg-blue-700';
-                    else if(val>=70) color='bg-blue-500';
-                    else if(val>=60) color='bg-blue-300';
-                    else if(val>=50) color='bg-blue-100';
-                    return <div key={j} className={`rounded-lg ${color}`} style={{width:36,height:36,marginRight:j<row.length-1?8:0}}><span className="text-xs text-white font-bold flex items-center justify-center h-full w-full">{val}</span></div>;
-                  })}
+          <div className="flex-1 flex items-center">
+            <div className="flex flex-col items-center ml-8">
+              <div className="flex">
+                {/* 좌측 시간대 라벨 */}
+                <div className="flex flex-col justify-center mr-2">
+                  {timeSlots.map((block) => (
+                    <div key={block.label} className="h-9 flex items-center justify-end text-[#7b8794] text-sm" style={{height:36}}>
+                      {block.label}
+                    </div>
+                  ))}
                 </div>
-              ))}
+                {/* 메인 히트맵 */}
+                <div className="flex flex-col">
+                  {timeHeatmap.map((row, i) => (
+                    <div key={i} className="flex mb-1 last:mb-0">
+                      {row.map((val, j) => {
+                        let color = 'bg-blue-50';
+                        if(val >= 80) color = 'bg-blue-700';
+                        else if(val >= 70) color = 'bg-blue-500';
+                        else if(val >= 60) color = 'bg-blue-300';
+                        else if(val >= 50) color = 'bg-blue-100';
+                        return (
+                          <div
+                            key={j}
+                            className={`rounded-lg ${color}`}
+                            style={{width: 36, height: 36, marginRight: j < row.length - 1 ? 8 : 0}}
+                          >
+                            <span className="text-xs text-white font-bold flex items-center justify-center h-full w-full">
+                              {val}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* 하단 요일 라벨 */}
+              <div className="flex mt-3 ml-28">
+                {weekdays.map((label, idx) => (
+                  <div
+                    key={label + idx}
+                    className="text-center text-[#7b8794] text-sm"
+                    style={{width: 36, marginRight: idx < 6 ? 8 : 0}}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="flex mt-3 ml-12">
-            {['월','화','수','목','금','토','일'].map((label,idx) => (
-              <div key={label+idx} className="w-9 text-center text-[#7b8794] text-sm" style={{width:36,marginRight:idx<6?8:0}}>{label}</div>
-            ))}
           </div>
         </div>
 
         {/* 3. 태그별 완료율 (막대그래프) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">태그별 완료율</div>
+          <div className="flex-1 flex items-center justify-center">
+            <Bar
+              ref={chartRefs[2] as any}
+              data={{
+                labels: tagStats.labels,
+                datasets: [{
+                  label: '완료율(%)',
+                  data: tagStats.data,
+                  backgroundColor: [
+                    '#93c5fd', // 연파랑
+                    '#fcd34d', // 연노랑
+                    '#6ee7b7', // 연초록
+                    '#c4b5fd', // 연보라
+                    '#fca5a5', // 연빨강
+                    '#a7f3d0', // 민트
+                    '#f9a8d4', // 연핑크
+                    '#fde68a', // 연주황
+                    '#fbcfe8', // 연분홍
+                    '#ddd6fe', // 연보라2
+                  ],
+                  barThickness: 26,
+                  maxBarThickness: 36,
+                }],
+              }}
+              options={{
+                plugins: { legend: { display: false } },
+                scales: { y: { min: 0, max: 100, title: { display: true, text: '완료율(%)' } } },
+                maintainAspectRatio: false,
+              }}
+              height={180}
+            />
+          </div>
+        </div>
+
+        {/* 4. 소요시간 분포 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+          <div className="font-semibold mb-3 text-[#22223b]">소요시간 분포</div>
+          <div className="flex-1 flex items-center justify-center">
+            <Bar
+              ref={chartRefs[3] as any}
+              data={{
+                labels: durationHistogram.labels,
+                datasets: [{
+                  label: '건수',
+                  data: durationHistogram.data,
+                  backgroundColor: '#6366f1',
+                  barThickness: 26,
+                  maxBarThickness: 36,
+                }],
+              }}
+              options={{
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, title: { display: true, text: '건수' } } },
+                maintainAspectRatio: false,
+              }}
+              height={180}
+            />
+          </div>
+        </div>
+
+        {/* 5. 소요시간 vs 감정 산점도 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+          <div className="font-semibold mb-3 text-[#22223b]">소요시간 vs 감정 산점도</div>
+          <div className="flex-1 flex items-center justify-center">
+            <Scatter
+              data={{
+                datasets: [
+                  {
+                    label: '업무별 소요시간 vs 감정',
+                    data: emotionStats,
+                    pointRadius: 6,
+                    backgroundColor: '#f59e42'
+                  }
+                ]
+              }}
+              options={{
+                plugins: {
+                  legend: { display: false }
+                },
+                scales: {
+                  x: {
+                    title: { display: true, text: '소요시간(분)' }
+                  },
+                  y: {
+                    title: { display: true, text: '감정' },
+                    min: 0,
+                    max: 2,
+                    ticks: {
+                      stepSize: 1,
+                      callback: function(value) {
+                        // emotionLabels[0]=부정, 1=보통, 2=긍정
+                        return emotionLabels[value as number] ?? value;
+                      }
+                    }
+                  }
+                }
+              }}
+              height={200}
+            />
+          </div>
+        </div>
+
+        {/* 6. 태그별 시간 분포 비교 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+          <div className="font-semibold mb-3 text-[#22223b]">태그별 시간 분포 비교</div>
+          <div className="flex-1 flex items-center justify-center">
           <Bar
-            ref={chartRefs[2] as any}
             data={{
-              labels: tagStats.labels,
+              labels: avgDurationByTag.labels,
               datasets: [{
-                label: '완료율(%)',
-                data: tagStats.data,
+                label: '평균 소요시간(분)',
+                data: avgDurationByTag.data,
                 backgroundColor: [
                   '#93c5fd', // 연파랑
                   '#fcd34d', // 연노랑
@@ -462,143 +679,95 @@ export default function PersonalAnalytics() {
                 ],
                 barThickness: 26,
                 maxBarThickness: 36,
-              }],
+              }]
             }}
             options={{
               plugins: { legend: { display: false } },
-              scales: { y: { min: 0, max: 100, title: { display: true, text: '완료율(%)' } } },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: '평균 소요시간(분)' }
+                }
+              }
             }}
             height={180}
           />
+          </div>
         </div>
 
-        {/* 4. 소요시간 분포 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
-          <div className="font-semibold mb-3 text-[#22223b]">소요시간 분포</div>
-          <Bar
-            ref={chartRefs[3] as any}
-            data={{
-              labels: durationHistogram.labels,
-              datasets: [{
-                label: '건수',
-                data: durationHistogram.data,
-                backgroundColor: '#6366f1',
-                barThickness: 26,
-                maxBarThickness: 36,
-              }],
-            }}
-            options={{
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '건수' } } },
-            }}
-            height={180}
-          />
+        {/* 7. 상태 파이차트 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+          <div className="font-semibold mb-3 text-[#22223b]">상태 파이차트</div>
+          <div className="w-[270px] h-[270px] mx-auto flex items-center justify-center">
+            <Doughnut
+              data={{
+                labels: statusPie.labels,
+                datasets: [{
+                  data: statusPie.data,
+                  backgroundColor: [
+                    '#3b82f6', // 파랑(완료)
+                    '#f59e42', // 주황(지연)
+                    '#6366f1', // 보라(진행중)
+                    '#10b981', // 초록(기타)
+                    '#ef4444', // 빨강(취소 등)
+                  ]
+                }]
+              }}
+              options={{
+                plugins: {
+                  legend: { position: 'bottom' }
+                }
+              }}
+              height={220}
+            />
+          </div>
         </div>
 
-        {/* 5. 감정 상태별 업무 수 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
-          <div className="font-semibold mb-3 text-[#22223b]">감정 상태별 업무 수</div>
-          <Bar
-            ref={chartRefs[4] as any}
-            data={{
-              labels: emotionStats.labels,
-              datasets: [{
-                label: '업무 수',
-                data: emotionStats.data,
-                backgroundColor: '#8b5cf6',
-                barThickness: 26,
-                maxBarThickness: 36,
-              }],
-            }}
-            options={{
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '업무 수' } } },
-            }}
-            height={180}
-          />
-        </div>
-
-        {/* 6. 상태별 업무 수 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
-          <div className="font-semibold mb-3 text-[#22223b]">상태별 업무 수</div>
-          <Bar
-            ref={chartRefs[5] as any}
-            data={{
-              labels: statusStats.labels,
-              datasets: [{
-                label: '업무 수',
-                data: statusStats.data,
-                backgroundColor: '#3b82f6',
-                barThickness: 26,
-                maxBarThickness: 36,
-              }],
-            }}
-            options={{
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '업무 수' } } },
-            }}
-            height={180}
-          />
-        </div>
-
-        {/* 7. 시간대별 일정 건수 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
-          <div className="font-semibold mb-3 text-[#22223b]">시간대별 일정 건수</div>
-          <Bar
-            ref={chartRefs[6] as any}
-            data={{
-              labels: timeSlotStats.labels,
-              datasets: [{
-                label: '일정 건수',
-                data: timeSlotStats.data,
-                backgroundColor: '#10b981',
-                barThickness: 26,
-                maxBarThickness: 36,
-              }],
-            }}
-            options={{
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '일정 건수' } } },
-            }}
-            height={180}
-          />
-        </div>
-
-        {/* 8. 누적 완료 영역차트 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        {/* 8. 누적 완료 영역 차트 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">누적 완료 추이</div>
+          <div className="flex-1 flex items-center justify-center">
           <Line
-            ref={chartRefs[7] as any}
             data={cumulativeCompletion}
             options={{
               plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '누적 완료' } } },
+              scales: {
+                x: { title: { display: true, text: '일(day)' } },
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: '누적 완료' }
+                }
+              }
             }}
             height={180}
           />
+          </div>
         </div>
 
         {/* 9. 시작/종료 시간 분포 비교 */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">시작/종료 시간 분포</div>
-          <Bar
-            ref={chartRefs[8] as any}
-            data={
-              {
-                ...timeDistributionComparison,
-                datasets: timeDistributionComparison.datasets.map(ds => ({
-                  ...ds,
-                  barThickness: 26,
-                  maxBarThickness: 36,
-                })),
+          <div className="flex-1 flex items-center justify-center">
+            <Bar
+              ref={chartRefs[8] as any}
+              data={
+                {
+                  ...timeDistributionComparison,
+                  datasets: timeDistributionComparison.datasets.map(ds => ({
+                    ...ds,
+                    barThickness: 26,
+                    maxBarThickness: 36,
+                  })),
+                }
               }
-            }
-            options={{
-              plugins: { legend: { position: 'bottom' } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '일정 건수' } } },
-            }}
-            height={180}
-          />
+              options={{
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true, title: { display: true, text: '일정 건수' } } },
+                maintainAspectRatio: false,
+              }}
+              height={180}
+            />
+          </div>
         </div>
       </div>
     </>
