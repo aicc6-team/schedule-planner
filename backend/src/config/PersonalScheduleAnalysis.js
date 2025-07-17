@@ -91,7 +91,8 @@ async function seedData() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dailyCompletions = randomInt(2, 8);
       cumulative += dailyCompletions;
-      cumulativeCompletions[day] = cumulative;
+      const dateKey = currentDate.date(day).format('YYYY-MM-DD');
+      cumulativeCompletions[dateKey] = cumulative;
     }
     
     const data = {
