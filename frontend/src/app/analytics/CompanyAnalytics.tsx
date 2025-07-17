@@ -28,7 +28,7 @@ interface CompanyScheduleAnalysis {
   time_slot_distribution: Record<string, number>;        // 시간대별 분포
   attendee_participation_counts: Record<string, number>; // 참석자별 참여 횟수
   organizer_schedule_counts: Record<string, number>;     // 주최 기관별 일정 수
-  supporting_organization_collaborations: Record<string, string[]>; // 협조 기관별 협력 횟수
+  supporting_organization_collaborations: Array<{ from: string; to: string; count: number }>; // 협조 기관별 협력 네트워크
   monthly_schedule_counts: Record<string, number>;       // 월별 일정 건수 추이
   schedule_category_ratio: Record<string, number>;       // 일정 카테고리별 비율
   updated_at: string | { toDate: () => Date };           // 갱신 일시
@@ -174,45 +174,29 @@ export default function CompanyAnalytics() {
   }, [firstData]);
 
   //4. 협조 기관 네트워크 그래프
-  const collaborationNetwork = useMemo(() => {
-    if (!firstData || !firstData.supporting_organization_collaborations) {
+  const orgNetworkGraph = useMemo(() => {
+    if (!companyAnalysis || !Array.isArray(companyAnalysis) || !Array.isArray(companyAnalysis[0]?.supporting_organization_collaborations)) {
       return { nodes: [], links: [] };
     }
-
-    const nodes = new Set<string>();
-    const edges: { from: string; to: string }[] = [];
-
-    Object.entries(firstData.supporting_organization_collaborations).forEach(([organization, collaborators]) => {
-      nodes.add(organization);
-      
-      // collaborators가 배열인지 확인하고 안전하게 처리
-      if (Array.isArray(collaborators)) {
-        collaborators.forEach(collaborator => {
-          if (typeof collaborator === 'string') {
-            nodes.add(collaborator);
-            edges.push({ from: organization, to: collaborator });
-          }
-        });
-      } else if (typeof collaborators === 'string') {
-        // collaborators가 단일 문자열인 경우
-        nodes.add(collaborators);
-        edges.push({ from: organization, to: collaborators });
-      } else if (typeof collaborators === 'object' && collaborators !== null) {
-        // collaborators가 객체인 경우
-        Object.keys(collaborators).forEach(collaborator => {
-          if (typeof collaborator === 'string') {
-            nodes.add(collaborator);
-            edges.push({ from: organization, to: collaborator });
-          }
-        });
-      }
+    const nodesSet = new Set<string>();
+    const links: { source: string; target: string; value: number }[] = [];
+  
+    companyAnalysis[0].supporting_organization_collaborations.forEach((item: any) => {
+      if (!item.from || !item.to) return;
+      nodesSet.add(item.from);
+      nodesSet.add(item.to);
+      links.push({
+        source: item.from,
+        target: item.to,
+        value: item.count || 1,
+      });
     });
-
-    return {
-      nodes: Array.from(nodes).map(id => ({ id })),
-      links: edges.map(e => ({ source: e.from, target: e.to })),
-    };
-  }, [firstData]);
+  
+    // 노드 객체 변환
+    const nodes = Array.from(nodesSet).map(id => ({ id }));
+  
+    return { nodes, links };
+  }, [companyAnalysis]);
 
   //5. 주최 기관별 일정 수 (막대그래프)
   const organizerScheduleCounts = useMemo(() => {
@@ -504,24 +488,53 @@ export default function CompanyAnalytics() {
         <div ref={chartRefs[3]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center justify-center min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">협조 기관 네트워크</div>
           <div className="w-full flex-1 flex items-center justify-center" style={{height:250}}>
-            <ForceGraph2D
-              graphData={collaborationNetwork}
-              nodeLabel={(node: any) => node.id}
-              nodeAutoColorBy="group"
-              linkDirectionalParticles={2}
-              linkDirectionalParticleWidth={2}
-              width={250}
-              height={250}
-              nodeCanvasObject={(node: any, ctx, globalScale) => {
-                const label = node.id;
-                const fontSize = 12 / globalScale;
-                ctx.font = `${fontSize}px Sans-Serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillStyle = '#22223b';
-                ctx.fillText(label, node.x, node.y + 8);
-              }}
-            />
+          {/* <ForceGraph2D
+            graphData={orgNetworkGraph}
+            width={420}
+            height={340}
+            nodeRelSize={14}
+            cooldownTicks={90}
+            linkWidth={link => 1 + (link.value || 1) * 0.6}
+            linkColor={() => "rgba(100,100,100,0.45)"}
+            linkCurvature={0}
+            nodeCanvasObject={(node: any, ctx, globalScale) => {
+              const label = node.id;
+              ctx.font = `${Math.max(10, 14 / globalScale)}px Pretendard, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = node.color || '#22223b';
+              ctx.strokeStyle = 'white';
+              ctx.lineWidth = 3;
+              ctx.strokeText(label, node.x, node.y);
+              ctx.fillText(label, node.x, node.y);
+            }}
+          /> */}
+          <ForceGraph2D
+            graphData={orgNetworkGraph}
+            width={420}
+            height={360}
+            nodeRelSize={12}
+            cooldownTicks={90}
+            // onEngineStop={fg => fg.zoomToFit(430, 60)}
+            d3VelocityDecay={0.12}
+            d3AlphaDecay={0.01}
+            // d3Force="charge"
+            // d3Charge={-520}
+            linkWidth={link => 1 + (link.value || 1) * 0.7}
+            linkColor={() => "rgba(100,100,100,0.35)"}  // 👈 회색(연하게)
+            linkCurvature={0}
+            nodeCanvasObject={(node: any, ctx, globalScale) => {
+              const label = node.id;
+              ctx.font = `${Math.max(8, 10 / globalScale)}px Pretendard, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = node.color || '#22223b';
+              ctx.strokeStyle = 'white';
+              ctx.lineWidth = 3;
+              ctx.strokeText(label, node.x, node.y);
+              ctx.fillText(label, node.x, node.y);
+            }}
+          />
           </div>
         </div>
 

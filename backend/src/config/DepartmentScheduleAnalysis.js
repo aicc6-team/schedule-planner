@@ -9,8 +9,8 @@ admin.initializeApp({
 const db = admin.firestore();
 
 const departments = ['스마트앱개발팀', 'AI팀', '디자인팀', '기획팀', '영업팀'];
-const members = ['user_001', 'user_002', 'user_003', 'user_004', 'user_005', 'user_006', 'user_007', 'user_008'];
-const scheduleTypes = ['회의', '개발', '검토', '기획', '디자인', '테스트'];
+const members = ['김민준', '이서연', '박지후', '최예린', '정현우', '조민서', '장하준', '오유진'];
+const scheduleTypes = ['회의', '개발', '검토', '기획'];
 const timeSlots = ['09:00-11:00', '11:00-13:00', '13:00-15:00', '15:00-17:00', '17:00-19:00'];
 
 function randomInt(min, max) {
@@ -19,6 +19,25 @@ function randomInt(min, max) {
 
 function randomFloat(min, max, precision = 2) {
   return parseFloat((Math.random() * (max - min) + min).toFixed(precision));
+}
+
+function generateCollaborationNetwork(members, minLinks = 2, maxLinks = 4) {
+  const links = [];
+  for (const from of members) {
+    const numLinks = randomInt(minLinks, maxLinks);
+    const candidates = members.filter(m => m !== from);
+    const shuffled = candidates.sort(() => Math.random() - 0.5);
+    for (let i = 0; i < numLinks; i++) {
+      const to = shuffled[i % shuffled.length];
+      if (links.some(link => link.from === from && link.to === to)) continue;
+      links.push({
+        from,
+        to,
+        count: randomInt(1, 10)
+      });
+    }
+  }
+  return links;
 }
 
 async function seedDepartmentTasks() {
@@ -51,11 +70,8 @@ async function seedDepartmentTasks() {
         bottleneckTimeSlots[slot] = randomInt(0, 5);
       });
       
-      // 협업 네트워크 참여 횟수
-      const collaborationNetwork = {};
-      members.forEach(member => {
-        collaborationNetwork[member] = randomInt(10, 50);
-      });
+      // ForceGraph2D용 협업 네트워크
+      const collaborationNetwork = generateCollaborationNetwork(members);
       
       // 팀원별 업무 유형별 투입 시간
       const workloadByMemberAndType = {};
@@ -66,19 +82,21 @@ async function seedDepartmentTasks() {
         });
       });
       
-      // 업무 수행시간 통계
-      const executionTimeStats = {
-        min: randomInt(15, 45),
-        max: randomInt(120, 300),
-        median: randomInt(60, 120)
-      };
+      // 업무 수행시간 통계 (팀원별)
+      const executionTimeStats = {};
+      members.forEach(member => {
+        executionTimeStats[member] = {
+          min: randomInt(15, 45),
+          max: randomInt(120, 300),
+          median: randomInt(60, 120)
+        };
+      });
       
-      // 업무 품질 통계
-      const qualityStats = {
-        average: randomFloat(3.5, 4.8, 1),
-        min: randomInt(2, 4),
-        max: randomInt(4, 5)
-      };
+      // 업무 품질 vs 투입 시간 산점도용 데이터 (배열)
+      const qualityStats = Array.from({ length: 15 }, () => ({
+        quality: randomFloat(3.0, 5.0, 1), // 품질점수(1~5)
+        time: randomInt(30, 300) // 투입 시간(분)
+      }));
       
       // 월별 일정 건수 추이 (이전 6개월)
       const monthlyScheduleTrends = {};
@@ -90,7 +108,10 @@ async function seedDepartmentTasks() {
       // 태그별, 팀별 지연 건수
       const issueOccurrenceRate = {};
       scheduleTypes.forEach(type => {
-        issueOccurrenceRate[type] = randomInt(2, 15);
+        issueOccurrenceRate[type] = {};
+        departments.forEach(dep => {
+          issueOccurrenceRate[type][dep] = randomInt(2, 15);
+        });
       });
       
       const data = {
@@ -99,7 +120,7 @@ async function seedDepartmentTasks() {
         average_delay_per_member: averageDelayPerMember,
         schedule_type_ratio: scheduleTypeRatio,
         bottleneck_time_slots: bottleneckTimeSlots,
-        collaboration_network: collaborationNetwork,
+        collaboration_network: collaborationNetwork, // ForceGraph2D용 배열
         workload_by_member_and_type: workloadByMemberAndType,
         execution_time_stats: executionTimeStats,
         quality_stats: qualityStats,
