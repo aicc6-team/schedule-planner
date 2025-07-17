@@ -439,8 +439,8 @@ export default function PersonalAnalytics() {
                 <>
                   분석 기간: {
                     (() => {
-                      const startDate = dayjs(analyticsData[0].date);
-                      const endDate = dayjs(analyticsData[analyticsData.length - 1].date);
+                      const startDate = dayjs(analyticsData[analyticsData.length - 1].date);
+                      const endDate = dayjs(analyticsData[0].date);
                       return `${startDate.isValid() ? startDate.format('YYYY-MM-DD') : 'Invalid Date'} ~ ${endDate.isValid() ? endDate.format('YYYY-MM-DD') : 'Invalid Date'}`;
                     })()
                   }
