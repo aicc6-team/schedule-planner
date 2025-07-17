@@ -47,16 +47,15 @@ export interface PersonalSchedule {
 }
 
 const chartDescriptions = [
-  '일별 이행률: 각 날짜별로 전체 일정 중 완료된 일정의 비율을 보여줍니다.',
-  '요일×시간대 히트맵: 요일과 시간대별로 일정 완료율의 분포를 시각화합니다.',
-  '태그별 완료율: 일정에 부여된 태그별로 완료율을 비교합니다.',
-  '소요시간 분포: 일정별 소요시간의 분포를 보여줍니다.',
-  '소요시간 vs 감정 산점도: 감정 상태(예: 긍정, 부정)별로 업무 건수를 집계합니다.',
-  '태그별 시간 분포 비교: 일정의 상태(예: 완료, 진행중 등)별로 업무 건수를 집계합니다.',
-  '상태 파이차트: 시간대별로 생성된 일정의 건수를 보여줍니다.',
-  '누적 완료 추이: 일정 완료 건수의 누적 변화를 시계열로 보여줍니다.',
-  '시작/종료 시간 분포: 일정의 시작/종료 시간이 어떻게 분포되어 있는지 비교합니다.',
-  '태그별 평균 소요시간: 태그별로 평균 소요시간을 비교합니다.'
+  '일별 이행률: 날짜별 전체 일정 중 완료된 일정의 비율을 선그래프로 보여줍니다.',
+  '요일×시간대 완료율: 요일과 시간대별 일정 완료율을 히트맵으로 시각화합니다.',
+  '태그별 완료율: 태그별 일정 완료율을 막대그래프로 비교합니다.',
+  '소요시간 분포: 일정별 소요시간의 분포를 막대그래프로 나타냅니다.',
+  '소요시간 vs 감정 산점도: 소요시간과 감정 상태의 관계를 산점도로 보여줍니다.',
+  '태그별 시간 분포 비교: 태그별 평균 소요시간을 막대그래프로 비교합니다.',
+  '상태 파이차트: 일정 상태(완료, 지연 등)별 비율을 파이차트로 나타냅니다.',
+  '누적 완료 추이: 일정 완료 건수의 누적 변화를 면적 그래프로 시계열로 보여줍니다.',
+  '시작/종료 시간 분포: 일정의 시작/종료 시간 분포를 막대그래프로 비교합니다.'
 ];
 
 export default function PersonalAnalytics() {
@@ -340,34 +339,52 @@ export default function PersonalAnalytics() {
     if (!Array.isArray(analyticsData) || analyticsData.length === 0) {
       return { labels: [], datasets: [] };
     }
-    // 날짜 기준으로 오름차순 정렬
-    const sortedData = [...analyticsData].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    
-    const labels = sortedData.map(item => item.date);
-    
-    const data = sortedData.map(item =>
-      item.cumulative_completions?.[item.date] ?? 0
-    );
+    // 모든 날짜별 누적값을 합침
+    const dateMap: Record<string, number> = {};
+    analyticsData.forEach(item => {
+      if (item.cumulative_completions) {
+        Object.entries(item.cumulative_completions).forEach(([date, value]) => {
+          dateMap[date] = value;
+        });
+      }
+    });
+    // 날짜 오름차순 정렬
+    const sortedDates = Object.keys(dateMap).sort();
+    const rawData = sortedDates.map(date => dateMap[date]);
+    // 월별 리셋을 방지: 값이 감소하면 이전까지의 누적합을 더해서 이어붙임
+    let offset = 0;
+    let prev = rawData[0] ?? 0;
+    const cumulativeData = rawData.map((val, idx) => {
+      if (idx === 0) {
+        prev = val;
+        return val;
+      }
+      if (val < prev) {
+        offset += prev;
+      }
+      prev = val;
+      return val + offset;
+    });
     return {
-      labels,
+      labels: sortedDates,
       datasets: [
         {
           label: '누적 완료건수',
-          data,
+          data: cumulativeData,
           fill: true,
           backgroundColor: 'rgba(59, 130, 246, 0.18)',
           borderColor: '#3b82f6',
-          tension: 0.3,
-          pointRadius: 2
+          borderWidth: 0.2,
+          tension: 2.0, // 더 부드럽게
+          pointRadius: 0, // 동그라미 제거
+          pointHoverRadius: 0, // 호버 동그라미도 제거
         }
       ]
     };
   }, [analyticsData]);
   
 
-  // Chart 9: 시작/종료 시간 분포 비교
+  // Chart 9: 시간대별 집중도 면적그래프
   const timeDistributionComparison = useMemo(() => {
     if (!Array.isArray(analyticsData) || analyticsData.length === 0) return { labels: [], datasets: [] };
     
@@ -605,7 +622,17 @@ export default function PersonalAnalytics() {
               }}
               options={{
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, title: { display: true, text: '건수' } } },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: { display: true, text: '건수' },
+                    ticks: {
+                      callback: function(value) {
+                        return Number(value).toFixed(0);
+                      }
+                    }
+                  }
+                },
                 maintainAspectRatio: false,
               }}
               height={180}
@@ -731,6 +758,12 @@ export default function PersonalAnalytics() {
             data={cumulativeCompletion}
             options={{
               plugins: { legend: { display: false } },
+              elements: {
+                point: {
+                  radius: 0,
+                  hoverRadius: 0,
+                }
+              },
               scales: {
                 x: { title: { display: true, text: '일(day)' } },
                 y: {
