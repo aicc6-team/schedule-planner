@@ -22,9 +22,29 @@ function randomFloat(min, max, precision = 2) {
   return parseFloat((Math.random() * (max - min) + min).toFixed(precision));
 }
 
+// ForceGraph2D용 협업 네트워크 생성
+function generateCollaborationLinks(orgs, minLinks = 2, maxLinks = 4) {
+  const links = [];
+  for (const from of orgs) {
+    const numLinks = randomInt(minLinks, maxLinks);
+    const candidates = orgs.filter(o => o !== from);
+    const shuffled = candidates.sort(() => Math.random() - 0.5);
+    for (let i = 0; i < numLinks; i++) {
+      const to = shuffled[i % shuffled.length];
+      if (links.some(link => link.from === from && link.to === to)) continue;
+      links.push({
+        from,
+        to,
+        count: randomInt(1, 10)
+      });
+    }
+  }
+  return links;
+}
+
 async function seedCompanyMetrics() {
-  const analysisStartDate = dayjs('2025-01-01');
-  const analysisEndDate = dayjs('2025-12-31');
+  const analysisStartDate = dayjs('2025-05-01');
+  const analysisEndDate = dayjs('2025-06-31');
   
   // 월별 데이터 생성
   for (let month = 0; month < 12; month++) {
@@ -61,11 +81,8 @@ async function seedCompanyMetrics() {
       organizerScheduleCounts[organizer] = randomInt(2, 10);
     });
     
-    // 협조 기관별 협력 횟수
-    const supportingOrganizationCollaborations = {};
-    departments.forEach(dept => {
-      supportingOrganizationCollaborations[dept] = randomInt(1, 8);
-    });
+    // ForceGraph2D용 협업 네트워크
+    const supportingOrganizationCollaborations = generateCollaborationLinks(organizers);
     
     // 월별 일정 건수 추이 (이전 6개월)
     const monthlyScheduleCounts = {};

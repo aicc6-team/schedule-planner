@@ -40,33 +40,36 @@ async function seedProjectTasks() {
         currentStartDate = currentStartDate.add(randomInt(2, 3), 'day');
       }
       
-      // 단계별 기간 (2-5일)
-      const durations = steps.map(() => randomInt(2, 5));
-      
-      // 작업 간 종속 관계
+      // 👇 [변경] 단계명과 duration을 묶어서 배열로 저장
+      const durations = steps.map(step => ({
+        step,
+        duration: randomInt(2, 5)
+      }));
+
+      // 👇 [변경] dependencies의 planned_duration을 duration과 맞춤
       const dependencies = [];
       for (let i = 1; i < steps.length; i++) {
         dependencies.push({
-          from: steps[i-1],
+          from: steps[i - 1],
           to: steps[i],
-          planned_duration: randomInt(1, 3)
+          planned_duration: durations[i].duration   // 바로 위에서 생성한 duration값과 맞춤!
         });
       }
-      
+
       // 계획 완료일 리스트
       const plannedCompletionDates = [];
       let plannedDate = currentDate;
       for (let i = 0; i < steps.length; i++) {
-        plannedDate = plannedDate.add(durations[i], 'day');
+        plannedDate = plannedDate.add(durations[i].duration, 'day'); // duration을 참조
         plannedCompletionDates.push(plannedDate.format('YYYY-MM-DD'));
       }
-      
+
       // 실제 완료일 리스트 (계획보다 0-3일 지연)
       const actualCompletionDates = plannedCompletionDates.map(date => {
         const delay = randomInt(0, 3);
         return dayjs(date).add(delay, 'day').format('YYYY-MM-DD');
       });
-      
+
       // 완료일 시뮬레이션 (몬테카를로 시뮬레이션 결과)
       const simulationCompletionDates = [];
       for (let i = 0; i < 10; i++) {
@@ -75,7 +78,7 @@ async function seedProjectTasks() {
           .format('YYYY-MM-DD');
         simulationCompletionDates.push(simDate);
       }
-      
+
       // 단계별 진행률 (0-100%)
       const progress = steps.map(() => randomInt(0, 100));
       
@@ -87,7 +90,7 @@ async function seedProjectTasks() {
       for (let i = 1; i < steps.length; i++) {
         intervals.push(randomInt(0, 2));
       }
-      
+
       // 예산 누적 소모 (단계별로 증가)
       const cumulativeBudget = [];
       let totalBudget = 0;
@@ -96,17 +99,17 @@ async function seedProjectTasks() {
         totalBudget += stepBudget;
         cumulativeBudget.push(totalBudget);
       }
-      
+
       // 단계별 상태
       const stageStatus = steps.map(() => statuses[randomInt(0, statuses.length - 1)]);
-      
+
       const data = {
         project_id: projectId,
         date: admin.firestore.Timestamp.fromDate(currentDate.toDate()),
         task_list: taskList,
         start_dates: startDates,
-        durations: durations,
-        dependencies: dependencies,
+        durations, // [{ step, duration }]
+        dependencies, // [{ from, to, planned_duration }]
         planned_completion_dates: plannedCompletionDates,
         actual_completion_dates: actualCompletionDates,
         simulation_completion_dates: simulationCompletionDates,

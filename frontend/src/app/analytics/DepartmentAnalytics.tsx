@@ -20,7 +20,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointE
 interface DepartmentScheduleAnalysis {
   department_name: string;           // 부서명
   date: string;                      // 분석 날짜
-  average_delay_per_member: Record<string, number>; // 팀원별 평균 응답 및 지연 시간
+  average_delay_per_member: Record<string, { delay_time: number; response_time: number }>; // 팀원별 평균 응답 및 지연 시간
   schedule_type_ratio: Record<string, number>;      // 일정 유형별 비율
   bottleneck_time_slots: Record<string, Record<string, number>>; // 시간대별 병목 현상 건수
   collaboration_network: Record<string, string[]>;  // 협업 네트워크 참여 횟수
@@ -32,8 +32,24 @@ interface DepartmentScheduleAnalysis {
   total_schedules?: number; // 총 일정 건수
 }
 
+export interface DepartmentSchedule {
+  created_at: string; // 생성 일시 (ISO string)
+  date: string; // 일정 날짜 (YYYY-MM-DD 등 ISO string)
+  department: string;
+  hour: number;
+  objective: string;
+  organizer: string;
+  participants: string[];
+  projectId: string;
+  status: string;
+  time: string;
+  title: string;
+  updated_at: string; // 수정 일시 (ISO string)
+}
+
 export default function DepartmentAnalytics() {
   const [departmentAnalysis, setDepartmentAnalysis] = useState<DepartmentScheduleAnalysis[]>([]);
+  const [departmentData, setDepartmentData] = useState<DepartmentSchedule[]>([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // 차트별 ref 생성 (9개)
@@ -60,6 +76,17 @@ export default function DepartmentAnalytics() {
     '이슈 발생률',
   ];
 
+
+  // 시간대와 요일 정의 (컴포넌트 레벨에서 선언)
+  const timeSlots = [
+    { label: '09:00-11:00', start: 9, end: 11 },
+    { label: '11:00-13:00', start: 11, end: 13 },
+    { label: '13:00-15:00', start: 13, end: 15 },
+    { label: '15:00-17:00', start: 15, end: 17 },
+    { label: '17:00-19:00', start: 17, end: 19 }
+  ];
+  const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+
   // 차트 캡처 함수
   const captureCharts = async () => {
     const images: string[] = [];
@@ -81,6 +108,17 @@ export default function DepartmentAnalytics() {
         // 데이터가 배열인지 확인하고 설정
         const analysisArray = Array.isArray(data) ? data : [];
         setDepartmentAnalysis(analysisArray);
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    fetch('http://localhost:3001/api/analytics/department')
+      .then(res => res.json())
+      .then((data: DepartmentSchedule[]) => {
+        // 데이터가 배열인지 확인하고 설정
+        const departmentArray = Array.isArray(data) ? data : [];
+        setDepartmentData(departmentArray);
       })
       .catch(console.error);
   }, []);
@@ -135,121 +173,104 @@ export default function DepartmentAnalytics() {
   };
 
   //1번 차트 - 팀원별 응답시간
-  const delayByAssignee = useMemo(() => {
-    if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
-      return { labels: [], datasets: [] };
-    }
-
-    const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.average_delay_per_member) {
-      return { labels: [], datasets: [] };
-    }
-
-    const labels = Object.keys(firstData.average_delay_per_member);
-    const data = Object.values(firstData.average_delay_per_member);
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: '평균 응답시간 (분)',
-          data,
-          backgroundColor: '#3b82f6',
-        },
-      ],
-    };
+  const delayByMember = useMemo(() => {
+    if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) return { labels: [], data: [] };
+  
+    // 가장 최근 또는 특정 분석 데이터 사용
+    const first = departmentAnalysis[0];
+    if (!first || !first.average_delay_per_member) return { labels: [], data: [] };
+  
+    const labels = Object.keys(first.average_delay_per_member);
+    const data = labels.map(user =>
+      first.average_delay_per_member[user]?.delay_time ?? 0
+    );
+  
+    return { labels, data };
   }, [departmentAnalysis]);
 
   //2번 차트: 일정 유형 파이차트
-  const typePieData = useMemo(() => {
-    if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
-      return { labels: [], datasets: [] };
-    }
-
-    const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.schedule_type_ratio) {
-      return { labels: [], datasets: [] };
-    }
-
-    const labels = Object.keys(firstData.schedule_type_ratio);
-    const data = Object.values(firstData.schedule_type_ratio);
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: '일정 유형 분포',
-          data,
-          backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'],
-        },
-      ],
-    };
+  const typeRatioPie = useMemo(() => {
+    if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) return { labels: [], data: [] };
+  
+    // 가장 최근 분석 데이터 사용 (혹은 원하는 인덱스)
+    const first = departmentAnalysis[0];
+    if (!first || !first.schedule_type_ratio) return { labels: [], data: [] };
+  
+    const labels = Object.keys(first.schedule_type_ratio);
+    const data = labels.map(type => Math.round(first.schedule_type_ratio[type] * 100));
+  
+    return { labels, data };
   }, [departmentAnalysis]);
 
   //3번 차트: 시간대별 병목 히트맵
-  const heatmapData = useMemo(() => {
-    if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
-      return [];
-    }
-
-    const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.bottleneck_time_slots) {
-      return [];
-    }
-
-    const timeBlocks = ['08-10', '10-12', '12-14', '14-16', '16-18'];
-    const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const timeHeatmap = useMemo(() => {
     
-    // 2차원 배열로 변환 (시간대 행, 요일 열)
-    return timeBlocks.map(tb => 
-      days.map(d => firstData.bottleneck_time_slots[tb]?.[d] || 0)
+    if (!Array.isArray(departmentData) || departmentData.length === 0) {
+      return Array.from({ length: 5 }, () => Array(7).fill(0));
+    }
+  
+    // 집계용 배열
+    const total = Array.from({ length: 5 }, () => Array(7).fill(0));
+    const completed = Array.from({ length: 5 }, () => Array(7).fill(0));
+    
+    departmentData.forEach(item => {
+      // item.date(YYYY-MM-DD), item.hour(숫자), item.status(문자열)
+      if (!item.date || typeof item.hour !== 'number') return;
+  
+      const dateObj = new Date(item.date);
+      if (isNaN(dateObj.getTime())) return;
+      // 요일 인덱스: 월(0)~일(6)
+      const jsDay = dateObj.getDay();
+      const dayIdx = jsDay === 0 ? 6 : jsDay - 1;
+  
+      timeSlots.forEach((tb, ti) => {
+        if (item.hour !== undefined && item.hour >= tb.start && item.hour < tb.end) {
+          total[ti][dayIdx]++;
+          if (item.status === "완료" || item.status === "completed") completed[ti][dayIdx]++;
+        }
+      });
+    });
+  
+    // 완료율(%) 반환
+    const heatmapData = total.map((row, ti) =>
+      row.map((cnt, wi) => cnt > 0 ? Math.round((completed[ti][wi] / cnt) * 100) : 0)
     );
-  }, [departmentAnalysis]);
+  
+    return heatmapData;
+  }, [departmentData, timeSlots]);
 
   //4. 협업 네트워크 그래프
   const graphData = useMemo(() => {
     if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
       return { nodes: [], links: [] };
     }
-
+  
     const firstData = departmentAnalysis[0];
     if (!firstData || !firstData.collaboration_network) {
       return { nodes: [], links: [] };
     }
-
-    const nodes = new Set<string>();
-    const edges: { from: string; to: string }[] = [];
-
-    Object.entries(firstData.collaboration_network).forEach(([member, collaborators]) => {
-      nodes.add(member);
-      
-      // collaborators가 배열인지 확인하고 안전하게 처리
-      if (Array.isArray(collaborators)) {
-        collaborators.forEach(collaborator => {
-          if (typeof collaborator === 'string') {
-            nodes.add(collaborator);
-            edges.push({ from: member, to: collaborator });
-          }
-        });
-      } else if (typeof collaborators === 'string') {
-        // collaborators가 단일 문자열인 경우
-        nodes.add(collaborators);
-        edges.push({ from: member, to: collaborators });
-      } else if (typeof collaborators === 'object' && collaborators !== null) {
-        // collaborators가 객체인 경우 (예: {name: string, count: number})
-        Object.keys(collaborators).forEach(collaborator => {
-          if (typeof collaborator === 'string') {
-            nodes.add(collaborator);
-            edges.push({ from: member, to: collaborator });
-          }
-        });
-      }
+  
+    // 노드/링크 뽑기
+    const nodesSet = new Set<string>();
+    const links: { source: string; target: string; value: number }[] = [];
+  
+    // collaboration_network는 배열임
+    const collaborationArray = Array.isArray(firstData.collaboration_network) ? firstData.collaboration_network : [];
+    collaborationArray.forEach((item: any) => {
+      if (!item.from || !item.to) return;
+      nodesSet.add(item.from);
+      nodesSet.add(item.to);
+      links.push({
+        source: item.from,
+        target: item.to,
+        value: item.count || 1, // 협업 횟수(굵기/파티클에 활용)
+      });
     });
-
-    return {
-      nodes: Array.from(nodes).map(id => ({ id })),
-      links: edges.map(e => ({ source: e.from, target: e.to })),
-    };
+  
+    // 노드 객체로 변환
+    const nodes = Array.from(nodesSet).map(id => ({ id }));
+  
+    return { nodes, links };
   }, [departmentAnalysis]);
 
   //5번 그래프: 업무 유형별 시간 분포
@@ -257,12 +278,11 @@ export default function DepartmentAnalytics() {
     if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
       return { labels: [], datasets: [] };
     }
-
     const firstData = departmentAnalysis[0];
     if (!firstData || !firstData.workload_by_member_and_type) {
       return { labels: [], datasets: [] };
     }
-
+    // 모든 멤버, 모든 업무유형 추출
     const members = Object.keys(firstData.workload_by_member_and_type);
     const allTypes = Array.from(
       new Set(
@@ -270,14 +290,24 @@ export default function DepartmentAnalytics() {
           .flatMap(memberData => Object.keys(memberData))
       )
     );
-
+    // 컬러셋 (유형 개수만큼)
+    const colors = [
+      '#3b82f6', // 미드 블루
+      '#6366f1', // 미드 퍼플
+      '#10b981', // 미드 그린
+      '#f59e42', // 미드 오렌지
+      '#ef4444', // 미드 레드
+      '#14b8a6', // 미드 시안
+      '#a855f7', // 미드 바이올렛
+    ];
+  
     const datasets = allTypes.map((type, idx) => ({
       label: type,
       data: members.map(member => firstData.workload_by_member_and_type[member]?.[type] || 0),
-      backgroundColor: ['#60a5fa', '#f59e0b', '#10b981', '#ef4444'][idx % 4],
+      backgroundColor: colors[idx % colors.length],
       stack: 'total'
     }));
-
+  
     return { labels: members, datasets };
   }, [departmentAnalysis]);
 
@@ -286,22 +316,19 @@ export default function DepartmentAnalytics() {
     if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
       return { labels: [], datasets: [] };
     }
-
+  
     const firstData = departmentAnalysis[0];
     if (!firstData || !firstData.execution_time_stats) {
       return { labels: [], datasets: [] };
     }
-
-    const labels = Object.keys(firstData.execution_time_stats);
-    const minData = labels.map(name => firstData.execution_time_stats[name]?.min || 0);
-    const avgData = labels.map(name => {
-      const stats = firstData.execution_time_stats[name];
-      return stats ? (stats.min + stats.max) / 2 : 0; // 중앙값 대신 평균 사용
-    });
-    const maxData = labels.map(name => firstData.execution_time_stats[name]?.max || 0);
-
+  
+    const labels = Object.keys(firstData.execution_time_stats); // ["김민준", "박지후", ...]
+    const minData = labels.map(name => firstData.execution_time_stats[name]?.min ?? 0);
+    const medianData = labels.map(name => firstData.execution_time_stats[name]?.median ?? 0);
+    const maxData = labels.map(name => firstData.execution_time_stats[name]?.max ?? 0);
+  
     return {
-      labels,
+      labels, // ["김민준", "박지후", ...]
       datasets: [
         {
           label: '최소',
@@ -309,8 +336,8 @@ export default function DepartmentAnalytics() {
           backgroundColor: 'rgba(59,130,246,0.1)',
         },
         {
-          label: '평균',
-          data: avgData,
+          label: '중앙값',
+          data: medianData,
           backgroundColor: 'rgba(59,130,246,0.5)',
         },
         {
@@ -324,32 +351,26 @@ export default function DepartmentAnalytics() {
 
   //7번째 품질 vs 시간 산점도
   const qualityScatter = useMemo(() => {
-    if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
-      return { datasets: [] };
-    }
-
+    if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) return { datasets: [] };
+  
+    // quality_stats는 배열
     const firstData = departmentAnalysis[0];
-    if (!firstData || !firstData.quality_stats) {
-      return { datasets: [] };
-    }
-
-    const members = Object.keys(firstData.quality_stats);
-    const data = members.map(member => {
-      const stats = firstData.quality_stats[member];
-      return {
-        x: stats?.avg || 0, // 평균 품질
-        y: firstData.execution_time_stats?.[member]?.median || 0, // 중앙값 수행시간
-      };
-    });
-
+    if (!firstData || !Array.isArray(firstData.quality_stats)) return { datasets: [] };
+  
+    const data = firstData.quality_stats.map(item => ({
+      x: item.quality ?? 0,
+      y: item.time ?? 0
+    }));
+  
     return {
       datasets: [
         {
           label: '품질 vs 시간',
           data,
           backgroundColor: '#3b82f6',
-        },
-      ],
+          pointRadius: 2,
+        }
+      ]
     };
   }, [departmentAnalysis]);
   
@@ -358,15 +379,17 @@ export default function DepartmentAnalytics() {
     if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
       return { labels: [], datasets: [] };
     }
-
+  
+    // 가장 최근 데이터 또는 첫 데이터 기준으로
     const firstData = departmentAnalysis[0];
     if (!firstData || !firstData.monthly_schedule_trends) {
       return { labels: [], datasets: [] };
     }
-
+  
+    // 월 정렬
     const labels = Object.keys(firstData.monthly_schedule_trends).sort();
     const data = labels.map(month => firstData.monthly_schedule_trends[month] || 0);
-
+  
     return {
       labels,
       datasets: [
@@ -387,27 +410,29 @@ export default function DepartmentAnalytics() {
     if (!Array.isArray(departmentAnalysis) || departmentAnalysis.length === 0) {
       return { labels: [], datasets: [] };
     }
-
+  
     const firstData = departmentAnalysis[0];
     if (!firstData || !firstData.issue_occurrence_rate) {
       return { labels: [], datasets: [] };
     }
-
-    const labels = Object.keys(firstData.issue_occurrence_rate);
-    const allTags = Array.from(
+  
+    // 태그(예: 개발, 검토, ...)가 X축 라벨, 팀별 데이터 추출
+    const tags = Object.keys(firstData.issue_occurrence_rate); // ['개발', '검토', ...]
+    const allTeams = Array.from(
       new Set(
         Object.values(firstData.issue_occurrence_rate)
           .flatMap(tagData => Object.keys(tagData))
       )
     );
-
-    const datasets = allTags.map((tag, i) => ({
-      label: tag,
-      data: labels.map(label => firstData.issue_occurrence_rate[label]?.[tag] || 0),
-      backgroundColor: ['#2563eb', '#f59e0b', '#10b981', '#6d28d9'][i % 4],
+  
+    // 각 팀별로 series 생성
+    const datasets = allTeams.map((team, idx) => ({
+      label: team,
+      data: tags.map(tag => firstData.issue_occurrence_rate[tag]?.[team] || 0),
+      backgroundColor: ['#60a5fa', '#a5b4fc', '#6ee7b7', '#fde68a', '#fca5a5', '#818cf8'][idx % 6],
     }));
-
-    return { labels, datasets };
+  
+    return { labels: tags, datasets };
   }, [departmentAnalysis]);
 
   return (
@@ -420,7 +445,7 @@ export default function DepartmentAnalytics() {
             <p className="text-gray-600 text-sm">
               {departmentAnalysis.length > 0 && (
                 <>
-                  분석 기간: {dayjs(departmentAnalysis[0].date).format('YYYY-MM-DD')} ~ {dayjs(departmentAnalysis[departmentAnalysis.length - 1].date).format('YYYY-MM-DD')}
+                  분석 기간: {dayjs(departmentAnalysis[departmentAnalysis.length - 1].date).format('YYYY-MM-DD')} ~ {dayjs(departmentAnalysis[0].date).format('YYYY-MM-DD')}
                   <span className="mx-2">•</span>
                   총 {departmentAnalysis.reduce((sum, item) => sum + (item.total_schedules ?? 0), 0)}개 일정
                   <span className="mx-2">•</span>
@@ -428,7 +453,7 @@ export default function DepartmentAnalytics() {
                     departmentAnalysis.length > 0 && departmentAnalysis[0].average_delay_per_member
                       ? (() => {
                           const values = Object.values(departmentAnalysis[0].average_delay_per_member)
-                            .map(v => typeof v === "number" && !isNaN(v) ? v : 0);
+                            .map(v => (typeof v === "object" && v !== null && typeof v.delay_time === "number") ? v.delay_time : 0);
                           const count = values.length;
                           if (count === 0) return 0;
                           const sum = values.reduce((sum, v) => sum + v, 0);
@@ -480,18 +505,31 @@ export default function DepartmentAnalytics() {
           <div className="flex-1 flex items-center">
             <Bar
               data={{
-                ...delayByAssignee,
-                datasets: delayByAssignee.datasets.map(ds => ({
-                  ...ds,
+                labels: delayByMember.labels,
+                datasets: [{
+                  label: '평균 응답시간(시간)',
+                  data: delayByMember.data,
+                  backgroundColor: [
+                    '#60a5fa', // 파랑
+                    '#a5b4fc', // 연보라
+                    '#6ee7b7', // 연초록
+                    '#fde68a', // 연노랑
+                    '#fca5a5', // 연빨강
+                  ],
                   barThickness: 26,
                   maxBarThickness: 36,
-                })),
+                }],
               }}
               options={{
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, title: { display: true, text: '평균 지연(분)' } } },
-                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: { display: true, text: '평균 응답시간(시간)' }
+                  }
+                }
               }}
+              height={180}
             />
           </div>
         </div>
@@ -501,74 +539,132 @@ export default function DepartmentAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">일정 유형 비율</div>
           <div className="w-[270px] h-[270px] flex items-center justify-center">
             <Pie
-              data={typePieData}
-              options={{
-                plugins: { legend: { position: 'bottom' } },
+              data={{
+                labels: typeRatioPie.labels,
+                datasets: [{
+                  data: typeRatioPie.data,
+                  backgroundColor: [
+                    '#60a5fa', // 개발
+                    '#a5b4fc', // 검토
+                    '#6ee7b7', // 기획
+                    '#fde68a', // 디자인
+                    '#fca5a5', // 테스트
+                    '#818cf8', // 기타
+                  ]
+                }]
               }}
+              options={{
+                plugins: {
+                  legend: { position: 'bottom' },
+                  tooltip: {
+                    callbacks: {
+                      label: ctx => {
+                        const label = ctx.label || '';
+                        const value = ctx.parsed || 0;
+                        return `${label}: ${value}%`;
+                      }
+                    }
+                  }
+                }
+              }}
+              height={220}
             />
           </div>
         </div>
 
         {/* 3. 시간대별 병목 히트맵 (커스텀) */}
         <div ref={chartRefs[2]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
-          <div className="font-semibold mb-3 text-[#22223b]">시간대별 병목</div>
-          <div className="flex">
-            <div className="flex flex-col justify-center mr-2">
-              {['08-10','10-12','12-14','14-16','16-18'].map((block) => (
-                <div key={block} className="h-9 flex items-center justify-end text-[#7b8794] text-sm" style={{height:36}}>{block}</div>
-              ))}
-            </div>
-
-            <div className="flex flex-col">
-                {heatmapData.map((row, i) => (
-                <div key={i} className="flex mb-1 last:mb-0">
-                  {row.map((val, j) => {
-                    let color = 'bg-blue-50';
-                    if (val >= 6) color = 'bg-blue-700';
-                    else if (val >= 4) color = 'bg-blue-500';
-                    else if (val >= 2) color = 'bg-blue-300';
-                    else if (val >= 1) color = 'bg-blue-100';
-                    return (
-                      <div key={j} className={`rounded-lg ${color}`} style={{width:36,height:36,marginRight:j<row.length-1?8:0}}>
-                        <span className="text-xs text-white font-bold flex items-center justify-center h-full w-full">{val}</span>
-                      </div>
-                    );
-                  })}
+          <div className="font-semibold mb-3 text-[#22223b]">요일×시간대 완료율</div>
+          {/* 히트맵: 커스텀 렌더링 */}
+          <div className="flex-1 flex items-center">
+            <div className="flex flex-col items-center ml-8">
+              <div className="flex">
+                {/* 좌측 시간대 라벨 */}
+                <div className="flex flex-col justify-center mr-2">
+                  {timeSlots.map((block) => (
+                    <div key={block.label} className="h-9 flex items-center justify-end text-[#7b8794] text-sm" style={{height:36}}>
+                      {block.label}
+                    </div>
+                  ))}
                 </div>
-              ))}
+                {/* 메인 히트맵 */}
+                <div className="flex flex-col">
+                  {timeHeatmap.map((row, i) => (
+                    <div key={i} className="flex mb-1 last:mb-0">
+                      {row.map((val, j) => {
+                        let color = 'bg-blue-50';
+                        if(val >= 80) color = 'bg-blue-700';
+                        else if(val >= 70) color = 'bg-blue-500';
+                        else if(val >= 60) color = 'bg-blue-300';
+                        else if(val >= 50) color = 'bg-blue-100';
+                        return (
+                          <div
+                            key={j}
+                            className={`rounded-lg ${color}`}
+                            style={{width: 36, height: 36, marginRight: j < row.length - 1 ? 8 : 0}}
+                          >
+                            <span className="text-xs text-white font-bold flex items-center justify-center h-full w-full">
+                              {val}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* 하단 요일 라벨 */}
+              <div className="flex mt-3 ml-28">
+                {weekdays.map((label, idx) => (
+                  <div
+                    key={label + idx}
+                    className="text-center text-[#7b8794] text-sm"
+                    style={{width: 36, marginRight: idx < 6 ? 8 : 0}}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
             </div>
-
-          </div>
-          <div className="flex mt-3 ml-12">
-            {['월','화','수','목','금','토','일'].map((label,idx) => (
-              <div key={label+idx} className="w-9 text-center text-[#7b8794] text-sm" style={{width:36,marginRight:idx<6?8:0}}>{label}</div>
-            ))}
           </div>
         </div>
 
         {/* 4. 협업 네트워크 그래프 (실제 차트) */}
-        <div ref={chartRefs[3]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center justify-center min-h-[220px]">
-          <div className="font-semibold mb-3 text-[#22223b]">협업 네트워크</div>
-          <div className="w-full flex-1 flex items-center justify-center" style={{height:200}}>
+        <div
+          ref={chartRefs[3]}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-start min-h-[420px]"
+          style={{ minHeight: 420, width: '100%', minWidth: 480, height: 420 }}
+        >
+          {/* 타이틀: 다른 차트와 동일하게 */}
+          <div className="font-semibold text-medium text-[#22223b] mb-6">협업 네트워크</div>
+          <div style={{ width: 420, height: 360 }}>
             
-            <ForceGraph2D
-              graphData={graphData}
-              nodeLabel={(node: any) => node.id}
-              nodeAutoColorBy="group"
-              linkDirectionalParticles={2}
-              linkDirectionalParticleWidth={2}
-              width={220}
-              height={200}
-              nodeCanvasObject={(node: any, ctx, globalScale) => {
-                const label = node.id;
-                const fontSize = 12 / globalScale;
-                ctx.font = `${fontSize}px Sans-Serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillStyle = '#22223b';
-                ctx.fillText(label, node.x, node.y + 8);
-              }}
-            />
+          <ForceGraph2D
+            graphData={graphData}
+            width={420}
+            height={360}
+            nodeRelSize={12}
+            cooldownTicks={90}
+            // onEngineStop={fg => fg.zoomToFit(430, 60)}
+            d3VelocityDecay={0.12}
+            d3AlphaDecay={0.01}
+            // d3Force="charge"
+            // d3Charge={-520}
+            linkWidth={link => 1 + (link.value || 1) * 0.7}
+            linkColor={() => "rgba(100,100,100,0.35)"}  // 👈 회색(연하게)
+            linkCurvature={0}
+            nodeCanvasObject={(node: any, ctx, globalScale) => {
+              const label = node.id;
+              ctx.font = `${Math.max(8, 10 / globalScale)}px Pretendard, sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = node.color || '#22223b';
+              ctx.strokeStyle = 'white';
+              ctx.lineWidth = 3;
+              ctx.strokeText(label, node.x, node.y);
+              ctx.fillText(label, node.x, node.y);
+            }}
+          />
           </div>
         </div>
         
@@ -594,22 +690,16 @@ export default function DepartmentAnalytics() {
                   y: { stacked: true, beginAtZero: true, title: { display: true, text: '시간' } },
                 },
               }}
+              height={340}
             />
           </div>
         </div>
         
-        {/* 6. 수행시간 분포 박스플롯 (바형태로 대체) */}
+        {/* 6. 수행시간 분포 박스플롯 */}
         <div ref={chartRefs[5]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">수행시간 분포</div>
           <Bar
-            data={{
-              ...execTimeStats,
-              datasets: execTimeStats.datasets.map(ds => ({
-                ...ds,
-                barThickness: 26,
-                maxBarThickness: 36,
-              })),
-            }}
+            data={execTimeStats}
             options={{
               plugins: { legend: { position: 'bottom' } },
               scales: { y: { beginAtZero: true, title: { display: true, text: '수행시간(분)' } } },
@@ -622,9 +712,18 @@ export default function DepartmentAnalytics() {
         <div ref={chartRefs[6]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">품질 vs 시간</div>
           <Scatter
-            data={qualityScatter}
+            data={{
+              ...qualityScatter,
+              datasets: qualityScatter.datasets.map(ds => ({
+                ...ds,
+                backgroundColor: '#38bdf8', // 이쁜 파랑 (ex: #38bdf8, #6366f1 등)
+                pointBorderColor: '#6366f1', // 테두리도 살짝 이쁘게
+                pointRadius: 5,
+                pointHoverRadius: 7,
+              })),
+            }}
             options={{
-              plugins: { legend: { position: 'top' } },
+              plugins: { legend: { position: 'bottom' } },
               scales: {
                 x: { title: { display: true, text: '평균 품질점수' } },
                 y: { title: { display: true, text: '수행시간(분)' } },
@@ -641,7 +740,10 @@ export default function DepartmentAnalytics() {
             data={monthlyCount}
             options={{
               plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '작업 건수' } } },
+              scales: { 
+                y: { beginAtZero: true, title: { display: true, text: '일정 건수' } },
+                x: { title: { display: true, text: '월' } },
+              },
             }}
             height={180}
           />
@@ -651,17 +753,13 @@ export default function DepartmentAnalytics() {
         <div ref={chartRefs[8]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">이슈 발생률</div>
           <Bar
-            data={{
-              ...issueMatrix,
-              datasets: issueMatrix.datasets.map(ds => ({
-                ...ds,
-                barThickness: 26,
-                maxBarThickness: 36,
-              })),
-            }}
+            data={issueMatrix}
             options={{
               plugins: { legend: { position: 'bottom' } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: '지연 건수' } } },
+              scales: {
+                x: { title: { display: true, text: '업무 태그' } },
+                y: { beginAtZero: true, title: { display: true, text: '지연 건수' } }
+              }
             }}
             height={180}
           />

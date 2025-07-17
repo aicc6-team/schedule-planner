@@ -78,6 +78,7 @@ router.get('/personalTasks', async (_req, res) => {
     const snapshot = await db.collection('PersonalScheduleAnalysis')
       .where('date', '>=', startTimestamp)
       .where('date', '<=', endTimestamp)
+      .orderBy('date', 'desc')
       .get();
 
     const tasks = snapshot.docs.map((doc: DocumentSnapshot) => {
@@ -120,6 +121,7 @@ router.get('/personal', async (_req, res) => {
     const snapshot = await db.collection('PersonalSchedule')
       .where('date', '>=', startDate)
       .where('date', '<=', endDate)
+      .orderBy('date', 'desc')
       .get();
 
     const tasks = snapshot.docs.map((doc: DocumentSnapshot) => ({
@@ -160,7 +162,7 @@ router.get('/departmentTasks', async (req, res) => {
       query = query.where('date', '>=', startTimestamp).where('date', '<=', endTimestamp);
     }
     
-    const snapshot = await query.get();
+    const snapshot = await query.orderBy('date', 'desc').get();
     
     const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
       const data = doc.data();
@@ -185,6 +187,36 @@ router.get('/departmentTasks', async (req, res) => {
   } catch (error) {
     console.error('Error fetching department analysis:', error);
     res.status(500).json({ error: 'Failed to fetch department analysis' });
+  }
+});
+
+// GET /api/analytics/department - DepartmentSchedule 컬렉션의 모든 데이터 가져오기
+router.get('/department', async (_req, res) => {
+  try {
+    // 오늘과 3개월 전 날짜 계산
+    const today = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    
+    // 날짜를 YYYY-MM-DD 형식의 문자열로 변환
+    const startDate = threeMonthsAgo.toISOString().slice(0, 10);
+    const endDate = today.toISOString().slice(0, 10);
+
+    const snapshot = await db.collection('DepartmentSchedule')
+      .where('date', '>=', startDate)
+      .where('date', '<=', endDate)
+      .orderBy('date', 'desc')
+      .get();
+
+    const tasks = snapshot.docs.map((doc: DocumentSnapshot) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching personal tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch personal tasks' });
   }
 });
 
@@ -216,7 +248,7 @@ router.get('/companyTasks', async (req, res) => {
                    .where('analysis_end_date', '<=', endTimestamp);
     }
     
-    const snapshot = await query.get();
+    const snapshot = await query.orderBy('analysis_start_date', 'desc').get();
     const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
       const data = doc.data();
       let startDateStr = '';
@@ -278,7 +310,7 @@ router.get('/projectTasks', async (req, res) => {
 
     }
     
-    const snapshot = await query.get();
+    const snapshot = await query.orderBy('date', 'desc').get();
     
 
     const analysis = snapshot.docs.map((doc: DocumentSnapshot) => {
@@ -311,7 +343,7 @@ router.get('/projectTasks', async (req, res) => {
 // GET /api/analytics/projectDependencies - ProjectDependenciesAnalysis 컬렉션의 모든 데이터 가져오기
 router.get('/projectDependencies', async (_req, res) => {
   try {
-    const snapshot = await db.collection('ProjectDependenciesAnalysis').get();
+    const snapshot = await db.collection('ProjectDependenciesAnalysis').orderBy('date', 'desc').get();
     
     const dependencies = snapshot.docs.map((doc: DocumentSnapshot) => ({
       id: doc.id,
@@ -328,7 +360,7 @@ router.get('/projectDependencies', async (_req, res) => {
 // GET /api/analytics/projectSimulations - ProjectSimulationsAnalysis 컬렉션의 모든 데이터 가져오기
 router.get('/projectSimulations', async (_req, res) => {
   try {
-    const snapshot = await db.collection('ProjectSimulationsAnalysis').get();
+    const snapshot = await db.collection('ProjectSimulationsAnalysis').orderBy('date', 'desc').get();
     
     const simulations = snapshot.docs.map((doc: DocumentSnapshot) => ({
       id: doc.id,
@@ -345,7 +377,7 @@ router.get('/projectSimulations', async (_req, res) => {
 // GET /api/analytics/projectProgress - ProjectProgressAnalysis 컬렉션의 모든 데이터 가져오기
 router.get('/projectProgress', async (_req, res) => {
   try {
-    const snapshot = await db.collection('ProjectProgressAnalysis').get();
+    const snapshot = await db.collection('ProjectProgressAnalysis').orderBy('date', 'desc').get();
 
     const progress = snapshot.docs.map((doc: DocumentSnapshot) => ({
       id: doc.id,
@@ -362,7 +394,7 @@ router.get('/projectProgress', async (_req, res) => {
 // GET /api/analytics/projectCosts - projectCostsAnalysis 컬렉션의 모든 데이터 가져오기
 router.get('/projectCosts', async (_req, res) => {
   try {
-    const snapshot = await db.collection('projectCostsAnalysis').get();  
+    const snapshot = await db.collection('projectCostsAnalysis').orderBy('date', 'desc').get();  
 
     const costs = snapshot.docs.map((doc: DocumentSnapshot) => ({
       id: doc.id,
