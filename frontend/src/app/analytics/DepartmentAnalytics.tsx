@@ -445,7 +445,7 @@ export default function DepartmentAnalytics() {
             <p className="text-gray-600 text-sm">
               {departmentAnalysis.length > 0 && (
                 <>
-                  분석 기간: {dayjs(departmentAnalysis[0].date).format('YYYY-MM-DD')} ~ {dayjs(departmentAnalysis[departmentAnalysis.length - 1].date).format('YYYY-MM-DD')}
+                  분석 기간: {dayjs(departmentAnalysis[departmentAnalysis.length - 1].date).format('YYYY-MM-DD')} ~ {dayjs(departmentAnalysis[0].date).format('YYYY-MM-DD')}
                   <span className="mx-2">•</span>
                   총 {departmentAnalysis.reduce((sum, item) => sum + (item.total_schedules ?? 0), 0)}개 일정
                   <span className="mx-2">•</span>
@@ -453,7 +453,7 @@ export default function DepartmentAnalytics() {
                     departmentAnalysis.length > 0 && departmentAnalysis[0].average_delay_per_member
                       ? (() => {
                           const values = Object.values(departmentAnalysis[0].average_delay_per_member)
-                            .map(v => typeof v === "number" && !isNaN(v) ? v : 0);
+                            .map(v => (typeof v === "object" && v !== null && typeof v.delay_time === "number") ? v.delay_time : 0);
                           const count = values.length;
                           if (count === 0) return 0;
                           const sum = values.reduce((sum, v) => sum + v, 0);

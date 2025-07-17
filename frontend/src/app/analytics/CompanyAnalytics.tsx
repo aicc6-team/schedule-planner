@@ -310,7 +310,7 @@ export default function CompanyAnalytics() {
       };
     }
 
-    const totalAttendees = Object.values(firstData.attendee_participation_counts || {}).reduce((sum, count) => sum + count, 0);
+    const totalAttendees = Object.values(firstData.attendee_participation_counts || {}).length;
     const totalOrganizers = Object.keys(firstData.organizer_schedule_counts || {}).length;
     const start = getDateString(firstData.analysis_start_date);
     const end = getDateString(firstData.analysis_end_date);

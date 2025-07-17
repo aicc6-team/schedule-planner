@@ -104,6 +104,11 @@ async function seedDepartmentTasks() {
         const prevMonth = currentDate.subtract(i, 'month').format('YYYY-MM');
         monthlyScheduleTrends[prevMonth] = randomInt(50, 150);
       }
+
+      // total_schedules: 최근 3개월치만 합산
+      const trendMonths = Object.keys(monthlyScheduleTrends).sort(); // 오름차순
+      const last3Months = trendMonths.slice(-3); // 최근 3개월
+      const totalSchedules = last3Months.reduce((sum, m) => sum + monthlyScheduleTrends[m], 0);
       
       // 태그별, 팀별 지연 건수
       const issueOccurrenceRate = {};
@@ -126,6 +131,7 @@ async function seedDepartmentTasks() {
         quality_stats: qualityStats,
         monthly_schedule_trends: monthlyScheduleTrends,
         issue_occurrence_rate: issueOccurrenceRate,
+        total_schedules: totalSchedules, // 추가
       };
 
       const ref = db.collection('DepartmentScheduleAnalysis').doc();

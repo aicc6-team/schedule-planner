@@ -188,31 +188,62 @@ export default function ProjectAnalytics() {
   }, [firstData]);
 
   //2. PERT 네트워크 데이터
-  const pertData = useMemo(() => {
-    if (!firstData || !firstData.dependencies) {
+  const pertNetwork = useMemo(() => {
+    if (!Array.isArray(projectAnalysis) || projectAnalysis.length === 0) {
       return { nodes: [], links: [] };
     }
+    const first = projectAnalysis[0];
 
-    const nodes = new Set<string>();
-    const edges: { from: string; to: string; duration: number }[] = [];
+    // dependencies: [{from, to, planned_duration}] 형태로 변환
+    let dependenciesArr: Array<{from: string, to: string, planned_duration: number}> = [];
+    if (Array.isArray(first.dependencies)) {
+      dependenciesArr = first.dependencies;
+    } else if (first.dependencies && typeof first.dependencies === 'object') {
+      dependenciesArr = Object.entries(first.dependencies).flatMap(([from, arr]) =>
+        Array.isArray(arr)
+          ? arr.map((dep: any) => ({
+              from,
+              to: dep.to,
+              planned_duration: dep.planned_duration ?? 0,
+            }))
+          : []
+      );
+    }
 
-    Object.entries(firstData.dependencies).forEach(([task, dependencies]) => {
-      nodes.add(task);
-      
-      if (Array.isArray(dependencies)) {
-        dependencies.forEach(dep => {
-          nodes.add(dep);
-          const duration = firstData.durations?.[task] || 1;
-          edges.push({ from: dep, to: task, duration });
-        });
-      }
-    });
+    // durations: [{step, duration}] 형태로 변환
+    let durationsArr: Array<{step: string, duration: number}> = [];
+    if (Array.isArray(first.durations)) {
+      durationsArr = first.durations;
+    } else if (first.durations && typeof first.durations === 'object') {
+      durationsArr = Object.entries(first.durations).map(([step, duration]) => ({
+        step,
+        duration: typeof duration === 'number' ? duration : 0,
+      }));
+    }
 
-    return {
-      nodes: Array.from(nodes).map(id => ({ id })),
-      links: edges.map(e => ({ source: e.from, target: e.to, label: String(e.duration) })),
-    };
-  }, [firstData]);
+    // 1. 모든 단계명
+    const allSteps = durationsArr.map(d => d.step);
+
+    // 2. 각 단계별 duration 매핑
+    const durationMap = Object.fromEntries(durationsArr.map(d => [d.step, d.duration]));
+
+    // 3. 노드 생성
+    const nodes = allSteps.map(step => ({
+      id: step,
+      label: `${step}\n(${durationMap[step]}일)`,
+      duration: durationMap[step],
+    }));
+
+    // 4. 링크 생성
+    const links = dependenciesArr.map(dep => ({
+      source: dep.from,
+      target: dep.to,
+      label: `${dep.planned_duration}일`,
+      value: dep.planned_duration,
+    }));
+
+    return { nodes, links };
+  }, [projectAnalysis]);
 
   //3. 단계별 지연 시간 (워터폴 차트)
   const delayData = useMemo(() => {
@@ -395,8 +426,8 @@ export default function ProjectAnalytics() {
             <p className="text-gray-600 text-sm">
               {projectAnalysis.length > 0 && (
                 <>
-                  분석 기간: {getDateString(projectAnalysis[0]?.date)}
-                  ~ {getDateString(projectAnalysis[projectAnalysis.length - 1]?.date)}
+                  분석 기간: {getDateString(projectAnalysis[projectAnalysis.length - 1]?.date)}
+                  ~ {getDateString(projectAnalysis[0]?.date)}
                   <span className="mx-2">•</span>
                   프로젝트ID: {projectAnalysis[0]?.project_id}
                   <span className="mx-2">•</span>
@@ -463,24 +494,54 @@ export default function ProjectAnalytics() {
         <div ref={chartRefs[1]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">PERT 네트워크</div>
           <div className="w-full flex-1 flex items-center justify-center">
-            <ForceGraph2D
-              graphData={pertData}
-              nodeLabel={(node: any) => node.id}
-              nodeAutoColorBy="group"
-              linkDirectionalParticles={2}
-              linkDirectionalParticleWidth={2}
-              width={250}
-              height={250}
-              nodeCanvasObject={(node: any, ctx, globalScale) => {
-                const label = node.id;
-                const fontSize = 12 / globalScale;
-                ctx.font = `${fontSize}px Sans-Serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillStyle = '#22223b';
-                ctx.fillText(label, node.x, node.y + 8);
-              }}
-            />
+          <ForceGraph2D
+            graphData={pertNetwork}
+            width={480}
+            height={340}
+            nodeRelSize={18}
+            linkDirectionalArrowLength={6}
+            linkDirectionalArrowRelPos={1}
+            linkWidth={link => 1 + (link.value || 1) * 0.7}
+            linkColor={() => "#94a3b8"}
+            linkCurvature={0}
+            nodeCanvasObject={(node, ctx, globalScale) => {
+              const x = typeof node.x === 'number' ? node.x : 0;
+              const y = typeof node.y === 'number' ? node.y : 0;
+              ctx.beginPath();
+              ctx.arc(x, y, 14, 0, 2 * Math.PI, false);
+              ctx.fillStyle = '#e0e7ef';
+              ctx.fill();
+              ctx.strokeStyle = '#64748b';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+
+              // 단계명
+              ctx.font = `bold ${Math.max(6, 7 / globalScale)}px Pretendard, sans-serif`;
+              ctx.fillStyle = '#22223b';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(String(node.id), x, y - 3);
+
+              // 기간 (하단)
+              ctx.font = `${Math.max(4, 5 / globalScale)}px Pretendard, sans-serif`;
+              ctx.fillStyle = '#3b82f6';
+              ctx.fillText(`${node.duration}일`, x, y + 4);
+            }}
+            linkCanvasObject={(link, ctx, globalScale) => {
+              const getXY = (pt: any) =>
+                pt && typeof pt === 'object' && 'x' in pt && 'y' in pt && typeof pt.x === 'number' && typeof pt.y === 'number'
+                  ? [pt.x, pt.y]
+                  : [0, 0];
+              const [sx, sy] = getXY(link.source);
+              const [tx, ty] = getXY(link.target);
+              const mx = (sx + tx) / 2;
+              const my = (sy + ty) / 2;
+              ctx.font = `${Math.max(9, 10 / globalScale)}px Pretendard, sans-serif`;
+              ctx.fillStyle = '#7b8794';
+              ctx.textAlign = 'center';
+              ctx.fillText(`${link.value}일`, mx, my - 10);
+            }}
+          />
           </div>
         </div>
 
