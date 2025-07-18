@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true })); // URL 인코딩 파싱
 
 // CORS 설정
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001'], // 개발 환경에서 두 포트 모두 허용
+  origin: ['https://schedule-planner-lake.vercel.app'],
   credentials: true,
   optionsSuccessStatus: 200
 };

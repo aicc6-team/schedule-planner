@@ -43,7 +43,7 @@ export default function GoogleCalendarEvents({ tokens }: GoogleCalendarEventsPro
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/google/calendar/events', {
+      const response = await fetch('http://44.212.4.6:3001/api/auth/google/calendar/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
