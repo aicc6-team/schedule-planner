@@ -21,7 +21,7 @@ import {
 import { analyzeScheduleConflicts, testOpenAIConnection } from '@/app/ai-structure/actions';
 
 // API 호출 함수들
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = 'http://44.212.4.6:3001';
 
 const fetchAllSchedules = async () => {
   const response = await fetch(`${API_BASE_URL}/api/schedules/all`);
