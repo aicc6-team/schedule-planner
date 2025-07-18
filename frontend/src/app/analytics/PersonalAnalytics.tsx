@@ -572,7 +572,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">태그별 완료율</div>
           <div className="flex-1 flex items-center justify-center">
             <Bar
-              ref={chartRefs[2] as any}
+              ref={chartRefs[1] as any}
               data={{
                 labels: tagStats.labels,
                 datasets: [{
@@ -609,7 +609,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">소요시간 분포</div>
           <div className="flex-1 flex items-center justify-center">
             <Bar
-              ref={chartRefs[3] as any}
+              ref={chartRefs[2] as any}
               data={{
                 labels: durationHistogram.labels,
                 datasets: [{
@@ -645,6 +645,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">소요시간 vs 감정 산점도</div>
           <div className="flex-1 flex items-center justify-center">
             <Scatter
+              ref={chartRefs[3] as any}
               data={{
                 datasets: [
                   {
@@ -687,6 +688,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">태그별 시간 분포 비교</div>
           <div className="flex-1 flex items-center justify-center">
           <Bar
+            ref={chartRefs[4] as any}
             data={{
               labels: avgDurationByTag.labels,
               datasets: [{
@@ -727,6 +729,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">상태 파이차트</div>
           <div className="w-[270px] h-[270px] mx-auto flex items-center justify-center">
             <Doughnut
+              ref={chartRefs[5] as any}
               data={{
                 labels: statusPie.labels,
                 datasets: [{
@@ -755,6 +758,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">누적 완료 추이</div>
           <div className="flex-1 flex items-center justify-center">
           <Line
+            ref={chartRefs[6] as any}
             data={cumulativeCompletion}
             options={{
               plugins: { legend: { display: false } },
@@ -782,7 +786,7 @@ export default function PersonalAnalytics() {
           <div className="font-semibold mb-3 text-[#22223b]">시작/종료 시간 분포</div>
           <div className="flex-1 flex items-center justify-center">
             <Bar
-              ref={chartRefs[8] as any}
+              ref={chartRefs[7] as any}
               data={
                 {
                   ...timeDistributionComparison,

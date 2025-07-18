@@ -1,6 +1,6 @@
 import { getCollection } from '../config/firebase';
 import { db } from '../config/firebase';
-import { DocumentSnapshot } from 'firebase-admin/firestore';
+import { DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import OpenAI from 'openai';
 import PDFDocument from 'pdfkit';
 import path from 'path';
@@ -47,18 +47,7 @@ export const getAnalytics = async (query: AnalyticsQuery = {}): Promise<Analytic
     if (query.id) {
       collectionRef = collectionRef.where('id', '==', query.id);
     }
-    // if (query.metric_name) {
-    //   collectionRef = collectionRef.where('metric_name', '==', query.metric_name);
-    // }
-    // if (query.period) {
-    //   collectionRef = collectionRef.where('period', '==', query.period);
-    // }
-    // if (query.start_date) {
-    //   collectionRef = collectionRef.where('date', '>=', query.start_date);
-    // }
-    // if (query.end_date) {
-    //   collectionRef = collectionRef.where('date', '<=', query.end_date);
-    // }
+    
     const snapshot = await collectionRef.get();
     const analytics: Analytics[] = [];
     snapshot.forEach((doc: any) => {
@@ -77,18 +66,40 @@ export const getAnalytics = async (query: AnalyticsQuery = {}): Promise<Analytic
 // 최근 3개월간 개인 일정 분석 데이터 조회 함수
 export async function getRecentPersonalSchedule(): Promise<PersonalScheduleAnalysis[]> {
   try {
+    const today = new Date();
     const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    const startTimestamp = Timestamp.fromDate(threeMonthsAgo);
+    const endTimestamp = Timestamp.fromDate(today);
     
     const snapshot = await db.collection('PersonalScheduleAnalysis')
-      .where('date', '>=', threeMonthsAgo.toISOString().split('T')[0])
+      .where('date', '>=', startTimestamp)
+      .where('date', '<=', endTimestamp)
       .orderBy('date', 'desc')
       .get();
     
-    return snapshot.docs.map((doc: DocumentSnapshot) => ({
-      id: doc.id,
-      ...doc.data()
-    })) as unknown as PersonalScheduleAnalysis[];
+    return snapshot.docs.map((doc: DocumentSnapshot) => {
+      const data = doc.data();
+      let dateString = '';
+      
+      // date 필드 처리: Firestore Timestamp 객체를 문자열로 변환
+      if (data && data['date'] && typeof data['date'] === 'object' && data['date'].toDate) {
+        // Firestore Timestamp 객체인 경우
+        dateString = data['date'].toDate().toISOString().split('T')[0];
+      } else if (data && data['date'] && typeof data['date'] === 'string') {
+        // 이미 문자열인 경우
+        dateString = data['date'];
+      } else {
+        // 기타 경우
+        dateString = '';
+      }
+      
+      return {
+        id: doc.id,
+        ...data,
+        date: dateString,
+      };
+    }) as unknown as PersonalScheduleAnalysis[];
   } catch (error) {
     console.error('Error fetching recent personal schedule analysis:', error);
     throw error;
@@ -112,7 +123,7 @@ ${JSON.stringify(stats, null, 2)}
 (모두 자연스러운 한국어로!)`;
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     messages: [{ role: 'system', content: '너는 일정 데이터를 분석하는 전문 어시스턴트야.' },
                { role: 'user', content: prompt }]
   });
@@ -143,28 +154,6 @@ export function getPeriodLabel(months: number): string {
   startDate.setMonth(startDate.getMonth() - months);
   
   return `${startDate.toISOString().split('T')[0]} ~ ${endDate.toISOString().split('T')[0]}`;
-}
-
-// 한국어 PDF 문서 정의 생성 함수 (임시 구현)
-export function makeKoreanReportDoc(summary: string, advice: string, statsTable: any, periodLabel: string) {
-  return {
-    content: [
-      { text: '개인 일정 분석 레포트', style: 'header' },
-      { text: periodLabel, style: 'subheader' },
-      { text: summary, style: 'body' },
-      { text: '조언:', style: 'subheader' },
-      { text: advice, style: 'body' },
-      { text: '통계 요약:', style: 'subheader' },
-      { text: `총 일정: ${statsTable.totalSchedules}개`, style: 'body' },
-      { text: `완료 일정: ${statsTable.completedSchedules}개`, style: 'body' },
-      { text: `완료율: ${statsTable.completionRate.toFixed(1)}%`, style: 'body' }
-    ],
-    styles: {
-      header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
-      subheader: { fontSize: 14, bold: true, margin: [0, 10, 0, 5] },
-      body: { fontSize: 12, margin: [0, 5, 0, 5] }
-    }
-  };
 }
 
 // 보고서 기록 저장 함수
@@ -219,7 +208,7 @@ export function generatePDFBuffer(
     doc.moveDown(0.2);
     doc.font('Regular').fontSize(11).fillColor('#6c757d');
     doc.text(
-      `분석기간: ${periodLabel}`,
+      `${periodLabel}`,
       { align: 'left' }
     );
     doc.moveDown(0.7);
@@ -275,7 +264,20 @@ export function generatePDFBuffer(
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(10).fillColor('#22223B');
       scheduleData.forEach((item, idx) => {
-        doc.text(`${item.date}: 총 ${item.total_schedules}, 완료 ${item.completed_schedules}`);
+        // date 필드 처리: Firestore Timestamp 객체를 문자열로 변환
+        let dateString = '';
+        if (item['date'] && typeof item['date'] === 'object' && item['date'].toDate) {
+          // Firestore Timestamp 객체인 경우
+          dateString = item['date'].toDate().toISOString().split('T')[0];
+        } else if (typeof item['date'] === 'string') {
+          // 이미 문자열인 경우
+          dateString = item['date'];
+        } else {
+          // 기타 경우
+          dateString = '날짜 없음';
+        }
+        
+        doc.text(`${dateString}: 총 ${item.total_schedules}, 완료 ${item.completed_schedules}`);
         if (idx < scheduleData.length - 1) doc.moveDown(0.2);
       });
       doc.moveDown(1);
@@ -308,11 +310,12 @@ export function generatePDFBuffer(
     doc.font('Regular').fontSize(11).fillColor('#22223B');
     [
       '• 일별 이행률',
+      '• 요일×시간대 완료율',
       '• 태그별 완료율',
       '• 소요시간 분포',
-      '• 감정 상태별 업무 수',
-      '• 상태별 업무 수',
-      '• 시간대별 일정 건수',
+      '• 소요시간 vs 감정 산점도',
+      '• 태그별 시간 분포 비교',
+      '• 상태 파이차트',
       '• 누적 완료 추이',
       '• 시작/종료 시간 분포',
     ].forEach((item) => doc.text(item));
