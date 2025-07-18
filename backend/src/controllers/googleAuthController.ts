@@ -115,7 +115,7 @@ class GoogleAuthController {
       const refreshToken = jwtService.generateRefreshToken(userId);
       
       // 프론트엔드로 리디렉션 (토큰 포함)
-      const redirectUrl = `${process.env['FRONTEND_URL'] || 'http://localhost:3000'}/dashboard?tokens=${encodeURIComponent(JSON.stringify({
+      const redirectUrl = `${process.env['FRONTEND_URL'] || 'https://schedule-planner-lake.vercel.app'}/dashboard?tokens=${encodeURIComponent(JSON.stringify({
         accessToken: jwtToken,
         refreshToken: refreshToken,
         googleTokens: tokens
@@ -125,7 +125,7 @@ class GoogleAuthController {
       
     } catch (error) {
       console.error('OAuth 콜백 처리 실패:', error);
-      const errorUrl = `${process.env['FRONTEND_URL'] || 'http://localhost:3000'}/login?error=oauth_error`;
+      const errorUrl = `${process.env['FRONTEND_URL'] || 'https://schedule-planner-lake.vercel.app'}/login?error=oauth_error`;
       return res.redirect(errorUrl);
     }
   }

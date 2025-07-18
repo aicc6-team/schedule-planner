@@ -137,7 +137,7 @@ export default function ProjectAnalytics() {
   };
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/analytics/projectTasks')
+    fetch('http://44.212.4.6:3001/api/analytics/projectTasks')
       .then(res => res.json())
       .then((data: ProjectScheduleAnalysis[]) => {
         // 데이터가 배열인지 확인하고 설정
@@ -378,7 +378,7 @@ export default function ProjectAnalytics() {
       // 1. 차트 이미지 캡처
       const chartImages = await captureCharts();
       // 2. 기존 fetch에 chartImages, chartDescriptions 추가
-      const response = await fetch('http://localhost:3001/api/analytics/generateReport', {
+      const response = await fetch('http://44.212.4.6:3001/api/analytics/generateReport', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
