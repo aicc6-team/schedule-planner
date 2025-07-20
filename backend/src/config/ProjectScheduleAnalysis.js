@@ -103,6 +103,10 @@ async function seedProjectTasks() {
       // 단계별 상태
       const stageStatus = steps.map(() => statuses[randomInt(0, statuses.length - 1)]);
 
+      // 추가: 총 작업 수 및 완료된 작업 수
+      const total_schedules = steps.length;
+      const completed_schedules = stageStatus.filter(s => s === 'completed').length;
+
       const data = {
         project_id: projectId,
         date: admin.firestore.Timestamp.fromDate(currentDate.toDate()),
@@ -118,6 +122,8 @@ async function seedProjectTasks() {
         intervals: intervals,
         cumulative_budget: cumulativeBudget,
         stage_status: stageStatus,
+        total_schedules,
+        completed_schedules,
       };
 
       const ref = db.collection('ProjectScheduleAnalysis').doc();

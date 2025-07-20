@@ -136,13 +136,6 @@ export default function PersonalAnalytics() {
         return null;
       });
 
-      const chartInfo = chartRefs.map((ref, i) => ({
-        idx: i,
-        type: ref.current?.constructor?.name,
-        hasToBase64: !!ref.current?.toBase64Image,
-        current: ref.current
-      }));
-
       const response = await fetch('http://44.212.4.6:3001/api/analytics/generateReport', {
         method: 'POST',
         headers: {
@@ -154,8 +147,8 @@ export default function PersonalAnalytics() {
           chartImages,
           reportType: 'personal',
           dateRange: {
-            start: analyticsData[0]?.date || dayjs().format('YYYY-MM-DD'),
-            end: analyticsData[analyticsData.length - 1]?.date || dayjs().format('YYYY-MM-DD')
+            start: analyticsData[analyticsData.length - 1]?.date || dayjs().format('YYYY-MM-DD'),
+            end: analyticsData[0]?.date || dayjs().format('YYYY-MM-DD')
           }
         }),
       });
