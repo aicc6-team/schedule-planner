@@ -2,10 +2,10 @@ import express from 'express';
 import { db } from '../config/firebase';
 import { DocumentSnapshot, Timestamp } from 'firebase-admin/firestore';
 import { 
-  getRecentPersonalSchedule, 
+  // getRecentPersonalSchedule, 
   getKoreanAnalysis, 
   makeStatsForPrompt, 
-  getPeriodLabel, 
+  // getPeriodLabel, 
   // makeKoreanReportDoc, 
   // saveReportRecord,
   generatePDFBuffer,
@@ -435,37 +435,34 @@ router.post('/reports', async (req, res) => {
 // POST /api/analytics/generateReport - PDF 레포트 생성
 router.post('/generateReport', async (req, res) => {
   try {
-    // const { userId } = req.body;
     const userId = "user01";
-    
-    // if (!userId) {
-    //   return res.status(400).json({ error: 'userId is required' });
-    // }
 
-    // (1) Firestore에서 3개월간 일정 데이터 조회
-    const scheduleData = await getRecentPersonalSchedule();
+    // 프론트에서 받은 값 사용 (탭별로 다름)
+    const { reportType, chartDescriptions, analyticsData, dateRange, chartImages } = req.body;
 
-    // (2) OpenAI 등 LLM으로 한글 요약/조언 생성
+    // (1) 분석 데이터, 기간, 통계 등 프론트에서 받은 값 사용
+    const scheduleData = analyticsData || [];
+    const periodLabel = dateRange
+      ? `분석기간: ${dateRange.start} ~ ${dateRange.end}`
+      : '';
+
+    // (2) 요약/조언은 기존처럼 LLM 호출 (옵션: 프론트에서 받아도 됨)
     const { summary, advice } = await getKoreanAnalysis(scheduleData);
 
     // (3) 통계표 등 시각 요약 데이터 준비
     const statsTable = makeStatsForPrompt(scheduleData);
-    const periodLabel = `분석기간: ${getPeriodLabel(3)} (최근 3개월)`;
 
-    // (4) 프론트에서 차트 이미지/설명 받기
-    const { chartImages, chartDescriptions } = req.body;
-
-    // (5) 실제 PDF 생성
+    // (4) PDF 생성
     const pdfBuffer = await generatePDFBuffer(summary, advice, statsTable, scheduleData, periodLabel, chartImages, chartDescriptions);
 
-    // (5-1) PDF 파일 저장
+    // (5) PDF 파일 저장
     const fileName = `report-${Date.now()}.pdf`;
     const uploadDir = path.join(__dirname, '../../kms');
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
     const filePath = path.join(uploadDir, fileName);
     fs.writeFileSync(filePath, pdfBuffer);
 
-    // (6) Firestore에 보고서 저장 (pdfUrl 추가)
+    // (6) Firestore에 보고서 저장 (pdfUrl, reportType, dateRange 등 포함)
     const pdfUrl = `/kms/${fileName}`;
     await db.collection('ComprehensiveAnalysisReport').add({
       userId,
@@ -474,8 +471,10 @@ router.post('/generateReport', async (req, res) => {
       scheduleData,
       periodLabel,
       createdAt: new Date(),
-      reportType: 'personal',
+      reportType: reportType || 'personal',
       pdfUrl,
+      dateRange: dateRange || null,
+      chartDescriptions: chartDescriptions || null,
     });
 
     // (7) PDF 파일 다운로드 응답

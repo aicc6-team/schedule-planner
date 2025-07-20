@@ -46,41 +46,24 @@ export default function CompanyAnalytics() {
   const [companyAnalysis, setCompanyAnalysis] = useState<CompanyScheduleAnalysis[]>([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
-  // 차트별 ref 생성
-  const chartRefs = [
-    useRef<HTMLDivElement>(null), // 1. 일정 기간별 분포
-    useRef<HTMLDivElement>(null), // 2. 시간대별 분포
-    useRef<HTMLDivElement>(null), // 3. 참석자별 참여 횟수
-    useRef<HTMLDivElement>(null), // 4. 협조 기관 네트워크
-    useRef<HTMLDivElement>(null), // 5. 주최 기관별 일정 수
-    useRef<HTMLDivElement>(null), // 6. 일정 카테고리별 비율
-    useRef<HTMLDivElement>(null), // 7. 월별 일정 건수 추이
-    useRef<HTMLDivElement>(null), // 8. 일정 기간 vs 참여자 수
-  ];
+  // 차트 ref 배열 (컴포넌트 함수 내부로 이동)
+  const chartRefs = useMemo(
+    () =>
+      Array.from({ length: 8 }, () =>
+        React.createRef<any>()
+      ),
+    []
+  );
   const chartDescriptions = [
-    '일정 기간별 분포',
-    '시간대별 일정 분포',
-    '참석자별 참여 횟수',
-    '협조 기관 네트워크',
-    '주최 기관별 일정 수',
-    '일정 카테고리별 비율',
-    '월별 일정 건수 추이',
-    '일정 기간 vs 참여자 수',
+    '일정 기간별 분포: 일정의 전체 기간(소요 일수)을 구간별로 분포를 확인할 수 있는 히스토그램입니다.',
+    '시간대별 일정 분포: 하루 중 어느 시간대에 일정이 집중되어 있는지 바그래프로 보여줍니다.',
+    '참석자별 참여 횟수: 참석자별로 참여한 일정의 횟수를 막대그래프로 시각화합니다.',
+    '협조 기관 네트워크: 협조 기관 간의 협력 관계를 네트워크 그래프로 나타냅니다.',
+    '주최 기관별 일정 수: 주최 기관별로 등록된 일정의 개수를 막대그래프로 나타냅니다.',
+    '일정 카테고리별 비율: 일정의 카테고리별(회의, 워크샵 등) 비율을 파이차트로 보여줍니다.',
+    '월별 일정 건수 추이: 월별 전체 일정 건수의 변화를 선그래프로 보여줍니다.',
+    '일정 기간 vs 참여자 수: 일정 기간과 그에 따른 참석자 수의 관계를 산점도로 시각화합니다.',
   ];
-
-  // 차트 캡처 함수
-  const captureCharts = async () => {
-    const images: string[] = [];
-    for (const ref of chartRefs) {
-      if (ref.current) {
-        const canvas = await html2canvas(ref.current);
-        images.push(canvas.toDataURL('image/png'));
-      } else {
-        images.push('');
-      }
-    }
-    return images;
-  };
 
   const getRecent6Months = () => {
     const arr: string[] = [];
@@ -99,7 +82,10 @@ export default function CompanyAnalytics() {
         const analysisArray = Array.isArray(data) ? data : [];
         setCompanyAnalysis(analysisArray);
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        setCompanyAnalysis([]);
+      });
   }, []);
 
   // 첫 번째 분석 데이터 가져오기 (가장 최근 데이터)
@@ -326,14 +312,17 @@ export default function CompanyAnalytics() {
 
   // 회사 레포트 생성 함수
   const generateReport = async () => {
+    console.log('companyAnalysis:', companyAnalysis);
     setIsGeneratingReport(true);
     try {
       if (!Array.isArray(companyAnalysis) || companyAnalysis.length === 0) {
         console.error('분석 데이터가 없습니다.');
         return;
       }
-      // 1. 차트 이미지 캡처
-      const chartImages = await captureCharts();
+      
+      // 차트 이미지 추출
+      const chartImages = chartRefs.map(ref => ref.current?.toBase64Image?.() ?? null);
+
       // 2. 기존 fetch에 chartImages, chartDescriptions 추가
       const response = await fetch('http://44.212.4.6:3001/api/analytics/generateReport', {
         method: 'POST',
@@ -430,10 +419,11 @@ export default function CompanyAnalytics() {
       {/* 3x3 그리드: 9개 회사 일정 분석 차트 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
         {/* 1. 일정 기간별 분포 (파이차트) */}
-        <div ref={chartRefs[0]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center">
           <div className="font-semibold mb-3 text-[#22223b]">일정 기간별 분포</div>
           <div className="w-[270px] h-[270px] flex items-center justify-center">
             <Pie
+              ref={chartRefs[0]}
               data={durationDistribution}
               options={{
                 plugins: { legend: { position: 'bottom' } },
@@ -443,10 +433,11 @@ export default function CompanyAnalytics() {
         </div>
 
         {/* 2. 시간대별 분포 (막대그래프) */}
-        <div ref={chartRefs[1]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">시간대별 일정 분포</div>
           <div className="flex-1 flex items-center">
             <Bar
+              ref={chartRefs[1]}
               data={{
                 ...timeSlotDistribution,
                 datasets: timeSlotDistribution.datasets.map(ds => ({
@@ -464,10 +455,11 @@ export default function CompanyAnalytics() {
         </div>
 
         {/* 3. 참석자별 참여 횟수 (막대그래프) */}
-        <div ref={chartRefs[2]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">참석자별 참여 횟수</div>
           <div className="flex-1 flex items-center">
             <Bar
+              ref={chartRefs[2]}
               data={{
                 ...attendeeParticipation,
                 datasets: attendeeParticipation.datasets.map(ds => ({
@@ -485,31 +477,11 @@ export default function CompanyAnalytics() {
         </div>
 
         {/* 4. 협조 기관 네트워크 그래프 */}
-        <div ref={chartRefs[3]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center justify-center min-h-[300px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center justify-center min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">협조 기관 네트워크</div>
           <div className="w-full flex-1 flex items-center justify-center" style={{height:250}}>
-          {/* <ForceGraph2D
-            graphData={orgNetworkGraph}
-            width={420}
-            height={340}
-            nodeRelSize={14}
-            cooldownTicks={90}
-            linkWidth={link => 1 + (link.value || 1) * 0.6}
-            linkColor={() => "rgba(100,100,100,0.45)"}
-            linkCurvature={0}
-            nodeCanvasObject={(node: any, ctx, globalScale) => {
-              const label = node.id;
-              ctx.font = `${Math.max(10, 14 / globalScale)}px Pretendard, sans-serif`;
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillStyle = node.color || '#22223b';
-              ctx.strokeStyle = 'white';
-              ctx.lineWidth = 3;
-              ctx.strokeText(label, node.x, node.y);
-              ctx.fillText(label, node.x, node.y);
-            }}
-          /> */}
           <ForceGraph2D
+            ref={chartRefs[3]}
             graphData={orgNetworkGraph}
             width={420}
             height={360}
@@ -518,6 +490,7 @@ export default function CompanyAnalytics() {
             // onEngineStop={fg => fg.zoomToFit(430, 60)}
             d3VelocityDecay={0.12}
             d3AlphaDecay={0.01}
+            enableZoomInteraction={false}
             // d3Force="charge"
             // d3Charge={-520}
             linkWidth={link => 1 + (link.value || 1) * 0.7}
@@ -539,10 +512,11 @@ export default function CompanyAnalytics() {
         </div>
 
         {/* 5. 주최 기관별 일정 수 (막대그래프) */}
-        <div ref={chartRefs[4]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">주최 기관별 일정 수</div>
           <div className="flex-1 flex items-center">
             <Bar
+              ref={chartRefs[4]}
               data={{
                 ...organizerScheduleCounts,
                 datasets: organizerScheduleCounts.datasets.map(ds => ({
@@ -560,10 +534,11 @@ export default function CompanyAnalytics() {
         </div>
 
         {/* 6. 일정 카테고리별 비율 (도넛차트) */}
-        <div ref={chartRefs[5]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center">
           <div className="font-semibold mb-3 text-[#22223b]">일정 카테고리별 비율</div>
           <div className="w-[270px] h-[270px] flex items-center justify-center">
             <Doughnut
+              ref={chartRefs[5]}
               data={categoryRatio}
               options={{
                 plugins: { legend: { position: 'bottom' } },
@@ -573,10 +548,11 @@ export default function CompanyAnalytics() {
         </div>
 
         {/* 7. 월별 일정 건수 추이 (라인차트) */}
-        <div ref={chartRefs[6]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">월별 일정 건수 추이</div>
           <div className="flex-1 flex items-center">
             <Line
+              ref={chartRefs[6]}
               data={monthlyScheduleCounts}
               options={{
                 plugins: { legend: { display: false } },
@@ -587,10 +563,11 @@ export default function CompanyAnalytics() {
         </div>
 
         {/* 8. 일정 기간 vs 참여자 수 산점도 */}
-        <div ref={chartRefs[7]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">기간 vs 참여자 수</div>
           <div className="flex-1 flex items-center">
             <Scatter
+              ref={chartRefs[7]}
               data={durationVsParticipants}
               options={{
                 plugins: { legend: { display: false } },
