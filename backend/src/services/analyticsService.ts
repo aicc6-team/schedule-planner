@@ -264,19 +264,19 @@ export function generatePDFBuffer(
       doc.moveDown(0.3);
       doc.font('Regular').fontSize(10).fillColor('#22223B');
       scheduleData.forEach((item, idx) => {
-        // date 필드 처리: Firestore Timestamp 객체를 문자열로 변환
+        // reportType이 company면 updated_at, 아니면 date 사용
         let dateString = '';
-        if (item['date'] && typeof item['date'] === 'object' && item['date'].toDate) {
-          // Firestore Timestamp 객체인 경우
-          dateString = item['date'].toDate().toISOString().split('T')[0];
-        } else if (typeof item['date'] === 'string') {
-          // 이미 문자열인 경우
-          dateString = item['date'];
+        let dateValue = item['date'];
+        if (item.reportType === 'company') {
+          dateValue = item['updated_at'];
+        }
+        if (dateValue && typeof dateValue === 'object' && dateValue.toDate) {
+          dateString = dateValue.toDate().toISOString().split('T')[0];
+        } else if (typeof dateValue === 'string') {
+          dateString = dateValue;
         } else {
-          // 기타 경우
           dateString = '날짜 없음';
         }
-        
         doc.text(`${dateString}: 총 ${item.total_schedules}, 완료 ${item.completed_schedules}`);
         if (idx < scheduleData.length - 1) doc.moveDown(0.2);
       });
@@ -287,38 +287,83 @@ export function generatePDFBuffer(
     if (Array.isArray(chartImages) && Array.isArray(chartDescriptions)) {
       chartImages.forEach((img, idx) => {
         if (!img) return;
-        doc.font('Bold').fontSize(12).fillColor('#22223B').text(chartDescriptions[idx] || '', { align: 'left' });
-        doc.moveDown(0.2);
-        try {
-          const base64 = img.replace(/^data:image\/png;base64,/, '');
-          const buf = Buffer.from(base64, 'base64');
-          doc.image(buf, { fit: [300, 150], align: 'center', valign: 'center' });
-        } catch (e) {
-          doc.font('Regular').fontSize(10).fillColor('red').text('차트 이미지를 불러올 수 없습니다.');
+        const base64 = img.replace(/^data:image\/png;base64,/, '');
+        const buf = Buffer.from(base64, 'base64');
+        const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+        const imgWidth = Math.floor(pageWidth * 0.5); // 이미지 50%
+        const imgHeight = 200;
+        const descX = doc.page.margins.left + imgWidth + 20; // 이미지 오른쪽에 20px 여백
+        const descWidth = Math.floor(pageWidth * 0.45); // 설명 45%
+        let startY = doc.y;
+        const descText = chartDescriptions[idx] || '';
+        // 제목:설명 분리
+        let title = descText;
+        let body = '';
+        if (descText.includes(':')) {
+          const arr = descText.split(/:(.+)/);
+          title = (arr[0] ?? '').trim();
+          body = (arr[1] ?? '').trim();
         }
-        doc.moveDown(0.5);
-        doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).stroke('#e5e7eb');
+        // 설명 텍스트 높이 측정 (body가 있으면 개행 포함)
+        const descTextHeight = doc.heightOfString(body ? title + '\n' + body : title, { width: descWidth });
+        const blockHeight = Math.max(imgHeight, descTextHeight);
+        // 블록 전체가 들어갈 공간이 남는지 체크
+        if (startY + blockHeight > doc.page.height - doc.page.margins.bottom) {
+          doc.addPage();
+          startY = doc.y;
+        }
+        // 이미지 왼쪽에 출력
+        doc.image(buf, doc.page.margins.left, startY, { fit: [imgWidth, imgHeight] });
+        // 설명 오른쪽에 출력
+        let descY = startY;
+        if (body) {
+          // 제목 bold, 설명은 개행 후 regular
+          doc.font('Bold').fontSize(11).fillColor('#22223B');
+          doc.text(title, descX, descY, { width: descWidth, align: 'left', continued: false });
+          descY += doc.heightOfString(title, { width: descWidth });
+          doc.font('Regular').fontSize(11).fillColor('#22223B');
+          doc.text(body, descX, descY, { width: descWidth, align: 'left' });
+        } else {
+          // 전체를 regular로
+          doc.font('Regular').fontSize(11).fillColor('#22223B');
+          doc.text(title, descX, descY, { width: descWidth, align: 'left' });
+        }
+        // y좌표를 이미지/설명 중 더 큰 높이만큼 내림
+        doc.y = startY + blockHeight + 10;
+        // 구분선
+        doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke('#e5e7eb');
         doc.moveDown(0.5);
       });
     }
 
     // ======================= 4. 분석 항목 안내 =========================
     doc.font('Bold').fontSize(13).fillColor('#22223B');
-    doc.text('4. 분석 항목 안내');
+    doc.text('4. 분석 항목 안내', doc.page.margins.left, doc.y, { align: 'left' });
     doc.moveDown(0.3);
 
     doc.font('Regular').fontSize(11).fillColor('#22223B');
-    [
-      '• 일별 이행률',
-      '• 요일×시간대 완료율',
-      '• 태그별 완료율',
-      '• 소요시간 분포',
-      '• 소요시간 vs 감정 산점도',
-      '• 태그별 시간 분포 비교',
-      '• 상태 파이차트',
-      '• 누적 완료 추이',
-      '• 시작/종료 시간 분포',
-    ].forEach((item) => doc.text(item));
+    const descriptionsToUse = Array.isArray(chartDescriptions) && chartDescriptions.length > 0
+      ? chartDescriptions
+      : [
+          '• 일별 이행률',
+          '• 요일×시간대 완료율',
+          '• 태그별 완료율',
+          '• 소요시간 분포',
+          '• 소요시간 vs 감정 산점도',
+          '• 태그별 시간 분포 비교',
+          '• 상태 파이차트',
+          '• 누적 완료 추이',
+          '• 시작/종료 시간 분포',
+        ];
+    descriptionsToUse.forEach((item) => {
+      let text = '';
+      if (typeof item === 'string') {
+        text = item.split(":")[0] ?? '';
+      } else if (item != null) {
+        text = String(item);
+      }
+      doc.text(text || '');
+    });
     doc.moveDown(1);
 
     // ======================= 5. 차트/표 안내 =========================
@@ -361,7 +406,9 @@ export async function getReportsByPeriodAndType(from: string, to: string, type: 
     const query = db.collection('ComprehensiveAnalysisReport')
       .where('reportType', '==', type)
       .where('createdAt', '>=', fromDate)
-      .where('createdAt', '<=', toDate);
+      .where('createdAt', '<=', toDate)
+      .orderBy('createdAt', 'desc'); // createdAt 기준 내림차순 정렬
+
     const snapshot = await query.get();
 
     return snapshot.docs.map(doc => ({

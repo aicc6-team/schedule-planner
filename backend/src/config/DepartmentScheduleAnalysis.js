@@ -9,7 +9,7 @@ admin.initializeApp({
 const db = admin.firestore();
 
 const departments = ['스마트앱개발팀', 'AI팀', '디자인팀', '기획팀', '영업팀'];
-const members = ['김민준', '이서연', '박지후', '최예린', '정현우', '조민서', '장하준', '오유진'];
+const members = ['김민준', '이서영', '박지후', '최예린', '정현우', '조민서', '장하준', '오유진'];
 const scheduleTypes = ['회의', '개발', '검토', '기획'];
 const timeSlots = ['09:00-11:00', '11:00-13:00', '13:00-15:00', '15:00-17:00', '17:00-19:00'];
 
@@ -110,6 +110,9 @@ async function seedDepartmentTasks() {
       const last3Months = trendMonths.slice(-3); // 최근 3개월
       const totalSchedules = last3Months.reduce((sum, m) => sum + monthlyScheduleTrends[m], 0);
       
+      // 완료된 일정 수 (예: 전체 일정의 60~90%를 랜덤으로 완료된 것으로 설정)
+      const completedSchedules = randomInt(Math.floor(totalSchedules * 0.6), Math.floor(totalSchedules * 0.9));
+
       // 태그별, 팀별 지연 건수
       const issueOccurrenceRate = {};
       scheduleTypes.forEach(type => {
@@ -132,6 +135,7 @@ async function seedDepartmentTasks() {
         monthly_schedule_trends: monthlyScheduleTrends,
         issue_occurrence_rate: issueOccurrenceRate,
         total_schedules: totalSchedules, // 추가
+        completed_schedules: completedSchedules,
       };
 
       const ref = db.collection('DepartmentScheduleAnalysis').doc();

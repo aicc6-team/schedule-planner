@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true })); // URL 인코딩 파싱
 
 // CORS 설정
 const corsOptions = {
-  origin: ['https://schedule-planner-lake.vercel.app'],
+  origin: ['https://schedule-planner-lake.vercel.app', 'http://localhost:3000'],
   credentials: true,
   optionsSuccessStatus: 200
 };

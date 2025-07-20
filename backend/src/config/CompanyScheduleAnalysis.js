@@ -97,11 +97,15 @@ async function seedCompanyMetrics() {
       scheduleCategoryRatio[category] = randomFloat(0.1, 0.4, 2);
     });
     
+    // 완료된 일정 수 (예: 전체 일정의 60~90%를 랜덤으로 완료된 것으로 설정)
+    const completedSchedules = randomInt(Math.floor(totalSchedules * 0.6), Math.floor(totalSchedules * 0.9));
+
     const data = {
       schedule_id: `schedule_${monthStr}`,
       analysis_start_date: admin.firestore.Timestamp.fromDate(analysisStartDate.toDate()),
       analysis_end_date: admin.firestore.Timestamp.fromDate(analysisEndDate.toDate()),
       total_schedules: totalSchedules,
+      completed_schedules: completedSchedules,
       schedule_duration_distribution: scheduleDurationDistribution,
       time_slot_distribution: timeSlotDistribution,
       attendee_participation_counts: attendeeParticipationCounts,
