@@ -147,8 +147,8 @@ export default function PersonalAnalytics() {
           chartImages,
           reportType: 'personal',
           dateRange: {
-            start: analyticsData[0]?.date || dayjs().format('YYYY-MM-DD'),
-            end: analyticsData[analyticsData.length - 1]?.date || dayjs().format('YYYY-MM-DD')
+            start: analyticsData[analyticsData.length - 1]?.date || dayjs().format('YYYY-MM-DD'),
+            end: analyticsData[0]?.date || dayjs().format('YYYY-MM-DD')
           }
         }),
       });

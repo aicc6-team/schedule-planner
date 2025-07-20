@@ -127,8 +127,8 @@ export default function DepartmentAnalytics() {
           analyticsData: departmentAnalysis,
           reportType: 'department',
           dateRange: {
-            start: departmentAnalysis[0]?.date || dayjs().format('YYYY-MM-DD'),
-            end: departmentAnalysis[departmentAnalysis.length - 1]?.date || dayjs().format('YYYY-MM-DD')
+            start: departmentAnalysis[departmentAnalysis.length - 1]?.date || dayjs().format('YYYY-MM-DD'),
+            end: departmentAnalysis[0]?.date || dayjs().format('YYYY-MM-DD')
           },
           chartImages,
           chartDescriptions,

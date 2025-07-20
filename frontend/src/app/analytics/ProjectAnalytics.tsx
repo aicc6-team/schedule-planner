@@ -430,8 +430,8 @@ export default function ProjectAnalytics() {
           analyticsData: projectAnalysis,
           reportType: 'project',
           dateRange: {
-            start: projectAnalysis[0]?.date || dayjs().format('YYYY-MM-DD'),
-            end: projectAnalysis[projectAnalysis.length - 1]?.date || dayjs().format('YYYY-MM-DD')
+            start: projectAnalysis[projectAnalysis.length - 1]?.date || dayjs().format('YYYY-MM-DD'),
+            end: projectAnalysis[0]?.date || dayjs().format('YYYY-MM-DD')
           },
           chartImages,
           chartDescriptions,
