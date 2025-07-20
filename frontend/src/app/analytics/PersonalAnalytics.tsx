@@ -136,13 +136,6 @@ export default function PersonalAnalytics() {
         return null;
       });
 
-      const chartInfo = chartRefs.map((ref, i) => ({
-        idx: i,
-        type: ref.current?.constructor?.name,
-        hasToBase64: !!ref.current?.toBase64Image,
-        current: ref.current
-      }));
-
       const response = await fetch('http://44.212.4.6:3001/api/analytics/generateReport', {
         method: 'POST',
         headers: {

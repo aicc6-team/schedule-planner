@@ -52,28 +52,24 @@ export default function DepartmentAnalytics() {
   const [departmentData, setDepartmentData] = useState<DepartmentSchedule[]>([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
-  // 차트별 ref 생성 (9개)
-  const chartRefs = [
-    useRef<HTMLDivElement>(null), // 1. 팀원별 응답시간
-    useRef<HTMLDivElement>(null), // 2. 일정 유형 비율
-    useRef<HTMLDivElement>(null), // 3. 시간대별 병목 히트맵
-    useRef<HTMLDivElement>(null), // 4. 협업 네트워크
-    useRef<HTMLDivElement>(null), // 5. 팀원별 작업량
-    useRef<HTMLDivElement>(null), // 6. 수행시간 분포
-    useRef<HTMLDivElement>(null), // 7. 품질 vs 시간
-    useRef<HTMLDivElement>(null), // 8. 월별 작업량
-    useRef<HTMLDivElement>(null), // 9. 이슈 발생률
-  ];
+  // 차트 ref 배열 (컴포넌트 함수 내부로 이동)
+  const chartRefs = useMemo(
+    () =>
+      Array.from({ length: 9 }, () =>
+        React.createRef<any>()
+      ),
+    []
+  );
   const chartDescriptions = [
-    '팀원별 응답시간',
-    '일정 유형 비율',
-    '시간대별 병목',
-    '협업 네트워크',
-    '팀원별 작업량',
-    '수행시간 분포',
-    '품질 vs 시간',
-    '월별 작업량',
-    '이슈 발생률',
+    '팀원별 응답시간: 각 팀원의 평균 응답(지연) 시간을 막대그래프로 나타냅니다.',
+    '일정 유형 비율: 회의/실행/검토 등 일정 유형별 비율을 파이차트로 시각화합니다.',
+    '요일×시간대 완료율: 요일과 시간대별로 일정 완료 비율을 히트맵으로 보여줍니다.',
+    '협업 네트워크: 팀원 간 협업 네트워크 구조를 그래프로 나타냅니다.',
+    '팀원별 작업량: 팀원별·업무유형별 시간 투입량을 스택형 막대그래프로 보여줍니다.',
+    '수행시간 분포: 각 팀원의 업무 수행 시간의 분포(최소~최대·평균 등)를 박스플롯 또는 막대그래프로 시각화합니다.',
+    '품질 vs 시간: 팀원별 업무 품질점수와 소요시간의 상관관계를 산점도로 표현합니다.',
+    '월별 작업량: 월별 전체 일정 건수를 선그래프로 추이와 함께 보여줍니다.',
+    '이슈 발생률: 팀별, 태그별로 발생한 일정 지연(이슈) 건수를 막대그래프로 나타냅니다.',
   ];
 
 
@@ -86,20 +82,6 @@ export default function DepartmentAnalytics() {
     { label: '17:00-19:00', start: 17, end: 19 }
   ];
   const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-
-  // 차트 캡처 함수
-  const captureCharts = async () => {
-    const images: string[] = [];
-    for (const ref of chartRefs) {
-      if (ref.current) {
-        const canvas = await html2canvas(ref.current);
-        images.push(canvas.toDataURL('image/png'));
-      } else {
-        images.push('');
-      }
-    }
-    return images;
-  };
 
   useEffect(() => {
     fetch('http://44.212.4.6:3001/api/analytics/departmentTasks')
@@ -131,8 +113,10 @@ export default function DepartmentAnalytics() {
         console.error('분석 데이터가 없습니다.');
         return;
       }
-      // 1. 차트 이미지 캡처
-      const chartImages = await captureCharts();
+      debugger;
+      // 차트 이미지 추출
+      const chartImages = chartRefs.map(ref => ref.current?.toBase64Image?.() ?? null);
+
       // 2. 기존 fetch에 chartImages, chartDescriptions 추가
       const response = await fetch('http://44.212.4.6:3001/api/analytics/generateReport', {
         method: 'POST',
@@ -500,10 +484,11 @@ export default function DepartmentAnalytics() {
       {/* 3x3 그리드: 9개 부서 일정 분석 차트 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
         {/* 1. 팀원별 응답시간 (막대그래프) */}
-        <div ref={chartRefs[0]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[300px]">
           <div className="font-semibold mb-3 text-[#22223b]">팀원별 응답시간</div>
           <div className="flex-1 flex items-center">
             <Bar
+              ref={chartRefs[0]}
               data={{
                 labels: delayByMember.labels,
                 datasets: [{
@@ -535,10 +520,11 @@ export default function DepartmentAnalytics() {
         </div>
 
         {/* 2. 일정 유형 파이차트 */}
-        <div ref={chartRefs[1]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-center">
           <div className="font-semibold mb-3 text-[#22223b]">일정 유형 비율</div>
           <div className="w-[270px] h-[270px] flex items-center justify-center">
             <Pie
+              ref={chartRefs[1]}
               data={{
                 labels: typeRatioPie.labels,
                 datasets: [{
@@ -573,7 +559,7 @@ export default function DepartmentAnalytics() {
         </div>
 
         {/* 3. 시간대별 병목 히트맵 (커스텀) */}
-        <div ref={chartRefs[2]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">요일×시간대 완료율</div>
           {/* 히트맵: 커스텀 렌더링 */}
           <div className="flex-1 flex items-center">
@@ -631,7 +617,6 @@ export default function DepartmentAnalytics() {
 
         {/* 4. 협업 네트워크 그래프 (실제 차트) */}
         <div
-          ref={chartRefs[3]}
           className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col items-start min-h-[420px]"
           style={{ minHeight: 420, width: '100%', minWidth: 480, height: 420 }}
         >
@@ -640,11 +625,13 @@ export default function DepartmentAnalytics() {
           <div style={{ width: 420, height: 360 }}>
             
           <ForceGraph2D
+            ref={chartRefs[2]}
             graphData={graphData}
             width={420}
             height={360}
             nodeRelSize={12}
             cooldownTicks={90}
+            enableZoomInteraction={false}
             // onEngineStop={fg => fg.zoomToFit(430, 60)}
             d3VelocityDecay={0.12}
             d3AlphaDecay={0.01}
@@ -669,10 +656,11 @@ export default function DepartmentAnalytics() {
         </div>
         
         {/* 5. 팀원별 작업량 스택바 */}
-        <div ref={chartRefs[4]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[240px]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col min-h-[240px]">
           <div className="font-semibold mb-3 text-[#22223b]">팀원별 작업량</div>
           <div className="flex-1">
             <Bar
+              ref={chartRefs[3]}
               data={{
                 ...deptTypeDuration,
                 datasets: deptTypeDuration.datasets.map(ds => ({
@@ -696,9 +684,10 @@ export default function DepartmentAnalytics() {
         </div>
         
         {/* 6. 수행시간 분포 박스플롯 */}
-        <div ref={chartRefs[5]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">수행시간 분포</div>
           <Bar
+            ref={chartRefs[4]}
             data={execTimeStats}
             options={{
               plugins: { legend: { position: 'bottom' } },
@@ -709,9 +698,10 @@ export default function DepartmentAnalytics() {
         </div>
 
         {/* 7. 품질 vs 시간 산점도 */}
-        <div ref={chartRefs[6]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">품질 vs 시간</div>
           <Scatter
+            ref={chartRefs[5]}
             data={{
               ...qualityScatter,
               datasets: qualityScatter.datasets.map(ds => ({
@@ -734,9 +724,10 @@ export default function DepartmentAnalytics() {
         </div>
 
         {/* 8. 월별 작업량 라인차트 */}
-        <div ref={chartRefs[7]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">월별 작업량</div>
           <Line
+            ref={chartRefs[6]}
             data={monthlyCount}
             options={{
               plugins: { legend: { display: false } },
@@ -750,9 +741,10 @@ export default function DepartmentAnalytics() {
         </div>
 
         {/* 9. 이슈 발생률 (막대그래프) */}
-        <div ref={chartRefs[8]} className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex flex-col">
           <div className="font-semibold mb-3 text-[#22223b]">이슈 발생률</div>
           <Bar
+            ref={chartRefs[7]}
             data={issueMatrix}
             options={{
               plugins: { legend: { position: 'bottom' } },
