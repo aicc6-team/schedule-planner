@@ -84,7 +84,7 @@ export default function ReportsPage() {
         if (selectedType !== 'all') {
           body.type = selectedType;
         }
-        const res = await fetch('http://44.212.4.6:3001/api/analytics/reports', {
+        const res = await fetch('http://localhost:3001/api/analytics/reports', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export default function ReportsPage() {
   const handleDownload = async (pdfUrl: string) => {
     setDownloadingPdf(true);
     try {
-      const res = await fetch('http://44.212.4.6:3001' + pdfUrl);
+      const res = await fetch('http://localhost:3001' + pdfUrl);
       if (!res.ok) throw new Error('PDF 다운로드 실패');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);

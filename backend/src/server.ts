@@ -8,8 +8,8 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log('🚀 서버가 시작되었습니다!');
-      console.log(`📍 서버 주소: http://44.212.4.6:3001`);
-      console.log(`🔍 헬스 체크: http://44.212.4.6:3001/health`);
+      console.log(`📍 서버 주소: http://localhost:3001`);
+      console.log(`🔍 헬스 체크: http://localhost:3001/health`);
       console.log(`🌍 환경: ${process.env['NODE_ENV'] || 'development'}`);
       console.log(`⏰ 시작 시간: ${new Date().toISOString()}`);
     });

@@ -13,7 +13,7 @@ import Modal from '@/components/Modal';
 import EditScheduleForm from '@/components/EditScheduleForm';
 
 // API 호출 함수들 - 전체 일정 조회만 남기고 나머지는 생략 (실제 파일에는 존재)
-const API_BASE_URL = 'http://44.212.4.6:3001';
+const API_BASE_URL = 'http://localhost:3001';
 
 const fetchAllSchedules = async (): Promise<{personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[], company: CompanySchedule[]}> => {
   const response = await fetch(`${API_BASE_URL}/api/schedules/all`);
