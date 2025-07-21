@@ -85,7 +85,7 @@ export default function PersonalAnalytics() {
 
   useEffect(() => {
 
-    fetch('http://44.212.4.6:3001/api/analytics/personalTasks')
+    fetch('http://localhost:3001/api/analytics/personalTasks')
       .then(res => res.json())
       .then((data: PersonalScheduleAnalysis[]) => {
 
@@ -102,7 +102,7 @@ export default function PersonalAnalytics() {
   }, []);
 
   useEffect(() => {
-    fetch('http://44.212.4.6:3001/api/analytics/personal')
+    fetch('http://localhost:3001/api/analytics/personal')
       .then(res => res.json())
       .then((data: PersonalSchedule[]) => {
 
@@ -136,7 +136,7 @@ export default function PersonalAnalytics() {
         return null;
       });
 
-      const response = await fetch('http://44.212.4.6:3001/api/analytics/generateReport', {
+      const response = await fetch('http://localhost:3001/api/analytics/generateReport', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

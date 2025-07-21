@@ -75,7 +75,7 @@ export default function CompanyAnalytics() {
   };
 
   useEffect(() => {
-    fetch('http://44.212.4.6:3001/api/analytics/companyTasks')
+    fetch('http://localhost:3001/api/analytics/companyTasks')
       .then(res => res.json())
       .then((data: CompanyScheduleAnalysis[]) => {
         // 데이터가 배열인지 확인하고 설정
@@ -324,7 +324,7 @@ export default function CompanyAnalytics() {
       const chartImages = chartRefs.map(ref => ref.current?.toBase64Image?.() ?? null);
 
       // 2. 기존 fetch에 chartImages, chartDescriptions 추가
-      const response = await fetch('http://44.212.4.6:3001/api/analytics/generateReport', {
+      const response = await fetch('http://localhost:3001/api/analytics/generateReport', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

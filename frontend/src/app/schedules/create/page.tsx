@@ -53,7 +53,7 @@ const scheduleTypes = [
 ];
 
 // API 호출 함수들
-const API_BASE_URL = 'http://44.212.4.6:3001';
+const API_BASE_URL = 'http://localhost:3001';
 
 const fetchPersonalSchedule = async (id: string) => {
   const response = await fetch(`${API_BASE_URL}/api/schedules/personal/${id}`);
@@ -343,7 +343,7 @@ function ScheduleCreateContent() {
 
   // API 호출 함수들
   const createPersonalSchedule = async (data: any) => {
-    const response = await fetch('http://44.212.4.6:3001/api/schedules/personal', {
+    const response = await fetch('http://localhost:3001/api/schedules/personal', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -360,7 +360,7 @@ function ScheduleCreateContent() {
   };
 
   const createDepartmentSchedule = async (data: any) => {
-    const response = await fetch('http://44.212.4.6:3001/api/schedules/department', {
+    const response = await fetch('http://localhost:3001/api/schedules/department', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -377,7 +377,7 @@ function ScheduleCreateContent() {
   };
 
   const createProjectSchedule = async (data: any) => {
-    const response = await fetch('http://44.212.4.6:3001/api/schedules/project', {
+    const response = await fetch('http://localhost:3001/api/schedules/project', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
