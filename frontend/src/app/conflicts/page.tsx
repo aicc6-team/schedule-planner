@@ -194,44 +194,39 @@ const transformProjectSchedule = (projectSchedule: ProjectSchedule): Schedule | 
 
 const transformCompanySchedule = (companySchedule: CompanySchedule): Schedule | null => {
   console.log('회사 일정 변환 시작:', companySchedule);
+  console.log('start_datetime 원본 값:', companySchedule.start_datetime);
+  console.log('end_datetime 원본 값:', companySchedule.end_datetime);
+  console.log('created_at 원본 값:', companySchedule.created_at);
   
   let start: Date, end: Date;
   
   try {
-    // 시작 시간 처리 - start_datetime 또는 start_time 필드 사용
-    const startField = companySchedule.start_datetime || companySchedule.start_time;
-    const endField = companySchedule.end_datetime || companySchedule.end_time;
-    
-    if (!startField || !endField) {
-      console.warn('회사 일정에 필수 날짜 필드가 없습니다:', companySchedule);
+    // Firebase에서 오는 날짜 문자열을 직접 처리
+    if (companySchedule.start_datetime) {
+      start = new Date(companySchedule.start_datetime);
+      console.log('변환된 start_datetime:', start);
+      console.log('start_datetime 타입:', typeof companySchedule.start_datetime);
+    } else {
+      console.warn('회사 일정에 start_datetime이 없습니다:', companySchedule);
       return null;
     }
     
-    // Firestore timestamp 객체 처리
-    if (startField && typeof startField === 'object' && startField._seconds) {
-      start = new Date(startField._seconds * 1000 + (startField._nanoseconds || 0) / 1000000);
-    } else if (startField instanceof Date) {
-      start = startField;
-    } else if (typeof startField === 'string') {
-      start = new Date(startField);
+    if (companySchedule.end_datetime) {
+      end = new Date(companySchedule.end_datetime);
+      console.log('변환된 end_datetime:', end);
+      console.log('end_datetime 타입:', typeof companySchedule.end_datetime);
     } else {
-      console.warn('시작 시간 형식을 인식할 수 없습니다:', startField);
-      return null;
-    }
-    
-    if (endField && typeof endField === 'object' && endField._seconds) {
-      end = new Date(endField._seconds * 1000 + (endField._nanoseconds || 0) / 1000000);
-    } else if (endField instanceof Date) {
-      end = endField;
-    } else if (typeof endField === 'string') {
-      end = new Date(endField);
-    } else {
-      console.warn('종료 시간 형식을 인식할 수 없습니다:', endField);
-      return null;
+      console.warn('회사 일정에 end_datetime이 없습니다:', companySchedule);
+      // end_datetime이 없으면 start_datetime에서 1시간 후로 설정
+      end = new Date(start.getTime() + 60 * 60 * 1000);
     }
     
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      console.warn('회사 일정 날짜 변환 실패:', { start: start.toString(), end: end.toString(), original: companySchedule });
+      console.warn('회사 일정 날짜 변환 실패:', { 
+        start: start.toString(), 
+        end: end.toString(), 
+        original: companySchedule 
+      });
       return null;
     }
   } catch (error) {

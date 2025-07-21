@@ -13,6 +13,9 @@ router.get('/department', scheduleController.getDepartmentSchedules);
 // 프로젝트 일정 조회
 router.get('/project', scheduleController.getProjectSchedules);
 
+// 회사 일정 조회
+router.get('/company', scheduleController.getCompanySchedules);
+
 // 모든 일정 조회 (통합)
 router.get('/all', scheduleController.getAllSchedules);
 
@@ -55,6 +58,17 @@ router.put('/project/:id', scheduleController.updateProjectSchedule);
 // 프로젝트 일정 삭제
 router.delete('/project/:id', scheduleController.deleteProjectSchedule);
 
-export default router;
+// === 회사 일정 CRUD ===
+// 회사 일정 생성
+router.post('/company', scheduleController.createCompanySchedule);
 
-//ff
+// 회사 일정 상세 조회
+router.get('/company/:id', scheduleController.getCompanyScheduleById);
+
+// 회사 일정 수정
+router.put('/company/:id', scheduleController.updateCompanySchedule);
+
+// 회사 일정 삭제
+router.delete('/company/:id', scheduleController.deleteCompanySchedule);
+
+export default router;

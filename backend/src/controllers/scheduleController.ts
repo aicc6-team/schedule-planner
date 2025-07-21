@@ -435,5 +435,141 @@ export const scheduleController = {
         message: error instanceof Error ? error.message : '알 수 없는 오류'
       });
     }
+  },
+
+  // === 회사 일정 CRUD ===
+  // 회사 일정 목록 조회
+  async getCompanySchedules(_req: Request, res: Response) {
+    try {
+      const schedules = await firestoreService.getCompanySchedules();
+      
+      res.status(200).json({
+        success: true,
+        data: schedules,
+        message: '회사 일정 목록 조회 성공',
+        count: schedules.length
+      });
+    } catch (error) {
+      console.error('회사 일정 조회 실패:', error);
+      res.status(500).json({
+        success: false,
+        error: '회사 일정을 조회하는 중 오류가 발생했습니다.',
+        message: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  },
+
+  // 회사 일정 생성
+  async createCompanySchedule(req: Request, res: Response) {
+    try {
+      const schedule = await firestoreService.createCompanySchedule(req.body);
+      
+      res.status(201).json({
+        success: true,
+        data: schedule,
+        message: '회사 일정 생성 성공'
+      });
+    } catch (error) {
+      console.error('회사 일정 생성 실패:', error);
+      res.status(500).json({
+        success: false,
+        error: '회사 일정을 생성하는 중 오류가 발생했습니다.',
+        message: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  },
+
+  // 회사 일정 상세 조회
+  async getCompanyScheduleById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID가 필요합니다.'
+        });
+      }
+      const schedule = await firestoreService.getCompanyScheduleById(id);
+      
+      if (!schedule) {
+        return res.status(404).json({
+          success: false,
+          error: '회사 일정을 찾을 수 없습니다.'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: schedule,
+        message: '회사 일정 조회 성공'
+      });
+    } catch (error) {
+      console.error('회사 일정 조회 실패:', error);
+      return res.status(500).json({
+        success: false,
+        error: '회사 일정을 조회하는 중 오류가 발생했습니다.',
+        message: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  },
+
+  // 회사 일정 수정
+  async updateCompanySchedule(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID가 필요합니다.'
+        });
+      }
+      const schedule = await firestoreService.updateCompanySchedule(id, req.body);
+      
+      if (!schedule) {
+        return res.status(404).json({
+          success: false,
+          error: '회사 일정을 찾을 수 없습니다.'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: schedule,
+        message: '회사 일정 수정 성공'
+      });
+    } catch (error) {
+      console.error('회사 일정 수정 실패:', error);
+      return res.status(500).json({
+        success: false,
+        error: '회사 일정을 수정하는 중 오류가 발생했습니다.',
+        message: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  },
+
+  // 회사 일정 삭제
+  async deleteCompanySchedule(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID가 필요합니다.'
+        });
+      }
+      await firestoreService.deleteCompanySchedule(id);
+      
+      return res.status(200).json({
+        success: true,
+        message: '회사 일정 삭제 성공'
+      });
+    } catch (error) {
+      console.error('회사 일정 삭제 실패:', error);
+      return res.status(500).json({
+        success: false,
+        error: '회사 일정을 삭제하는 중 오류가 발생했습니다.',
+        message: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
   }
 };

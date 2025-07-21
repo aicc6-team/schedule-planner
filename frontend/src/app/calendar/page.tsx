@@ -61,10 +61,13 @@ interface CompanySchedule {
   schedule_id: string;
   title: string;
   description: string;
-  start_time: string;
-  end_time: string;
+  start_datetime: string; // Firebase에서 오는 실제 필드명
+  end_datetime: string;   // Firebase에서 오는 실제 필드명
   organizer: string;
-  status: string;
+  supporting_organizations?: any;
+  attendees?: any;
+  created_at?: any;
+  updated_at?: any;
   [key: string]: any;
 }
 
@@ -182,18 +185,60 @@ const transformProjectSchedule = (schedule: ProjectSchedule): Schedule => {
   };
 };
 
-const transformCompanySchedule = (schedule: CompanySchedule): Schedule => ({
-  id: schedule.schedule_id,
-  title: schedule.title || '제목 없음',
-  description: schedule.description,
-  startTime: schedule.start_time,
-  endTime: schedule.end_time,
-  priority: 'high',
-  type: 'company',
-  assignee: schedule.organizer,
-  project: '전사 일정',
-  status: schedule.status === '완료' ? 'completed' : 'pending'
-});
+const transformCompanySchedule = (schedule: CompanySchedule): Schedule => {
+  console.log('캘린더 - 회사 일정 변환 시작:', schedule);
+  console.log('캘린더 - start_datetime 원본 값:', schedule.start_datetime);
+  console.log('캘린더 - end_datetime 원본 값:', schedule.end_datetime);
+  
+  let startTime, endTime;
+  
+  try {
+    // Firebase에서 오는 날짜 문자열을 Date 객체로 변환
+    if (schedule.start_datetime) {
+      startTime = new Date(schedule.start_datetime);
+      console.log('캘린더 - 변환된 start_datetime:', startTime);
+      console.log('캘린더 - start_datetime 타입:', typeof schedule.start_datetime);
+    } else {
+      console.warn('캘린더 - 회사 일정에 start_datetime이 없습니다:', schedule);
+      startTime = new Date();
+    }
+    
+    if (schedule.end_datetime) {
+      endTime = new Date(schedule.end_datetime);
+      console.log('캘린더 - 변환된 end_datetime:', endTime);
+      console.log('캘린더 - end_datetime 타입:', typeof schedule.end_datetime);
+    } else {
+      console.warn('캘린더 - 회사 일정에 end_datetime이 없습니다:', schedule);
+      endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 기본 1시간
+    }
+    
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+      console.warn('캘린더 - 회사 일정 날짜 변환 실패:', schedule);
+      startTime = new Date();
+      endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+    }
+  } catch (error) {
+    console.error('캘린더 - 회사 일정 변환 중 오류:', error, schedule);
+    startTime = new Date();
+    endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+  }
+  
+  const result = {
+    id: schedule.schedule_id,
+    title: schedule.title || '제목 없음',
+    description: schedule.description,
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    priority: 'high' as const,
+    type: 'company' as const,
+    assignee: schedule.organizer || '전사',
+    project: '전사 일정',
+    status: 'pending' as const
+  };
+  
+  console.log('캘린더 - 회사 일정 변환 완료:', result);
+  return result;
+};
 
 const transformAllSchedules = (allSchedules: {personal: PersonalSchedule[], department: DepartmentSchedule[], project: ProjectSchedule[], company: CompanySchedule[]}): Schedule[] => {
   const p = allSchedules.personal?.map(transformPersonalSchedule) || [];

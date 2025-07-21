@@ -235,10 +235,109 @@ export const firestoreService = {
   async getCompanySchedules(): Promise<CompanySchedule[]> {
     try {
       const snapshot = await db.collection('CompanySchedule').get();
-      return snapshot.docs.map((doc: any) => ({
-        schedule_id: doc.id,
-        ...doc.data()
-      } as CompanySchedule));
+      return snapshot.docs.map((doc: any) => {
+        const data = doc.data();
+        
+        // Firebase에서 오는 날짜 문자열을 Date 객체로 변환
+        let start_datetime: Date;
+        let end_datetime: Date;
+        let created_at: Date;
+        let updated_at: Date;
+        
+        try {
+          // start_datetime 변환
+          if (data.start_datetime) {
+            if (typeof data.start_datetime === 'string') {
+              start_datetime = new Date(data.start_datetime);
+            } else if (data.start_datetime._seconds) {
+              // Firestore Timestamp 객체인 경우
+              start_datetime = new Date(data.start_datetime._seconds * 1000);
+            } else {
+              start_datetime = new Date(data.start_datetime);
+            }
+          } else {
+            start_datetime = new Date();
+          }
+          
+          // end_datetime 변환
+          if (data.end_datetime) {
+            if (typeof data.end_datetime === 'string') {
+              end_datetime = new Date(data.end_datetime);
+            } else if (data.end_datetime._seconds) {
+              // Firestore Timestamp 객체인 경우
+              end_datetime = new Date(data.end_datetime._seconds * 1000);
+            } else {
+              end_datetime = new Date(data.end_datetime);
+            }
+          } else {
+            end_datetime = new Date(start_datetime.getTime() + 60 * 60 * 1000); // 기본 1시간
+          }
+          
+          // created_at 변환
+          if (data.created_at) {
+            if (typeof data.created_at === 'string') {
+              created_at = new Date(data.created_at);
+            } else if (data.created_at._seconds) {
+              created_at = new Date(data.created_at._seconds * 1000);
+            } else {
+              created_at = new Date(data.created_at);
+            }
+          } else {
+            created_at = new Date();
+          }
+          
+          // updated_at 변환
+          if (data.updated_at) {
+            if (typeof data.updated_at === 'string') {
+              updated_at = new Date(data.updated_at);
+            } else if (data.updated_at._seconds) {
+              updated_at = new Date(data.updated_at._seconds * 1000);
+            } else {
+              updated_at = new Date(data.updated_at);
+            }
+          } else {
+            updated_at = new Date();
+          }
+          
+          // 유효하지 않은 날짜인지 확인
+          if (isNaN(start_datetime.getTime())) {
+            console.warn('유효하지 않은 start_datetime:', data.start_datetime);
+            start_datetime = new Date();
+          }
+          if (isNaN(end_datetime.getTime())) {
+            console.warn('유효하지 않은 end_datetime:', data.end_datetime);
+            end_datetime = new Date(start_datetime.getTime() + 60 * 60 * 1000);
+          }
+          if (isNaN(created_at.getTime())) {
+            console.warn('유효하지 않은 created_at:', data.created_at);
+            created_at = new Date();
+          }
+          if (isNaN(updated_at.getTime())) {
+            console.warn('유효하지 않은 updated_at:', data.updated_at);
+            updated_at = new Date();
+          }
+          
+        } catch (error) {
+          console.error('날짜 변환 중 오류:', error, data);
+          start_datetime = new Date();
+          end_datetime = new Date(start_datetime.getTime() + 60 * 60 * 1000);
+          created_at = new Date();
+          updated_at = new Date();
+        }
+        
+        return {
+          schedule_id: doc.id,
+          title: data.title || '',
+          description: data.description || '',
+          start_datetime,
+          end_datetime,
+          organizer: data.organizer || '',
+          supporting_organizations: data.supporting_organizations || null,
+          attendees: data.attendees || null,
+          created_at,
+          updated_at
+        } as CompanySchedule;
+      });
     } catch (error) {
       console.error('회사 일정 조회 실패:', error);
       throw new Error('회사 일정을 조회하는 중 오류가 발생했습니다.');
@@ -498,21 +597,68 @@ export const firestoreService = {
 
 
   // === 회사 일정 CRUD ===
-  async createCompanySchedule(_data: Omit<CompanySchedule, 'schedule_id' | 'created_at' | 'updated_at'>): Promise<CompanySchedule> {
-    // TODO: 구현
-    return {} as CompanySchedule;
+  async createCompanySchedule(data: Omit<CompanySchedule, 'schedule_id' | 'created_at' | 'updated_at'>): Promise<CompanySchedule> {
+    try {
+      const scheduleData = {
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+     
+      const docRef = await db.collection('CompanySchedule').add(scheduleData);
+      
+      return {
+        schedule_id: docRef.id,
+        ...scheduleData,
+        start_datetime: new Date(scheduleData.start_datetime),
+        end_datetime: new Date(scheduleData.end_datetime),
+        created_at: new Date(scheduleData.created_at),
+        updated_at: new Date(scheduleData.updated_at),
+      };
+    } catch (error) {
+      console.error('회사 일정 생성 실패:', error);
+      throw new Error('회사 일정을 생성하는 중 오류가 발생했습니다.');
+    }
   },
-  async getCompanyScheduleById(_id: string): Promise<CompanySchedule | null> {
-    // TODO: 구현
-    return null;
+
+  async getCompanyScheduleById(id: string): Promise<CompanySchedule | null> {
+    try {
+      const doc = await db.collection('CompanySchedule').doc(id).get();
+      if (!doc.exists) return null;
+     
+      return {
+        schedule_id: doc.id,
+        ...doc.data()
+      } as CompanySchedule;
+    } catch (error) {
+      console.error('회사 일정 상세 조회 실패:', error);
+      throw new Error('회사 일정을 조회하는 중 오류가 발생했습니다.');
+    }
   },
-  async updateCompanySchedule(_id: string, _data: Partial<CompanySchedule>): Promise<CompanySchedule | null> {
-    // TODO: 구현
-    return null;
+
+  async updateCompanySchedule(id: string, data: Partial<CompanySchedule>): Promise<CompanySchedule | null> {
+    try {
+      const updateData = {
+        ...data,
+        updated_at: new Date().toISOString()
+      };
+     
+      await db.collection('CompanySchedule').doc(id).update(updateData);
+      return await this.getCompanyScheduleById(id);
+    } catch (error) {
+      console.error('회사 일정 수정 실패:', error);
+      throw new Error('회사 일정을 수정하는 중 오류가 발생했습니다.');
+    }
   },
-  async deleteCompanySchedule(_id: string): Promise<boolean> {
-    // TODO: 구현
-    return false;
+
+  async deleteCompanySchedule(id: string): Promise<boolean> {
+    try {
+      await db.collection('CompanySchedule').doc(id).delete();
+      return true;
+    } catch (error) {
+      console.error('회사 일정 삭제 실패:', error);
+      throw new Error('회사 일정을 삭제하는 중 오류가 발생했습니다.');
+    }
   },
 
 
